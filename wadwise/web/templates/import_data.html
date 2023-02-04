@@ -1,0 +1,8 @@
+{% extends 'base.html' %}
+
+{% block content %}
+<form method="POST" enctype="multipart/form-data">
+    GNUCash: <input type="file" name="gnucash" accept=".gnca" /><br>
+    <button type="submit">Import</button>
+</form>
+{% endblock %}

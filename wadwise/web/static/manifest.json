@@ -1,0 +1,8 @@
+{
+  "name": "Wadwise",
+  "short_name": "Wadwise",
+  "start_url": "/account",
+  "display": "standalone",
+  "background_color": "#fff",
+  "description": "A simple financial app"
+}

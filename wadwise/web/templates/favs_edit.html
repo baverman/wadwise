@@ -1,0 +1,35 @@
+{% extends 'base.html' %}
+{% from 'widgets.html' import select_group %}
+
+{% block content %}
+<script>
+function favs_form() {
+    return {
+        'ids': {{ ids | tojson }},
+        add() {
+            this.ids.push('')
+        },
+        remove(idx){
+            if (confirm('Delete?')) {
+                this.ids.splice(idx, 1)
+            }
+        }
+    }
+}
+</script>
+
+<form method="POST" x-data="favs_form">
+    <template x-for="(it, idx) in ids" :key="idx">
+    <p>
+        {{ select_group('acc', '', env.account_groups, **{'x-model': "ids[idx]"}) }}
+        <button @click.prevent="remove(idx)">Remove</button>
+    </p>
+    </template>
+    <p>
+        <button @click.prevent="add">Add</button>
+    </p>
+    <p>
+        <button type="submit">Save</button>
+    </p>
+</form>
+{% endblock %}

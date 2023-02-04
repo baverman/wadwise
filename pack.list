@@ -1,0 +1,5 @@
+--exclude=*/__pycache__
+--exclude=*.pyc
+wadwise
+main.py
+run-android.sh
