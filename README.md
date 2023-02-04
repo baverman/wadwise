@@ -1,0 +1,2 @@
+# wadwise
+Personal finances app
