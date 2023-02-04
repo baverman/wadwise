@@ -1,0 +1,4 @@
+*.sql
+*.sqlite*
+*.pyc
+*.http

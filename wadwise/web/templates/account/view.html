@@ -1,0 +1,126 @@
+{% extends "base.html" %}
+
+{% macro cur_table_header(cur_list) %}
+<tr><th></th>{% for cur in cur_list %}<th class="tright cur"><span class="cur">{{ cur }}</span></th>{% endfor %}</tr>
+{% endmacro %}
+
+{% macro cur_table_row(cur_list, total) %}
+{% for cur in cur_list %}<td class="tright amount"><nobr>{{ fmt_num(total[cur]) | safe }}</nobr></td>{% endfor %}
+{% endmacro %}
+
+{% macro cur_table_row_s(cur_list, label, total) %}
+<tr><td>{{ label }}</td>{% for cur in cur_list %}<td class="tright amount"><nobr>{{ fmt_num(total[cur]) | safe }}</nobr></td>{% endfor %}</tr>
+{% endmacro %}
+
+{% block content %}
+<script>
+    function mode_selector_data() {
+        return {
+            mode: {{ total_mode | tojson }},
+            init() {
+                this.$watch('mode', value => {
+                    document.cookie = 'total_mode=' + value
+                    this.$nextTick(() => window.location.reload())
+                })
+            }
+        }
+    }
+</script>
+
+{% if account %}
+<div>
+  <a href="{{ url_for('account_view') }}">Root</a>:{% for p in account.parents %}<a href="{{ url_for('account_view', aid=p) }}">{{ env.amap[p].name }}</a>:{% endfor %}<a href="{{ url_for('account_edit', aid=account.aid) }}">{{ account.name }}</a>
+  {% with messages = get_flashed_messages() %}
+    {% if messages %}
+      {% for message in messages %}
+      <div class="flash">{{ message }}</div>
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+  {% set cur_list = env.sorted_curs(env.total(account.aid)) %}
+  {% if cur_list %}
+  <table style="width: 100%">
+    {{ cur_table_header(cur_list) }}
+    {% if account.is_sheet %}
+      {% if account.children %}{{ cur_table_row_s(cur_list, 'Total', env.current[account.aid].total) }}{% endif %}
+      {% if env.current[account.aid].self_total %}{{ cur_table_row_s(cur_list, 'Self', env.current[account.aid].self_total) }}{% endif %}
+    {% else %}
+      {% if account.children %}{{ cur_table_row_s(cur_list, 'This month total', env.month[account.aid].total) }}{% endif %}
+      {% if env.month[account.aid].self_total %}{{ cur_table_row_s(cur_list, 'This month', env.month[account.aid].self_total) }}{% endif %}
+      {% if account.children %}{{ cur_table_row_s(cur_list, 'Today total', env.day[account.aid].total) }}{% endif %}
+      {% if env.day[account.aid].self_total %}{{ cur_table_row_s(cur_list, 'Today', env.day[account.aid].self_total) }}{% endif %}
+    {% endif %}
+  </table>
+  {% endif %}
+  {% if accounts and not account.is_sheet %}
+  <div>
+  <span>Subtotal mode:</span>
+  <select x-data="mode_selector_data" x-init="init" x-model="mode">
+      <option>day</option>
+      <option>month</option>
+  </select>
+  </div>
+  {% endif %}
+</div>
+{% else %}
+  {% set cur_list = env.top_sorted_curs() %}
+{% endif %}
+
+{% if not account %}
+<a href="{{ url_for('account_edit', parent=account.aid) }}">Add subaccount</a>
+| <a href="{{ url_for('import_data') }}">Import data</a>
+| <a href="{{ url_for('favs_edit') }}">Favorites</a>
+{% endif %}
+
+{% if accounts %}
+<hr>
+<table style="width:100%">
+    {{ cur_table_header(cur_list) }}
+    {% for it in accounts %}
+    <tr>
+        <td>
+            <a href="{{ url_for('account_view', aid=it.aid) }}">{{ it.name }}</a>
+        </td>
+        {{ cur_table_row(cur_list, env.total(it.aid, total_mode)) }}
+    </tr>
+    {% endfor %}
+</table>
+{% endif %}
+
+{% if account  %}
+<hr>
+<a href="{{ url_for('transaction_edit', dest=account.aid) }}">Add transaction</a>
+| <a href="{{ url_for('transaction_edit', dest=account.aid, split=1) }}">Add split</a>
+
+<div class="transaction-list">
+{% for it in transactions %}
+<div class="transaction-item">
+    <table>
+        <tr {{ {'class': [None, 'transaction-header'][it.split]} | xmlattr}} >
+            <td>{{ it.desc or '' }}</td>
+            <td class="tright">
+                <a href="{{ url_for('transaction_edit', tid=it.tid, dest=account.aid) }}" class="date">
+                    &#x270E;{{ it.date.date() }}
+                </a>
+            </td>
+        </tr>
+        {% if it.split %}
+            {% for op_acc, op_amnt, op_cur in it.ops %}
+            <tr>
+                <td>{{ env.amap[op_acc].full_name }}</td>
+                <td class="tright">{{ '%.2f' % op_amnt }}&nbsp;<span class="cur">{{ op_cur }}</span></td>
+            </tr>
+            {% endfor %}
+        {% else %}
+            <tr>
+                <td>{{ env.amap[it.src].full_name }}&nbsp;&rarr;</td>
+                <td class="tright">{{ '%.2f' % it.amount }}&nbsp;<span class="cur">{{ it.cur }}</span></td>
+            </tr>
+        {% endif %}
+        </div>
+    </table>
+</div>
+{% endfor %}
+</div>
+{% endif %}
+{% endblock %}
