@@ -2,9 +2,10 @@ import time
 import json
 import operator
 from datetime import datetime
+from sqlbind import not_none
 
-from wadwise.db import (gen_id, insert, transaction, execute, F, update,
-                        delete, replace, Q, WHERE, SET)
+from wadwise.db import (gen_id, insert, transaction, execute, update,
+                        delete, replace, Q, select)
 
 
 class AccType:
@@ -51,30 +52,25 @@ def update_transaction(tid, ops, date, desc):
 
 @transaction()
 def delete_transaction(tid):
-    Q('DELETE FROM ops', WHERE(tid=tid)).all()
-    return Q('DELETE FROM transactions', WHERE(tid=tid)).all()
+    delete('ops', tid=tid)
+    delete('transactions', tid=tid)
 
 
-def account_transactions(*fields, **eq):
-    uniq_tid = Q('SELECT distinct(tid) FROM ops', WHERE(*fields, **eq))
-
-    q = Q('''\
+def account_transactions(**eq):
+    result = Q(q := Q.p, f'''\
         SELECT tid, date, desc, json_array(json_group_array(aid),
                                            json_group_array(amount/100.0),
                                            json_group_array(cur)) ops_raw
-        FROM (
-           ''', uniq_tid, '''
-        ) td
+        FROM (SELECT distinct(tid) FROM ops {q.WHERE(**eq)})
         INNER JOIN transactions t USING(tid)
         INNER JOIN ops USING(tid)
         GROUP BY tid
         ORDER BY date DESC
-    ''')
+    ''').all()
 
     aid = eq.pop('aid', None)
     by_amount = operator.itemgetter(1)
 
-    result = q.all()
     for it in result:
         it['date'] = datetime.fromtimestamp(it['date'])
         accs, amounts, curs = json.loads(it.pop('ops_raw'))
@@ -92,29 +88,25 @@ def account_transactions(*fields, **eq):
 @transaction()
 def delete_account(aid, new_parent):
     assert aid
-    Q('UPDATE accounts', SET(parent=new_parent), WHERE(parent=aid)).all()
-    Q('UPDATE ops', SET(aid=new_parent), WHERE(aid=aid)).all()
-    return Q('DELETE FROM accounts', WHERE(aid=aid)).all()
+    update('accounts', 'parent', aid, parent=new_parent)
+    update('ops', 'aid', aid, aid=new_parent)
+    delete('accounts', aid=aid)
 
 
 def account_by_name(parent, name):
-    return Q('SELECT * FROM accounts',
-             WHERE(parent=parent, name=name)).one()
+    return select('accounts', '*', parent=parent, name=name).one()
 
 
 def account_by_id(aid):
-    return Q('SELECT * FROM accounts', WHERE(aid=aid)).one()
+    return select('accounts', '*', aid=aid).one()
 
 
 def get_sub_accounts(parent):
-    return Q('SELECT * FROM accounts', WHERE(parent=parent)).all()
+    return select('accounts', '*', parent=parent).all()
 
 
 def get_param(name, default=None):
-    v = Q('SELECT value FROM params', WHERE(name=name)).one()
-    if v is None:
-        return default
-    return v['value']
+    return select('params', 'value', name=name).scalar(default)
 
 
 @transaction()
@@ -139,7 +131,7 @@ class AccountMap(dict):
 
 
 def account_list():
-    amap = AccountMap({it['aid']: it for it in Q('SELECT * FROM accounts')})
+    amap = AccountMap({it['aid']: it for it in Q(None, 'SELECT * FROM accounts')})
     amap[None] = {}
 
     cache = {}
@@ -166,15 +158,16 @@ def op2(a1, a2, amount, currency):
 
 
 def balance(start=None, end=None):
-    q = Q('SELECT aid, cur, sum(amount) / 100.0 AS total',
-          'FROM transactions AS t',
-          'INNER JOIN ops t USING (tid)',
-          WHERE(F.not_none('t.date >= {}', start),
-                F.not_none('t.date < {}', end)),
-          'GROUP BY aid, cur')
+    data = Q(q := Q.p, f'''\
+        SELECT aid, cur, sum(amount) / 100.0 AS total
+        FROM transactions AS t
+        INNER JOIN ops t USING (tid)
+        {q.WHERE(q.in_range(q.t.date, not_none/start, not_none/end))}
+        GROUP BY aid, cur
+    ''')
 
     result = {}
-    for it in q:
+    for it in data:
         result.setdefault(it['aid'], {})[it['cur']] = it['total']
 
     return result
@@ -245,7 +238,7 @@ def create_tables():
 
 
 def create_initial_accounts():
-    if Q('SELECT count(1) from accounts').scalar(0) > 0:
+    if Q(None, 'SELECT count(1) from accounts').scalar(0) > 0:
         return
 
     initial_accounts = [
@@ -256,7 +249,7 @@ def create_initial_accounts():
         (AccType.EQUITY, 'Equity'),
     ]
     for aid, name in initial_accounts:
-        execute('INSERT OR IGNORE INTO accounts (aid, type, name) VALUES (?, ?, ?)', (aid, aid, name))
+        Q(q := Q.p, f'INSERT OR IGNORE INTO accounts {q.VALUES(aid=aid, type=aid, name=name)}').execute()
 
 
 @transaction()

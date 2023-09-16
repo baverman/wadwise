@@ -2,3 +2,5 @@
 *.sqlite*
 *.pyc
 *.http
+sqlbind.py
+.coverage

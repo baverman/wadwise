@@ -98,7 +98,7 @@ def test_transaction_flow(dbconn):
     assert result == {}
 
     # make shure transaction cleans up ops
-    ops = db.Q('SELECT * FROM ops', db.WHERE(tid=tid)).all()
+    ops = db.select('ops', '*', tid=tid).all()
     assert not ops
 
 
