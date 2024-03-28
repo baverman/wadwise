@@ -75,7 +75,7 @@ def transaction_edit(split, **form):
         return render_template('transaction/edit.html', form=form)
 
 
-transaction_actions_t = opt(str) | enum('delete', 'copy')
+transaction_actions_t = opt(str) | enum('delete', 'copy', 'copy-now')
 
 
 @app.route('/transaction/edit', methods=['POST'])
@@ -90,11 +90,11 @@ def transaction_save_helper(action, tid, ops, form, dest):
     if action == 'delete':
         m.delete_transaction(tid)
     else:
-        if action == 'copy':
+        if action == 'copy-now':
             form['date'] = int(time.time())
         else:
             form['date'] = form['date'].timestamp()
-        if tid and action != 'copy':
+        if tid and action not in ('copy', 'copy-now'):
             m.update_transaction(tid, ops, **form)
         else:
             m.create_transaction(ops, **form)

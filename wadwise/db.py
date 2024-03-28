@@ -78,13 +78,8 @@ def gen_id():
     return base64.urlsafe_b64encode(value).decode()
 
 
-class QParamDesc:
-    def __get__(self, instance, owner):
-        return sqlbind.Dialect.sqlite_named()
-
-
 class Q:
-    p = QParamDesc()
+    p = sqlbind.Dialect(sqlbind.Dialect.sqlite_named)
 
     def __init__(self, q, query):
         self.q = q

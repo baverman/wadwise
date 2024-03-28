@@ -1,2 +1,2 @@
 #!/bin/sh
-tar -cf - -T pack.list | ssh "$@" 'tar -C wadwise -xvf-'
+tar -chf - -T pack.list | ssh "$@" 'tar -C wadwise -xvf-'

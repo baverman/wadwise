@@ -15,6 +15,7 @@
         <button type="submit">Save</button>
         {% if form.tid %}
             <button name="action" value="delete" type="submit">Delete</button>
+            <button name="action" value="copy-now" type="submit">Copy Now</button>
             <button name="action" value="copy" type="submit">Copy</button>
             <a href="{{ url_for('transaction_edit', tid=form.tid, dest=form.dest, split=1) }}">Split</a>
         {% endif %}
