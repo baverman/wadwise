@@ -14,6 +14,9 @@ class Env:
     cur_sort_key = lambda r, d={'RUB': 'zzzzz'}: d.get(r[0], r[0])
     cur_sort_key1 = lambda r, d={'RUB': 'zzzzz'}: d.get(r, r)
 
+    def __init__(self, today=None):
+        self.today = today or date.today()
+
     @cached_property
     def account_list_all(self):
         return [Option(it['aid'], it['full_name'], False) for it in self.amap.values()]
@@ -55,7 +58,7 @@ class Env:
 
     @cached_property
     def month(self):
-        dt = utils.month_start(date.today())
+        dt = utils.month_start(self.today)
         return month_balance(dt)
 
     def total(self, aid, mode='month'):
@@ -70,7 +73,7 @@ class Env:
 
     @cached_property
     def day(self):
-        return day_balance(date.today())
+        return day_balance(self.today)
 
     def sorted_total(self, total):
         return sorted(total.items(), key=Env.cur_sort_key)
