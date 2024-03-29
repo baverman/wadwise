@@ -1,15 +1,17 @@
 import time
-from datetime import datetime
+from datetime import datetime, timedelta
 
-from covador import opt, DateTime, item, enum
+from covador import opt, DateTime, item, enum, Date
 from covador.flask import query_string, form
 
 from flask import render_template, redirect, url_for, request, flash
 
-from wadwise import model as m, state
+from wadwise import model as m, state, utils
 from wadwise.web import app
 
 datetime_t = DateTime('%Y-%m-%dT%H:%M')
+datetime_trunc_t = DateTime('%Y-%m-%d')
+date_t = Date('%Y-%m-%d')
 
 
 @app.route('/account')
@@ -121,6 +123,30 @@ def transaction_save_helper(action, tid, ops, form, dest):
 def transaction_split_save(tid, dest, acc, amount, cur, action, **form):
     ops = [m.op(*it) for it in zip(acc, amount, cur)]
     return transaction_save_helper(action, tid, ops, form, dest)
+
+
+@app.route('/transaction/over')
+@query_string(aid=str, today=str | date_t)
+def transaction_transfer_over(aid, today):
+    next_date = today.replace(day=1)
+    prev_date = next_date - timedelta(days=1)
+    return render_template('transaction/over.html', aid=aid,
+                           next_date=utils.fmt_date(next_date), prev_date=utils.fmt_date(prev_date))
+
+
+@app.route('/transaction/over', methods=['POST'])
+@query_string(aid=str)
+@form(
+    over=str,
+    cur=str,
+    amount=float,
+    next_date=str | datetime_trunc_t,
+    prev_date=str | datetime_trunc_t)
+def transaction_transfer_over_save(aid, over, cur, amount, next_date, prev_date):
+    with m.transaction():
+        m.create_transaction(m.op2(aid, over, amount, cur), prev_date.timestamp())
+        tid = m.create_transaction(m.op2(over, aid, amount, cur), next_date.timestamp())
+    return redirect(url_for('account_view', aid=aid, _anchor=f't-{tid}'))
 
 
 @app.route('/')

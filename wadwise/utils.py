@@ -52,3 +52,7 @@ def scream(fn):
             raise
 
     return inner
+
+
+def fmt_date(dt):
+    return dt.strftime('%Y-%m-%d')
