@@ -97,7 +97,7 @@ def transaction_save_helper(action, tid, ops, form, dest):
         if tid and action not in ('copy', 'copy-now'):
             m.update_transaction(tid, ops, **form)
         else:
-            m.create_transaction(ops, **form)
+            tid = m.create_transaction(ops, **form)
 
     state.transactions_changed()
 
