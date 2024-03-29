@@ -96,7 +96,7 @@
 {% for it in transactions %}
 <div class="transaction-item">
     <table>
-        <tr {{ {'class': [None, 'transaction-header'][it.split]} | xmlattr}} >
+        <tr {{ {'class': [None, 'transaction-header'][it.split], 'id': 't-' + it.tid} | xmlattr}} >
             <td>{{ it.desc or '' }}</td>
             <td class="tright">
                 <a href="{{ url_for('transaction_edit', tid=it.tid, dest=account.aid) }}" class="date">

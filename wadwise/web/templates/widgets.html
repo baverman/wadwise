@@ -23,3 +23,12 @@
 {% macro checkbox(name, value) %}
 <input type="checkbox" name="{{ name }}"{% if value %}checked{% endif %} {{ kwargs | xmlattr }}>
 {% endmacro %}
+
+{% macro curlist() %}
+<datalist id="curlist">
+    <option value="GBP"></option>
+    <option value="USD"></option>
+    <option value="EUR"></option>
+    <option value="RUB"></option>
+</datalist>
+{% endmacro %}

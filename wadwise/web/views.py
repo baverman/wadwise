@@ -108,7 +108,7 @@ def transaction_save_helper(action, tid, ops, form, dest):
         if aid != dest and amap[aid]['is_sheet']:
             flash(f'''{amap[aid]['full_name']}: {cbal[aid].total.get(op['cur'], 0)} {op['cur']}''')
 
-    return redirect(url_for('account_view', aid=dest))
+    return redirect(url_for('account_view', aid=dest, _anchor=tid and f't-{tid}'))
 
 
 @app.route('/transaction/split-edit', methods=['POST'])

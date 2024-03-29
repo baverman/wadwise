@@ -1,5 +1,5 @@
 {% extends 'base.html' %}
-{% from 'widgets.html' import select_group %}
+{% from 'widgets.html' import select_group, curlist %}
 
 {% block content %}
 <script>
@@ -35,6 +35,8 @@ function split_form() {
 }
 </script>
 
+{{ curlist() }}
+
 <form method="POST" x-data="split_form" action="{{ url_for('transaction_split_save', tid=form.tid, dest=form.dest) }}">
     <template x-for="(op, idx) in ops" :key="idx">
     <p>
@@ -42,7 +44,7 @@ function split_form() {
         <input type="text" placeholder="amount" inputmode="decimal" name="amount"
                @input="neg_input($event.target)"
                x-model.number="op[1]" size="8em" autocomplete="off">
-        <input name="cur" x-model="op[2]" size="3em">
+        <input name="cur" x-model="op[2]" size="4em" list="curlist">
         <button @click.prevent="fix_amount(idx)">Fix</button>
         <button @click.prevent="remove(idx)">Remove</button>
     </p>
