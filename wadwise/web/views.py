@@ -1,7 +1,7 @@
 import time
 from datetime import datetime, timedelta
 
-from covador import opt, DateTime, item, enum, Date
+from covador import opt, DateTime, item, enum, Date, Time
 from covador.flask import query_string, form
 
 from flask import render_template, redirect, url_for, request, flash
@@ -9,9 +9,19 @@ from flask import render_template, redirect, url_for, request, flash
 from wadwise import model as m, state, utils
 from wadwise.web import app
 
-datetime_t = DateTime('%Y-%m-%dT%H:%M')
+datetime_t = DateTime('%Y-%m-%d%H:%M')
 datetime_trunc_t = DateTime('%Y-%m-%d')
 date_t = Date('%Y-%m-%d')
+
+
+def split_date(form, dt, name='date'):
+    form[name] = dt.strftime('%Y-%m-%d')
+    form[name + '_time'] = dt.strftime('%H:%M')
+
+
+def combine_date(form, name='date'):
+    form[name] = datetime_t(form[name] + form[name + '_time'])
+    form.pop(name + '_time', None)
 
 
 @app.route('/account')
@@ -65,10 +75,10 @@ def transaction_edit(split, **form):
     assert form['tid'] or form['dest']
     if form['tid']:
         form, = m.account_transactions(aid=form['dest'], tid=form['tid'])
-        form['date'] = form['date'].strftime(datetime_t.fmt)
+        split_date(form, form['date'])
     else:
         form['cur'] = 'GBP'
-        form['date'] = datetime.now().strftime(datetime_t.fmt)
+        split_date(form, datetime.now())
         form['ops'] = (None, 0, 'GBP'), (form['dest'], 0, 'GBP')
 
     if split or form.get('split'):
@@ -82,8 +92,9 @@ transaction_actions_t = opt(str) | enum('delete', 'copy', 'copy-now')
 
 @app.route('/transaction/edit', methods=['POST'])
 @query_string(dest=str, tid=opt(str))
-@form(src=str, amount=float, date=str | datetime_t, desc=opt(str), cur=str, action=transaction_actions_t)
+@form(src=str, amount=float, date=str, date_time=str, desc=opt(str), cur=str, action=transaction_actions_t)
 def transaction_save(tid, src, dest, amount, cur, action, **form):
+    combine_date(form)
     ops = m.op2(src, dest, amount, cur)
     return transaction_save_helper(action, tid, ops, form, dest)
 
@@ -115,12 +126,13 @@ def transaction_save_helper(action, tid, ops, form, dest):
 
 @app.route('/transaction/split-edit', methods=['POST'])
 @query_string(dest=str, tid=opt(str))
-@form(date=str | datetime_t, desc=opt(str),
+@form(date=str, date_time=str, desc=opt(str),
       acc=item(str, multi=True),
       amount=item(float, multi=True),
       cur=item(str, multi=True),
       action=transaction_actions_t)
 def transaction_split_save(tid, dest, acc, amount, cur, action, **form):
+    combine_date(form)
     ops = [m.op(*it) for it in zip(acc, amount, cur)]
     return transaction_save_helper(action, tid, ops, form, dest)
 
@@ -146,6 +158,7 @@ def transaction_transfer_over_save(aid, over, cur, amount, next_date, prev_date)
     with m.transaction():
         m.create_transaction(m.op2(aid, over, amount, cur), prev_date.timestamp())
         tid = m.create_transaction(m.op2(over, aid, amount, cur), next_date.timestamp())
+    state.transactions_changed()
     return redirect(url_for('account_view', aid=aid, _anchor=f't-{tid}'))
 
 

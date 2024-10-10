@@ -43,7 +43,6 @@
 {% if account %}
 <div>
   <a href="{{ url_for('account_view') }}">Root</a>:{% for p in account.parents %}<a href="{{ url_for('account_view', aid=p) }}">{{ env.amap[p].name }}</a>:{% endfor %}<a href="{{ url_for('account_edit', aid=account.aid) }}">{{ account.name }}</a>
-  <input type="date" x-data="today_selector_data" x-init="init" x-model="today" />
   {% with messages = get_flashed_messages() %}
     {% if messages %}
       {% for message in messages %}
@@ -51,8 +50,6 @@
       {% endfor %}
     {% endif %}
   {% endwith %}
-  {% if not account.is_sheet %}
-  {% endif %}
   {% set cur_list = env.sorted_curs(env.total(account.aid)) %}
   {% if cur_list %}
   <table style="width: 100%">
@@ -86,6 +83,10 @@
 <a href="{{ url_for('account_edit', parent=account.aid) }}">Add subaccount</a>
 | <a href="{{ url_for('import_data') }}">Import data</a>
 | <a href="{{ url_for('favs_edit') }}">Favorites</a>
+{% endif %}
+
+{% if account and not account.is_sheet %}
+<input type="date" x-data="today_selector_data" x-init="init" x-model="today" />
 {% endif %}
 
 {% if accounts %}
