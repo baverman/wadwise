@@ -1,8 +1,9 @@
 import datetime
-from unittest.mock import ANY
 
 import pytest
-from wadwise import db, model as m
+
+from wadwise import db
+from wadwise import model as m
 
 
 def get_acc(name):
@@ -73,24 +74,23 @@ def test_delete_account(dbconn):
 def test_transaction_flow(dbconn):
     a = make_acc('a:cash')
     e = make_acc('e:food')
-    tid = m.create_transaction(m.op2(a, e, 100, 'USD'), 10)
+    tid = m.create_transaction(m.op2(a, e, 100, 'USD'), from_ts(10))
 
-    m.update_transaction(tid, m.op2(a, e, 200, 'USD'), 10, 'foo')
+    m.update_transaction(tid, m.op2(a, e, 200, 'USD'), from_ts(10), 'foo')
     result = m.balance()
     assert result == {a: {'USD': -200}, e: {'USD': 200}}
 
-    data, = m.account_transactions(tid=tid)
+    (data,) = m.account_transactions(tid=tid)
     assert data == {
         'tid': tid,
         'date': datetime.datetime(1970, 1, 1, 1, 0, 10),
         'desc': 'foo',
-        'ops': [(a, -200.0, 'USD'),
-                (e, 200.0, 'USD')],
+        'ops': [(a, -200.0, 'USD'), (e, 200.0, 'USD')],
         'split': False,
         'dest': None,
         'amount': 0,
         'src': a,
-        'cur': 'USD'
+        'cur': 'USD',
     }
 
     m.delete_transaction(tid)
@@ -102,14 +102,18 @@ def test_transaction_flow(dbconn):
     assert not ops
 
 
+def from_ts(ts):
+    return datetime.datetime.fromtimestamp(ts)
+
+
 def test_balance_for_date_range(dbconn):
     a = make_acc('a:cash')
     e = make_acc('e:food')
     i = make_acc('i:salary')
-    m.create_transaction(m.op2(a, e, 100, 'USD'), 10)
-    m.create_transaction(m.op2(a, e, 20, 'USD'), 50)
-    m.create_transaction(m.op2(i, a, 200.4, 'USD'), 100)
-    m.create_transaction(m.op2(a, e, 30, 'USD'), 150)
+    m.create_transaction(m.op2(a, e, 100, 'USD'), from_ts(10))
+    m.create_transaction(m.op2(a, e, 20, 'USD'), from_ts(50))
+    m.create_transaction(m.op2(i, a, 200.4, 'USD'), from_ts(100))
+    m.create_transaction(m.op2(a, e, 30, 'USD'), from_ts(150))
 
     result = m.balance(end=50)
     assert result == {a: {'USD': -100}, e: {'USD': 100}}
@@ -121,7 +125,7 @@ def test_balance_for_date_range(dbconn):
     assert result == {a: {'USD': 170.4}, e: {'USD': 30}, i: {'USD': -200.4}}
 
     result = m.balance()
-    assert result == {a: {'USD': 50.4}, e: {'USD': 150}, i:{'USD': -200.4}}
+    assert result == {a: {'USD': 50.4}, e: {'USD': 150}, i: {'USD': -200.4}}
 
 
 def test_params(dbconn):

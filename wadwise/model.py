@@ -1,11 +1,61 @@
-import time
 import json
 import operator
 from datetime import datetime
+from typing import Any, Iterable, Literal, Optional, TypedDict, Union, overload
+
 from sqlbind import not_none
 
-from wadwise.db import (gen_id, insert, transaction, execute, update,
-                        delete, replace, Q, select)
+from wadwise.db import Q, QueryList, delete, execute, gen_id, insert, replace, select, transaction, update
+
+
+class Operation(TypedDict):
+    aid: str
+    amount: float
+    cur: str
+
+
+class Transaction(TypedDict):
+    tid: str
+    date: datetime
+    desc: str
+    ops: list[tuple[str, float, str]]
+    split: Literal[True]
+    dest: str
+
+
+class Transaction2(Transaction):
+    amount: float
+    src: str
+    cur: str
+    split: Literal[False]  # type: ignore[misc]
+
+
+class AccountB(TypedDict):
+    type: str
+    name: str
+    desc: Optional[str]
+    parent: Optional[str]
+    is_placeholder: bool
+
+
+class Account(AccountB):
+    aid: str
+
+
+class AccountExt(Account):
+    parents: tuple[str, ...]
+    is_sheet: bool
+    children: list[str]
+    full_name: str
+
+
+TransactionAny = Union[Transaction, Transaction2]
+BState = dict[str, float]
+Balance = dict[str, BState]
+
+
+class AccountMap(dict[str, AccountExt]):
+    top: list[str]
 
 
 class AccType:
@@ -15,50 +65,62 @@ class AccType:
     ASSET = 'a'
     LIABILITY = 'l'
 
+
 acc_types = [(v, k.capitalize()) for k, v in vars(AccType).items() if not k.startswith('_')]
 sheet_accounts = {AccType.EQUITY, AccType.ASSET, AccType.LIABILITY}
 
 
 @transaction()
-def create_account(parent, name, type, desc=None, aid=None, is_placeholder=False):
+def create_account(
+    parent: Optional[str],
+    name: str,
+    type: str,
+    desc: Optional[str] = None,
+    aid: Optional[str] = None,
+    is_placeholder: bool = False,
+) -> str:
     aid = aid or gen_id()
-    insert('accounts', aid=aid, parent=parent, name=name, type=type, desc=desc,
-           is_placeholder=is_placeholder)
+    insert('accounts', aid=aid, parent=parent, name=name, type=type, desc=desc, is_placeholder=is_placeholder)
     return aid
 
 
 @transaction()
-def update_account(aid, parent, name, type, desc, is_placeholder):
-    update('accounts', 'aid', aid=aid, parent=parent, name=name, type=type,
-           desc=desc, is_placeholder=is_placeholder)
+def update_account(
+    aid: str, parent: Optional[str], name: str, type: str, desc: Optional[str], is_placeholder: bool
+) -> None:
+    update('accounts', 'aid', aid=aid, parent=parent, name=name, type=type, desc=desc, is_placeholder=is_placeholder)
 
 
 @transaction()
-def create_transaction(ops, date=None, desc=None):
+def create_transaction(ops: Iterable[Operation], date: Optional[datetime] = None, desc: Optional[str] = None) -> str:
     tid = gen_id()
-    insert('transactions', tid=tid, date=date or int(time.time()), desc=desc)
+    ts = int((date or datetime.now()).timestamp())
+    insert('transactions', tid=tid, date=ts, desc=desc)
     for op in ops:
         insert('ops', tid=tid, aid=op['aid'], amount=round(op['amount'] * 100), cur=op['cur'])
     return tid
 
 
 @transaction()
-def update_transaction(tid, ops, date, desc):
-    update('transactions', 'tid', tid=tid, date=date, desc=desc)
+def update_transaction(tid: str, ops: Iterable[Operation], date: datetime, desc: Optional[str]) -> None:
+    update('transactions', 'tid', tid=tid, date=int(date.timestamp()), desc=desc)
     delete('ops', tid=tid)
     for op in ops:
         insert('ops', tid=tid, aid=op['aid'], amount=round(op['amount'] * 100), cur=op['cur'])
 
 
 @transaction()
-def delete_transaction(tid):
+def delete_transaction(tid: str) -> None:
     delete('ops', tid=tid)
     delete('transactions', tid=tid)
 
 
-def account_transactions(**eq):
+def account_transactions(**eq: Any) -> QueryList[TransactionAny]:
     q = Q()
-    result = q.execute_d(f'''\
+    result: QueryList[TransactionAny]
+
+    result = q.execute_d(
+        f'''\
         SELECT tid, date, desc, json_array(json_group_array(aid),
                                            json_group_array(amount/100.0),
                                            json_group_array(cur)) ops_raw
@@ -67,16 +129,20 @@ def account_transactions(**eq):
         INNER JOIN ops USING(tid)
         GROUP BY tid
         ORDER BY date DESC
-    ''')
+    '''
+    )  # type: ignore[assignment]
 
     aid = eq.pop('aid', None)
     by_amount = operator.itemgetter(1)
 
     for it in result:
-        it['date'] = datetime.fromtimestamp(it['date'])
-        accs, amounts, curs = json.loads(it.pop('ops_raw'))
+        it['date'] = datetime.fromtimestamp(it['date'])  # type: ignore[arg-type]
+        accs: list[str]
+        amounts: list[float]
+        curs: list[str]
+        accs, amounts, curs = json.loads(it.pop('ops_raw'))  # type: ignore[typeddict-item]
         it['ops'] = sorted(zip(accs, amounts, curs), key=by_amount)
-        it['split'] = len(accs) != 2 or len(set(curs)) > 1
+        it['split'] = len(accs) != 2 or len(set(curs)) > 1  # type: ignore[arg-type]
         it['dest'] = aid
         if not it['split']:
             it['amount'] = sum(a for op_aid, a, cur in it['ops'] if aid == op_aid)
@@ -87,36 +153,44 @@ def account_transactions(**eq):
 
 
 @transaction()
-def delete_account(aid, new_parent):
+def delete_account(aid: str, new_parent: Optional[str]) -> None:
     assert aid
     update('accounts', 'parent', aid, parent=new_parent)
     update('ops', 'aid', aid, aid=new_parent)
     delete('accounts', aid=aid)
 
 
-def account_by_name(parent, name):
-    return select('accounts', '*', parent=parent, name=name).first()
+def account_by_name(parent: str, name: str) -> Optional[Account]:
+    return select('accounts', '*', parent=parent, name=name).first()  # type: ignore[return-value]
 
 
-def account_by_id(aid):
-    return select('accounts', '*', aid=aid).first()
+def account_by_id(aid: str) -> Optional[Account]:
+    return select('accounts', '*', aid=aid).first()  # type: ignore[return-value]
 
 
-def get_sub_accounts(parent):
-    return select('accounts', '*', parent=parent)
+def get_sub_accounts(parent: Optional[str]) -> QueryList[Account]:
+    return select('accounts', '*', parent=parent)  # type: ignore[return-value]
 
 
-def get_param(name, default=None):
+@overload
+def get_param(name: str) -> Optional[str]: ...
+
+
+@overload
+def get_param(name: str, default: str) -> str: ...
+
+
+def get_param(name: str, default: Optional[str] = None) -> Optional[str]:
     q = Q()
-    return q.execute(f'SELECT value FROM params WHERE name = {q/name}').scalar(default)
+    return q.execute(f'SELECT value FROM params WHERE name = {q/name}').scalar(default)  # type: ignore[no-any-return]
 
 
 @transaction()
-def set_param(name, value):
+def set_param(name: str, value: str) -> None:
     replace('params', name=name, value=value)
 
 
-def account_parents(aid, amap, cache):
+def account_parents(aid: Optional[str], amap: AccountMap, cache: dict[str, tuple[str, ...]]) -> tuple[str, ...]:
     if aid is None:
         return ()
 
@@ -128,56 +202,57 @@ def account_parents(aid, amap, cache):
     return result
 
 
-class AccountMap(dict):
-    pass
+def account_list() -> AccountMap:
+    all_accounts: QueryList[AccountExt] = Q().execute_d('SELECT * FROM accounts')  # type: ignore[assignment]
+    amap = AccountMap({it['aid']: it for it in all_accounts})
+    amap[None] = {}  # type: ignore[typeddict-item,index]
 
-
-def account_list():
-    amap = AccountMap({it['aid']: it for it in Q().execute_d('SELECT * FROM accounts')})
-    amap[None] = {}
-
-    cache = {}
+    cache: dict[str, tuple[str, ...]] = {}
     for it in amap.values():
-        if not it.get('aid'): continue
+        if not it.get('aid'):
+            continue
         it['is_sheet'] = it['type'] in sheet_accounts
         it['parents'] = account_parents(it['parent'], amap, cache)
         it.setdefault('children', [])
-        amap[it['parent']].setdefault('children', []).append(it['aid'])
+        amap[it['parent']].setdefault('children', []).append(it['aid'])  # type: ignore[index]
 
-    amap.top = amap.pop(None)['children']
+    amap.top = amap.pop(None)['children']  # type: ignore[call-overload]
     for it in amap.values():
-        if not it.get('aid'): continue
+        if not it.get('aid'):
+            continue
         it['full_name'] = ':'.join([amap[p]['name'] for p in it['parents']] + [it['name']])
     return amap
 
 
-def op(aid, amount, currency):
+def op(aid: str, amount: float, currency: str) -> Operation:
     return {'aid': aid, 'amount': amount, 'cur': currency}
 
 
-def op2(a1, a2, amount, currency):
+def op2(a1: str, a2: str, amount: float, currency: str) -> tuple[Operation, Operation]:
     return op(a1, -amount, currency), op(a2, amount, currency)
 
 
-def balance(start=None, end=None):
+def balance(start: Optional[float] = None, end: Optional[float] = None) -> Balance:
     q = Q()
-    data = q.execute_d(f'''\
+    data = q.execute_d(
+        f'''\
         SELECT aid, cur, sum(amount) / 100.0 AS total
         FROM transactions AS t
         INNER JOIN ops t USING (tid)
         {q.WHERE(q.in_range(q.t.date, not_none/start, not_none/end))}
         GROUP BY aid, cur
-    ''')
+    '''
+    )
 
-    result = {}
+    result: Balance = {}
     for it in data:
         result.setdefault(it['aid'], {})[it['cur']] = it['total']
 
     return result
 
 
-def combine_balances(*balances):  # pragma: no cover
-    result = {}
+def combine_balances(*balances: Balance) -> Balance:  # pragma: no cover
+    result: Balance = {}
     for b in balances:
         for acc, state in b.items():
             rstate = result.setdefault(acc, {})
@@ -187,8 +262,8 @@ def combine_balances(*balances):  # pragma: no cover
     return result
 
 
-def combine_states(*states):  # pragma: no cover
-    rstate = {}
+def combine_states(*states: BState) -> BState:  # pragma: no cover
+    rstate: BState = {}
     for state in states:
         for cur, amount in state.items():
             rstate[cur] = rstate.get(cur, 0) + amount
@@ -196,9 +271,10 @@ def combine_states(*states):  # pragma: no cover
 
 
 @transaction()
-def create_tables():
+def create_tables() -> None:
     # Initial tables
-    execute('''\
+    execute(
+        '''\
         CREATE TABLE IF NOT EXISTS accounts (
             aid TEXT NOT NULL PRIMARY KEY,
             type TEXT NOT NULL,
@@ -207,31 +283,38 @@ def create_tables():
             parent TEXT,
             is_placeholder INTEGER NOT NULL DEFAULT 0
         )
-    ''')
+    '''
+    )
 
-    execute('''\
+    execute(
+        '''\
         CREATE TABLE IF NOT EXISTS transactions (
             tid TEXT NOT NULL PRIMARY KEY,
             date INTEGER NOT NULL,
             desc TEXT
         )
-    ''')
+    '''
+    )
 
-    execute('''\
+    execute(
+        '''\
         CREATE TABLE IF NOT EXISTS ops (
             tid TEXT NOT NULL,
             aid TEXT NOT NULL,
             amount INTEGER NOT NULL,
             cur TEXT NOT NULL
         )
-    ''')
+    '''
+    )
 
-    execute('''\
+    execute(
+        '''\
         CREATE TABLE IF NOT EXISTS params (
             name TEXT NOT NULL PRIMARY KEY,
             value TEXT
         )
-    ''')
+    '''
+    )
 
     # Indexes
     execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_uniq_name ON accounts (parent, name)')
@@ -240,7 +323,7 @@ def create_tables():
     execute('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions (date, tid)')
 
 
-def create_initial_accounts():
+def create_initial_accounts() -> None:
     if Q().execute('SELECT count(1) from accounts').scalar(0) > 0:
         return
 
@@ -257,7 +340,7 @@ def create_initial_accounts():
 
 
 @transaction()
-def drop_tables():
+def drop_tables() -> None:
     execute('DROP TABLE IF EXISTS accounts')
     execute('DROP TABLE IF EXISTS transactions')
     execute('DROP TABLE IF EXISTS ops')

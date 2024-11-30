@@ -1,8 +1,11 @@
 # ToDo
-* select cur in transaction
+* split date should be done in template
 * operation colors
 
 # Done
+* combine date should be done by validator
+* update and create transaction should accept datetime instead of ts
+* select cur in transaction
 * duplicate transaction
 * day/month selector instead of fixed totals in account view
 * currency aware total in split edit

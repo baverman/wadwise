@@ -1,8 +1,10 @@
-from datetime import datetime
-from xml.etree import ElementTree as ET
-from covador import make_schema, item, opt
+# type: ignore
 from base64 import urlsafe_b64encode
 from binascii import unhexlify
+from datetime import datetime
+from xml.etree import ElementTree as ET
+
+from covador import item, make_schema, opt
 
 from wadwise import model as m
 
@@ -82,7 +84,7 @@ transaction_t = gnc_schema(
 
 gnc_data = gnc_schema(
     accounts=item(account_t, multi=True, src='gnc:book/gnc:account'),
-    transactions=item(transaction_t, multi=True, src='gnc:book/gnc:transaction')
+    transactions=item(transaction_t, multi=True, src='gnc:book/gnc:transaction'),
 )
 
 
@@ -115,14 +117,19 @@ def import_data(fname):
                 continue
 
             if it['name'].endswith(' ' + it['cur']):
-                nm = it['name'][:-len(' ' + it['cur'])]
+                nm = it['name'][: -len(' ' + it['cur'])]
                 acc = next((fit for fit in parents[parent] if fit['name'] == nm), None)
                 if acc:
                     it['aid'] = acc['aid']
                     continue
 
-            m.create_account(parent, it['name'], acc_types[it['type']], aid=it['aid'],
-                             is_placeholder=it['slots']['placeholder']=='true')
+            m.create_account(
+                parent,
+                it['name'],
+                acc_types[it['type']],
+                aid=it['aid'],
+                is_placeholder=it['slots']['placeholder'] == 'true',
+            )
             make_children_acc(it['aid'])
 
     root = parents[None][0]['aid']

@@ -53,8 +53,8 @@ function split_form() {
         <button @click.prevent="add_op">Add</button><span x-show="same_cur">&nbsp;Total: <span x-text="total"></span></span>
     </p>
     <p><textarea placeholder="description" name="desc">{{ form.desc or ''}}</textarea></p>
-    <p><input type="date" name="date" value="{{ form.date }}">
-       <input type="hidden" name="date_time" value="{{ form.date_time }}"></p>
+    <p><input type="date" name="date" value="{{ form.date.strftime('%Y-%m-%d') }}">
+       <input type="hidden" name="date_time" value="{{ form.date.strftime('%H:%M') }}"></p>
     <p>
         <button type="submit">Save</button>
         {% if form.tid %}

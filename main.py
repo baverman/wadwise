@@ -1,15 +1,14 @@
-import sys
-import os.path
-import glob
-
 import logging
+import os.path
+import sys
+
 log = logging.getLogger()
 logging.basicConfig(level='INFO', stream=sys.stdout)
 
 if os.environ.get('WADWISE_VENDOR') == '1':
     sys.path.insert(0, os.path.dirname(__file__) + '/vendor')
 
-from wadwise import web, db
+from wadwise import db, web
 
 db.DB = os.environ.get('WADWISE_DB', 'data.sqlite')
 

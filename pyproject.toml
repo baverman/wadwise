@@ -1,0 +1,23 @@
+[tool.mypy]
+python_version = "3.9"
+mypy_path = "stubs"
+strict = true
+packages = ["wadwise"]
+
+[tool.black]
+line-length = 120
+target-version = ['py39']
+skip-string-normalization = true
+
+[tool.isort]
+py_version=39
+line_length = 120
+
+[tool.flake8]
+max-line-length = 120
+ignore = ['E402', 'E704', 'E731']
+
+
+# [[tool.mypy.overrides]]
+# module = []
+# ignore_missing_imports = true
