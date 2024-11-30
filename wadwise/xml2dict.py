@@ -1,9 +1,11 @@
+# type: ignore
 # Simple xml to dict parser
 #
 # It's usable only for small documents due low performance
 # comparing with lxml
 
 from xml.etree import ElementTree as etree
+
 
 def builder(ptag, attrib, pchild):
     child = []

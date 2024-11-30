@@ -2,7 +2,9 @@ import datetime
 from unittest.mock import ANY
 
 import pytest
-from wadwise import db, model as m
+
+from wadwise import db
+from wadwise import model as m
 
 
 def get_acc(name):
@@ -79,18 +81,17 @@ def test_transaction_flow(dbconn):
     result = m.balance()
     assert result == {a: {'USD': -200}, e: {'USD': 200}}
 
-    data, = m.account_transactions(tid=tid)
+    (data,) = m.account_transactions(tid=tid)
     assert data == {
         'tid': tid,
         'date': datetime.datetime(1970, 1, 1, 1, 0, 10),
         'desc': 'foo',
-        'ops': [(a, -200.0, 'USD'),
-                (e, 200.0, 'USD')],
+        'ops': [(a, -200.0, 'USD'), (e, 200.0, 'USD')],
         'split': False,
         'dest': None,
         'amount': 0,
         'src': a,
-        'cur': 'USD'
+        'cur': 'USD',
     }
 
     m.delete_transaction(tid)
@@ -121,7 +122,7 @@ def test_balance_for_date_range(dbconn):
     assert result == {a: {'USD': 170.4}, e: {'USD': 30}, i: {'USD': -200.4}}
 
     result = m.balance()
-    assert result == {a: {'USD': 50.4}, e: {'USD': 150}, i:{'USD': -200.4}}
+    assert result == {a: {'USD': 50.4}, e: {'USD': 150}, i: {'USD': -200.4}}
 
 
 def test_params(dbconn):
