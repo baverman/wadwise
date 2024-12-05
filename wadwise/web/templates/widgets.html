@@ -10,11 +10,11 @@
 <select name="{{ name }}" {{ kwargs | xmlattr }}>
     {% for gtitle, group in options %}
     <optgroup label="{{ gtitle }}">
-        {% for ovalue, otitle, ohidden in group %}
+        {%- for ovalue, otitle, ohidden in group %}
         <option value="{{ ovalue }}"
-                {% if ovalue == value %}selected{% endif %}
-                {% if ohidden %}hidden{% endif %}>{{ otitle }}</option>
-        {% endfor %}
+                {%- if ovalue == value %} selected{% endif -%}
+                {%- if ohidden %} hidden{% endif -%}>{{ otitle }}</option>
+        {%- endfor %}
     </optgroup>
     {% endfor %}
 </select>

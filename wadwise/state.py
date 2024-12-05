@@ -3,6 +3,7 @@ from collections import namedtuple
 from datetime import date, datetime
 from functools import cached_property
 from typing import Optional
+from operator import itemgetter
 
 from wadwise import model as m
 from wadwise import utils
@@ -38,6 +39,10 @@ class Env:
             if it['parent'] and it['aid'] not in fids:
                 atitle = ':'.join([amap[p]['name'] for p in it['parents'][1:]] + [it['name']])
                 groups.setdefault(it['parents'][0], []).append(Option(it['aid'], atitle, it['is_placeholder']))
+
+        key = itemgetter(1)
+        for v in groups.values():
+            v.sort(key=key)
 
         result.extend((amap[gaid]['name'], children) for gaid, children in groups.items())
         return result

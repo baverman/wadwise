@@ -1,5 +1,6 @@
 # ToDo
-* split date should be done in template
+* balance table should be by line per currency if cur num is > 3
+* use termux-open --send to share backups with gdrive
 * operation colors
 
 # Done
