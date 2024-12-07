@@ -2,14 +2,16 @@ import json
 from collections import namedtuple
 from datetime import date, datetime
 from functools import cached_property
-from typing import Optional
 from operator import itemgetter
+from typing import Optional
 
 from wadwise import model as m
 from wadwise import utils
 
 Option = namedtuple('Option', 'value title hidden')
 Option2 = namedtuple('Option2', 'value title')
+
+DEFAULT_CUR = 'USD'
 
 
 class Env:
@@ -134,6 +136,14 @@ def get_favs() -> list[str]:
 
 def set_favs(ids: list[str]) -> None:
     m.set_param('accounts.favs', json.dumps(ids))
+
+
+def get_cur_list() -> list[str]:
+    return json.loads(m.get_param('cur_list', '[]')) or [DEFAULT_CUR]
+
+
+def set_cur_list(cur_list: list[str]) -> None:
+    m.set_param('cur_list', json.dumps(cur_list))
 
 
 @utils.cached

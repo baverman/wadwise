@@ -5,7 +5,7 @@
 <script>
 function favs_form() {
     return {
-        'ids': {{ ids | tojson }},
+        'ids': {{ fav_ids | tojson }},
         add() {
             this.ids.push('')
         },
@@ -18,7 +18,13 @@ function favs_form() {
 }
 </script>
 
-<form method="POST" x-data="favs_form">
+<a href="{{ url_for('account_view') }}">Back</a>
+| <a href="{{ url_for('account_edit') }}">Add subaccount</a>
+| <a href="{{ url_for('import_data') }}">Import data</a>
+
+<h2>Favorites</h2>
+
+<form method="POST" action="./favs" x-data="favs_form">
     <template x-for="(it, idx) in ids" :key="idx">
     <p>
         {{ select_group('acc', '', env.account_groups, **{'x-model': "ids[idx]"}) }}
@@ -32,4 +38,17 @@ function favs_form() {
         <button type="submit">Save</button>
     </p>
 </form>
+
+<h2>Currencies</h2>
+
+<form method="POST" action="./cur-list">
+    <p>
+        <textarea name="cur_list" rows="{{ ((cur_list | length) + 2, 3) | max }}"
+            >{{ cur_list | join('\n') }}</textarea>
+    </p>
+    <p>
+        <button type="submit">Save</button>
+    </p>
+</form>
+
 {% endblock %}

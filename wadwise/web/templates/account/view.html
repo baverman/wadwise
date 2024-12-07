@@ -80,9 +80,7 @@
 {% endif %}
 
 {% if not account %}
-<a href="{{ url_for('account_edit', parent=account.aid) }}">Add subaccount</a>
-| <a href="{{ url_for('import_data') }}">Import data</a>
-| <a href="{{ url_for('favs_edit') }}">Favorites</a>
+<a href="{{ url_for('settings')}}">Settings</a>
 {% endif %}
 
 {% if account and not account.is_sheet %}

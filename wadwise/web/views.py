@@ -101,13 +101,14 @@ def transaction_edit(dest: str, tid: Optional[str], split: bool) -> str:
         (trn,) = m.account_transactions(aid=dest, tid=tid)
         form = cast(dict[str, Any], trn)
     else:
-        cur = 'GBP'
+        cur = state.get_cur_list()[0]
         form = {'cur': cur, 'ops': ((None, 0, cur), (dest, 0, cur)), 'dest': dest, 'date': datetime.now()}
 
+    cur_list = state.get_cur_list()
     if split or form.get('split'):
-        return render_template('transaction/split.html', form=form)
+        return render_template('transaction/split.html', form=form, cur_list=cur_list)
     else:
-        return render_template('transaction/edit.html', form=form)
+        return render_template('transaction/edit.html', form=form, cur_list=cur_list)
 
 
 transaction_actions_t = opt(str) | enum('delete', 'copy', 'copy-now')
@@ -180,7 +181,11 @@ def transaction_transfer_over(aid: str, today: dt_date) -> str:
     next_date = today.replace(day=1)
     prev_date = next_date - timedelta(days=1)
     return render_template(
-        'transaction/over.html', aid=aid, next_date=utils.fmt_date(next_date), prev_date=utils.fmt_date(prev_date)
+        'transaction/over.html',
+        aid=aid,
+        next_date=utils.fmt_date(next_date),
+        prev_date=utils.fmt_date(prev_date),
+        cur_list=state.get_cur_list(),
     )
 
 
@@ -219,13 +224,21 @@ def import_data_apply() -> Response:
     return redirect(url_for('account_view'))
 
 
-@app.route('/account/favs')
-def favs_edit() -> str:
-    return render_template('favs_edit.html', ids=state.get_favs())
+@app.route('/settings/')
+def settings() -> str:
+    return render_template('settings.html', fav_ids=state.get_favs(), cur_list=state.get_cur_list())
 
 
-@app.route('/account/favs', methods=['POST'])
+@app.route('/settings/favs', methods=['POST'])
 @form(ids=opt(str, src='acc', multi=True))
 def favs_edit_apply(ids: list[str]) -> Response:
     state.set_favs(ids)
-    return redirect(url_for('account_view'))
+    return redirect(url_for('settings'))
+
+
+@app.route('/settings/cur-list', methods=['POST'])
+@form(cur_list=str)
+def cur_list_edit_apply(cur_list: str) -> Response:
+    clist = list(filter(None, (it.strip().upper() for it in cur_list.splitlines())))
+    state.set_cur_list(clist)
+    return redirect(url_for('settings'))

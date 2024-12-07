@@ -1,15 +1,14 @@
 {% extends 'base.html' %}
-{% from 'widgets.html' import select_group, curlist %}
+{% from 'widgets.html' import select_group, select_cur %}
 
 {% block content %}
-{{ curlist() }}
 <form method="POST">
     <p>From:<br>{{ select_group('src', form.src, env.account_groups, tabindex='3') }}<p>
     <p>To: {{ env.amap[form.dest].full_name }}</p>
     <p><input type="text" placeholder="amount" inputmode="decimal" name="amount"
               x-data="{}" @input="neg_input($event.target)"
               autofocus tabindex=1 value="{{ form.amount }}" size="8em" autocomplete="off">
-       <input name="cur" tabindex=0 value="{{ form.cur }}" size="4em" list="curlist"></p>
+       {{ select_cur('cur', form.cur, cur_list) }}</p>
     <p><textarea placeholder="description" name="desc" tabindex=2>{{ form.desc or ''}}</textarea></p>
     <p><input type="date" tabindex=4 name="date" value="{{ form.date.strftime('%Y-%m-%d') }}">
        <input type="hidden" name="date_time" value="{{ form.date.strftime('%H:%M') }}"></p>

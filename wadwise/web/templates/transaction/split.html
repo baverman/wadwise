@@ -1,13 +1,15 @@
 {% extends 'base.html' %}
-{% from 'widgets.html' import select_group, curlist %}
+{% from 'widgets.html' import select_group, select_cur %}
 
 {% block content %}
 <script>
+var DEFAULT_CUR = ({{ cur_list | tojson }})[0];
+
 function split_form() {
     return {
         'ops': {{ form.ops | tojson }},
         add_op() {
-            this.ops.push(['', 0, 'GBP'])
+            this.ops.push(['', 0, DEFAULT_CUR])
         },
         total() {
             var result = 0
@@ -35,8 +37,6 @@ function split_form() {
 }
 </script>
 
-{{ curlist() }}
-
 <form method="POST" x-data="split_form" action="{{ url_for('transaction_split_save', tid=form.tid, dest=form.dest) }}">
     <template x-for="(op, idx) in ops" :key="idx">
     <p>
@@ -44,7 +44,7 @@ function split_form() {
         <input type="text" placeholder="amount" inputmode="decimal" name="amount"
                @input="neg_input($event.target)"
                x-model.number="op[1]" size="8em" autocomplete="off">
-        <input name="cur" x-model="op[2]" size="4em" list="curlist">
+        {{ select_cur('cur', '', cur_list, **{'x-model': "op[2]"}) }}
         <button @click.prevent="fix_amount(idx)">Fix</button>
         <button @click.prevent="remove(idx)">Remove</button>
     </p>
