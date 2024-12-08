@@ -1,9 +1,12 @@
 # ToDo
+* make global date selector to be able to navigate through
+  transactions for particular period
 * balance table should be by line per currency if cur num is > 3
-* use termux-open --send to share backups with gdrive
 * operation colors
 
 # Done
+* use termux-open --send to share backups with gdrive
+* currency list editor and use first currency as default
 * combine date should be done by validator
 * update and create transaction should accept datetime instead of ts
 * select cur in transaction

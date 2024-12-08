@@ -33,8 +33,8 @@ def transaction() -> Iterator[None]:
 
 
 @functools.lru_cache(None)
-def _get_connection(tid: int) -> sqlite3.Connection:
-    conn = sqlite3.connect(DB)
+def _get_connection(tid: int, db: Optional[str] = None) -> sqlite3.Connection:
+    conn = sqlite3.connect(db or DB)
     conn.isolation_level = None
     conn.execute('pragma journal_mode=wal')
     conn.execute('pragma cache_size=-100000')
@@ -42,8 +42,8 @@ def _get_connection(tid: int) -> sqlite3.Connection:
     return conn
 
 
-def get_connection() -> sqlite3.Connection:
-    return _get_connection(threading.get_ident())
+def get_connection(db: Optional[str] = None) -> sqlite3.Connection:
+    return _get_connection(threading.get_ident(), db)
 
 
 def execute(sql: str, params: Optional[dict[str, Any]] = None) -> sqlite3.Cursor:
@@ -125,3 +125,13 @@ class Q(sqlbind.NamedQueryParams):
     def execute_d(self, query: str) -> QueryList[DictResult]:
         r = self.execute(query, True)
         return r
+
+
+def backup() -> str:
+    src = get_connection()
+    fname = os.path.join(os.path.dirname(DB), 'wadwise-backup.sqlite')
+    dst = _get_connection.__wrapped__(None, fname)
+    with dst:
+        src.backup(dst)
+    dst.close()
+    return fname

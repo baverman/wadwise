@@ -1,3 +1,4 @@
+import subprocess
 from datetime import date as dt_date
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, Union, cast
@@ -241,4 +242,11 @@ def favs_edit_apply(ids: list[str]) -> Response:
 def cur_list_edit_apply(cur_list: str) -> Response:
     clist = list(filter(None, (it.strip().upper() for it in cur_list.splitlines())))
     state.set_cur_list(clist)
+    return redirect(url_for('settings'))
+
+
+@app.route('/settings/backup', methods=['POST'])
+def backup_db() -> Response:
+    fname = db.backup()
+    subprocess.run(['termux-open', '--send', fname], check=True)
     return redirect(url_for('settings'))
