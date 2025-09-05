@@ -121,9 +121,8 @@ def account_transactions(**eq: Any) -> QueryList[TransactionAny]:
 
     result = q.execute_d(
         f'''\
-        SELECT tid, date, desc, json_array(json_group_array(aid),
-                                           json_group_array(amount/100.0),
-                                           json_group_array(cur)) ops_raw
+        SELECT tid, date, desc,
+               json_group_array(json_array(aid, amount/100.0, cur)) as ops
         FROM (SELECT distinct(tid) FROM ops {q.WHERE(**eq)})
         INNER JOIN transactions t USING(tid)
         INNER JOIN ops USING(tid)
@@ -137,17 +136,15 @@ def account_transactions(**eq: Any) -> QueryList[TransactionAny]:
 
     for it in result:
         it['date'] = datetime.fromtimestamp(it['date'])  # type: ignore[arg-type]
-        accs: list[str]
-        amounts: list[float]
-        curs: list[str]
-        accs, amounts, curs = json.loads(it.pop('ops_raw'))  # type: ignore[typeddict-item]
-        it['ops'] = sorted(zip(accs, amounts, curs), key=by_amount)
-        it['split'] = len(accs) != 2 or len(set(curs)) > 1  # type: ignore[arg-type]
+        tops = [tuple(op) for op in json.loads(it['ops'])]  # type: ignore[arg-type]
+        it['ops'] = sorted(tops, key=by_amount)
+        curs = set(o[2] for o in it['ops'])
+        it['split'] = len(it['ops']) != 2 or len(curs) > 1  # type: ignore[arg-type]
         it['dest'] = aid
         if not it['split']:
-            it['amount'] = sum(a for op_aid, a, cur in it['ops'] if aid == op_aid)
-            it['src'] = next(a for a in accs if a != aid)
-            it['cur'] = curs[0]
+            it['amount'] = sum(a for op_aid, a, _cur in it['ops'] if aid == op_aid)
+            it['src'] = next(op_aid for op_aid, _a, _cur in it['ops'] if op_aid != aid)
+            it['cur'] = list(curs)[0]
 
     return result
 
