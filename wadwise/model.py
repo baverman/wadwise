@@ -14,6 +14,13 @@ class Operation(TypedDict):
     cur: str
 
 
+class TransactionRaw(TypedDict):
+    tid: str
+    date: int
+    desc: str
+    ops: str
+
+
 class Transaction(TypedDict):
     tid: str
     date: datetime
@@ -115,11 +122,11 @@ def delete_transaction(tid: str) -> None:
     delete('transactions', tid=tid)
 
 
-def account_transactions(**eq: Any) -> QueryList[TransactionAny]:
+def account_transactions(**eq: Any) -> list[TransactionAny]:
     q = Q()
-    result: QueryList[TransactionAny]
+    data: QueryList[TransactionRaw]
 
-    result = q.execute_d(
+    data = q.execute_d(
         f'''\
         SELECT tid, date, desc,
                json_group_array(json_array(aid, amount/100.0, cur)) as ops
@@ -134,17 +141,25 @@ def account_transactions(**eq: Any) -> QueryList[TransactionAny]:
     aid = eq.pop('aid', None)
     by_amount = operator.itemgetter(1)
 
-    for it in result:
-        it['date'] = datetime.fromtimestamp(it['date'])  # type: ignore[arg-type]
-        tops = [tuple(op) for op in json.loads(it['ops'])]  # type: ignore[arg-type]
-        it['ops'] = sorted(tops, key=by_amount)
-        curs = set(o[2] for o in it['ops'])
-        it['split'] = len(it['ops']) != 2 or len(curs) > 1  # type: ignore[arg-type]
-        it['dest'] = aid
-        if not it['split']:
-            it['amount'] = sum(a for op_aid, a, _cur in it['ops'] if aid == op_aid)
-            it['src'] = next(op_aid for op_aid, _a, _cur in it['ops'] if op_aid != aid)
-            it['cur'] = list(curs)[0]
+    result: list[TransactionAny] = []
+    for it in data:
+        ops: list[tuple[str, float, str]] = [tuple(op) for op in json.loads(it['ops'])]
+        curs = set(o[2] for o in ops)
+        tr: TransactionAny = {
+            'tid': it['tid'],
+            'date': datetime.fromtimestamp(it['date']),
+            'ops': sorted(ops, key=by_amount),
+            'split': len(ops) != 2 or len(curs) > 1,  # type: ignore[typeddict-item]
+            'dest': aid,
+            'desc': it['desc'],
+        }
+
+        if not tr['split']:
+            tr['amount'] = sum(a for op_aid, a, _cur in tr['ops'] if aid == op_aid)
+            tr['src'] = next(op_aid for op_aid, _a, _cur in tr['ops'] if op_aid != aid)
+            tr['cur'] = list(curs)[0]
+
+        result.append(tr)
 
     return result
 
