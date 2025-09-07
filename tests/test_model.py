@@ -136,5 +136,5 @@ def test_params(dbconn):
 
 def test_create_initial(dbconn):
     m.create_initial_accounts()
-    db.execute('DELETE FROM accounts')
+    db.execute_raw('DELETE FROM accounts')
     m.create_initial_accounts()

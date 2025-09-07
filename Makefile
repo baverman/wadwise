@@ -1,7 +1,7 @@
 .PHONY: fmt lint all
 
 fmt:
-	isort .
+	isort $$(find . -name '*.py')
 	black .
 
 lint:

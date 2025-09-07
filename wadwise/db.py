@@ -7,13 +7,16 @@ import threading
 import time
 from typing import Any, Iterator, Literal, Optional, TypeVar, Union, cast, overload
 
-import sqlbind
+from wadwise.sqlbind_tpl import SET, SQL, VALUES, WHERE, QMarkQueryParams, t, text
+
+_used = SET, VALUES, WHERE, text
 
 T = TypeVar('T')
 TupleResult = tuple[Any, ...]
 DictResult = dict[str, Any]
 
 DB = 'data.sqlite'
+sqlite_params = QMarkQueryParams()
 
 
 @contextlib.contextmanager
@@ -46,36 +49,31 @@ def get_connection(db: Optional[str] = None) -> sqlite3.Connection:
     return _get_connection(threading.get_ident(), db)
 
 
-def execute(sql: str, params: Optional[dict[str, Any]] = None) -> sqlite3.Cursor:
+def execute_raw(sql: str, params: Optional[Union[dict[str, Any], list[Any]]] = None) -> sqlite3.Cursor:
     conn = get_connection()
     return conn.execute(sql, params or ())
 
 
 def insert(table: str, **params: Any) -> 'QueryList[TupleResult]':
-    q = Q()
-    return q.execute(f'INSERT INTO {table} {q.VALUES(**params)}')
+    return execute(t('INSERT INTO {text(table)} {VALUES(**params)}'))
 
 
 def replace(table: str, **params: Any) -> 'QueryList[TupleResult]':
-    q = Q()
-    return q.execute(f'REPLACE INTO {table} {q.VALUES(**params)}')
+    return execute(t('REPLACE INTO {text(table)} {VALUES(**params)}'))
 
 
 def update(table: str, pk: str, pk_value: Optional[Any] = None, **params: Any) -> 'QueryList[TupleResult]':
     if pk_value is None:
         pk_value = params.pop(pk)
-    q = Q()
-    return q.execute(f'UPDATE {table} {q.SET(**params)} WHERE {pk} = {q/pk_value}')
+    return execute(t('UPDATE {text(table)} {SET(**params)} WHERE {text(pk)} = {pk_value}'))
 
 
 def delete(table: str, **eq: Any) -> 'QueryList[TupleResult]':
-    q = Q()
-    return q.execute(f'DELETE FROM {table} {q.WHERE(**eq)}')
+    return execute(t('DELETE FROM {text(table)} {WHERE(**eq)}'))
 
 
 def select(table: str, fields: str, **eq: Any) -> 'QueryList[DictResult]':
-    q = Q()
-    return q.execute_d(f'SELECT {fields} FROM {table} {q.WHERE(**eq)}')
+    return execute_d(t('SELECT {text(fields)} FROM {text(table)} {WHERE(**eq)}'))
 
 
 def gen_id() -> str:
@@ -101,30 +99,30 @@ class QueryList(list[T]):
         return [it[n] for it in cast(TupleResult, self)]
 
 
-class Q(sqlbind.NamedQueryParams):
-    def __init__(self) -> None:
-        sqlbind.NamedQueryParams.__init__(self, sqlbind.SQLiteDialect)
+@overload
+def execute(sql: SQL) -> QueryList[TupleResult]: ...
 
-    @overload
-    def execute(self, query: str) -> QueryList[TupleResult]: ...
 
-    @overload
-    def execute(self, query: str, as_dict: Literal[True]) -> QueryList[DictResult]: ...
+@overload
+def execute(sql: SQL, as_dict: Literal[True]) -> QueryList[DictResult]: ...
 
-    def execute(self, query: str, as_dict: bool = False) -> Union[QueryList[TupleResult], QueryList[DictResult]]:
-        cur = execute(query, self)
-        data = cur.fetchall()
-        if as_dict:
-            fields = [it[0] for it in cur.description]
-            data = (dict(zip(fields, row)) for row in data)  # type: ignore[assignment]
 
-        result = QueryList(data)
-        result.rowcount = cur.rowcount
-        return result
+def execute(sql: SQL, as_dict: bool = False) -> Union[QueryList[TupleResult], QueryList[DictResult]]:
+    query, params = sqlite_params.render(sql)
+    cur = execute_raw(query, params)
+    data = cur.fetchall()
+    if as_dict:
+        fields = [it[0] for it in cur.description]
+        data = (dict(zip(fields, row)) for row in data)  # type: ignore[assignment]
 
-    def execute_d(self, query: str) -> QueryList[DictResult]:
-        r = self.execute(query, True)
-        return r
+    result = QueryList(data)
+    result.rowcount = cur.rowcount
+    return result
+
+
+def execute_d(sql: SQL) -> QueryList[DictResult]:
+    r = execute(sql, True)
+    return r
 
 
 def backup() -> str:

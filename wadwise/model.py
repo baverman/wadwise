@@ -3,9 +3,22 @@ import operator
 from datetime import datetime
 from typing import Any, Iterable, Literal, Optional, TypedDict, Union, overload
 
-from sqlbind import not_none
+from wadwise.db import (
+    QueryList,
+    delete,
+    execute,
+    execute_d,
+    execute_raw,
+    gen_id,
+    insert,
+    replace,
+    select,
+    transaction,
+    update,
+)
+from wadwise.sqlbind_tpl import VALUES, WHERE, in_range, not_none, t
 
-from wadwise.db import Q, QueryList, delete, execute, gen_id, insert, replace, select, transaction, update
+_used = VALUES, WHERE, in_range, not_none
 
 
 class Operation(TypedDict):
@@ -123,19 +136,18 @@ def delete_transaction(tid: str) -> None:
 
 
 def account_transactions(**eq: Any) -> list[TransactionAny]:
-    q = Q()
-    data: QueryList[TransactionRaw]
-
-    data = q.execute_d(
-        f'''\
-        SELECT tid, date, desc,
-               json_group_array(json_array(aid, amount/100.0, cur)) as ops
-        FROM (SELECT distinct(tid) FROM ops {q.WHERE(**eq)})
-        INNER JOIN transactions t USING(tid)
-        INNER JOIN ops USING(tid)
-        GROUP BY tid
-        ORDER BY date DESC
-    '''
+    data: QueryList[TransactionRaw] = execute_d(
+        t(
+            '''\
+                SELECT tid, date, desc,
+                       json_group_array(json_array(aid, amount/100.0, cur)) as ops
+                FROM (SELECT distinct(tid) FROM ops {WHERE(**eq)})
+                INNER JOIN transactions t USING(tid)
+                INNER JOIN ops USING(tid)
+                GROUP BY tid
+                ORDER BY date DESC
+            '''
+        )
     )  # type: ignore[assignment]
 
     aid = eq.pop('aid', None)
@@ -193,8 +205,7 @@ def get_param(name: str, default: str) -> str: ...
 
 
 def get_param(name: str, default: Optional[str] = None) -> Optional[str]:
-    q = Q()
-    return q.execute(f'SELECT value FROM params WHERE name = {q/name}').scalar(default)  # type: ignore[no-any-return]
+    return execute(t('SELECT value FROM params WHERE name = {name}')).scalar(default)  # type: ignore[no-any-return]
 
 
 @transaction()
@@ -215,7 +226,7 @@ def account_parents(aid: Optional[str], amap: AccountMap, cache: dict[str, tuple
 
 
 def account_list() -> AccountMap:
-    all_accounts: QueryList[AccountExt] = Q().execute_d('SELECT * FROM accounts')  # type: ignore[assignment]
+    all_accounts: QueryList[AccountExt] = execute_d(t('SELECT * FROM accounts'))  # type: ignore[assignment]
     amap = AccountMap({it['aid']: it for it in all_accounts})
     amap[None] = {}  # type: ignore[typeddict-item,index]
 
@@ -245,15 +256,16 @@ def op2(a1: str, a2: str, amount: float, currency: str) -> tuple[Operation, Oper
 
 
 def balance(start: Optional[float] = None, end: Optional[float] = None) -> Balance:
-    q = Q()
-    data = q.execute_d(
-        f'''\
-        SELECT aid, cur, sum(amount) / 100.0 AS total
-        FROM transactions AS t
-        INNER JOIN ops t USING (tid)
-        {q.WHERE(q.in_range(q.t.date, not_none/start, not_none/end))}
-        GROUP BY aid, cur
-    '''
+    data = execute_d(
+        t(
+            '''\
+                SELECT aid, cur, sum(amount) / 100.0 AS total
+                FROM transactions AS t
+                INNER JOIN ops t USING (tid)
+                {WHERE(in_range('t.date', not_none/start, not_none/end))}
+                GROUP BY aid, cur
+            '''
+        )
     )
 
     result: Balance = {}
@@ -285,58 +297,58 @@ def combine_states(*states: BState) -> BState:  # pragma: no cover
 @transaction()
 def create_tables() -> None:
     # Initial tables
-    execute(
+    execute_raw(
         '''\
-        CREATE TABLE IF NOT EXISTS accounts (
-            aid TEXT NOT NULL PRIMARY KEY,
-            type TEXT NOT NULL,
-            name TEXT NOT NULL,
-            desc TEXT,
-            parent TEXT,
-            is_placeholder INTEGER NOT NULL DEFAULT 0
-        )
-    '''
+            CREATE TABLE IF NOT EXISTS accounts (
+                aid TEXT NOT NULL PRIMARY KEY,
+                type TEXT NOT NULL,
+                name TEXT NOT NULL,
+                desc TEXT,
+                parent TEXT,
+                is_placeholder INTEGER NOT NULL DEFAULT 0
+            )
+        '''
     )
 
-    execute(
+    execute_raw(
         '''\
-        CREATE TABLE IF NOT EXISTS transactions (
-            tid TEXT NOT NULL PRIMARY KEY,
-            date INTEGER NOT NULL,
-            desc TEXT
-        )
-    '''
+            CREATE TABLE IF NOT EXISTS transactions (
+                tid TEXT NOT NULL PRIMARY KEY,
+                date INTEGER NOT NULL,
+                desc TEXT
+            )
+        '''
     )
 
-    execute(
+    execute_raw(
         '''\
-        CREATE TABLE IF NOT EXISTS ops (
-            tid TEXT NOT NULL,
-            aid TEXT NOT NULL,
-            amount INTEGER NOT NULL,
-            cur TEXT NOT NULL
-        )
-    '''
+            CREATE TABLE IF NOT EXISTS ops (
+                tid TEXT NOT NULL,
+                aid TEXT NOT NULL,
+                amount INTEGER NOT NULL,
+                cur TEXT NOT NULL
+            )
+        '''
     )
 
-    execute(
+    execute_raw(
         '''\
-        CREATE TABLE IF NOT EXISTS params (
-            name TEXT NOT NULL PRIMARY KEY,
-            value TEXT
-        )
-    '''
+            CREATE TABLE IF NOT EXISTS params (
+                name TEXT NOT NULL PRIMARY KEY,
+                value TEXT
+            )
+        '''
     )
 
     # Indexes
-    execute('CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_uniq_name ON accounts (parent, name)')
-    execute('CREATE INDEX IF NOT EXISTS idx_ops_tid ON ops (tid)')
-    execute('CREATE INDEX IF NOT EXISTS idx_ops_aid ON ops (aid)')
-    execute('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions (date, tid)')
+    execute_raw('CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_uniq_name ON accounts (parent, name)')
+    execute_raw('CREATE INDEX IF NOT EXISTS idx_ops_tid ON ops (tid)')
+    execute_raw('CREATE INDEX IF NOT EXISTS idx_ops_aid ON ops (aid)')
+    execute_raw('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions (date, tid)')
 
 
 def create_initial_accounts() -> None:
-    if Q().execute('SELECT count(1) from accounts').scalar(0) > 0:
+    if execute(t('SELECT count(1) from accounts')).scalar(0) > 0:
         return
 
     initial_accounts = [
@@ -347,13 +359,12 @@ def create_initial_accounts() -> None:
         (AccType.EQUITY, 'Equity'),
     ]
     for aid, name in initial_accounts:
-        q = Q()
-        q.execute(f'INSERT OR IGNORE INTO accounts {q.VALUES(aid=aid, type=aid, name=name)}')
+        execute(t('INSERT OR IGNORE INTO accounts {VALUES(aid=aid, type=aid, name=name)}'))
 
 
 @transaction()
 def drop_tables() -> None:
-    execute('DROP TABLE IF EXISTS accounts')
-    execute('DROP TABLE IF EXISTS transactions')
-    execute('DROP TABLE IF EXISTS ops')
-    execute('DROP TABLE IF EXISTS params')
+    execute_raw('DROP TABLE IF EXISTS accounts')
+    execute_raw('DROP TABLE IF EXISTS transactions')
+    execute_raw('DROP TABLE IF EXISTS ops')
+    execute_raw('DROP TABLE IF EXISTS params')
