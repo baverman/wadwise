@@ -1,11 +1,21 @@
 import ast
 from textwrap import dedent
 
+import pytest
+
 from wadwise.sqlbind_t.tstring import transform_fstrings
 
 
+def execute(source):
+    new = transform_fstrings(ast.parse(source))
+    code = compile(new, '<string>', 'exec')
+    ctx = {}
+    exec(code, ctx, ctx)
+    return ctx
+
+
 def test_simple():
-    tree = ast.parse(
+    ctx = execute(
         dedent(
             """\
                 from wadwise.sqlbind_t.tstring import t
@@ -15,10 +25,20 @@ def test_simple():
         )
     )
 
-    new = transform_fstrings(tree)
-    code = compile(new, '<string>', 'exec')
-    ctx = {}
-    exec(code, ctx, ctx)
     p1, p2 = list(ctx['boo']('zoom'))
     assert p1 == 'SELECT '
     assert p2.value == 'zoom'
+
+
+def test_type_check():
+    ctx = execute(
+        dedent(
+            """\
+                from wadwise.sqlbind_t.tstring import t
+                def boo(name):
+                    return t(f'SELECT {name}')
+            """
+        )
+    )
+    with pytest.raises(RuntimeError, match='Check your f-string'):
+        ctx['boo']('zoom')

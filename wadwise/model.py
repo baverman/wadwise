@@ -16,7 +16,7 @@ from wadwise.db import (
     transaction,
     update,
 )
-from wadwise.sqlbind_t import VALUES, WHERE, in_range, not_none
+from wadwise.sqlbind_t import VALUES, WHERE, in_range, not_none, text
 from wadwise.sqlbind_t.tstring import t
 
 
@@ -225,7 +225,7 @@ def account_parents(aid: Optional[str], amap: AccountMap, cache: dict[str, tuple
 
 
 def account_list() -> AccountMap:
-    all_accounts: QueryList[AccountExt] = execute_d(t(f'!! SELECT * FROM accounts'))  # type: ignore[assignment]
+    all_accounts: QueryList[AccountExt] = execute_d(text('SELECT * FROM accounts'))  # type: ignore[assignment]
     amap = AccountMap({it['aid']: it for it in all_accounts})
     amap[None] = {}  # type: ignore[typeddict-item,index]
 
@@ -347,7 +347,7 @@ def create_tables() -> None:
 
 
 def create_initial_accounts() -> None:
-    if execute(t(f'!! SELECT count(1) from accounts')).scalar(0) > 0:
+    if execute(text('SELECT count(1) from accounts')).scalar(0) > 0:
         return
 
     initial_accounts = [

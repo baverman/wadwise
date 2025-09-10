@@ -76,9 +76,9 @@ def transform_fstrings(tree: Module) -> Module:
 
 
 def make_template(parts: List[Union[str, Interpolation]]) -> Template:
-    args = []
+    args: List[Union[str, Interpolation]] = []
     for it in parts:
-        if type(it) is str:
+        if isinstance(it, str):
             args.append(it)
         elif isinstance(it.value, Template):
             args.extend(it.value)
@@ -98,28 +98,28 @@ t = check_template
 
 
 class TransformingLoader(importlib.abc.SourceLoader):
-    def __init__(self, fullname, path):
+    def __init__(self, fullname: str, path: str) -> None:
         self.fullname = fullname
         self.path = path
 
-    def get_filename(self, fullname):
+    def get_filename(self, fullname: str) -> str:
         return self.path
 
-    def get_data(self, path):
+    def get_data(self, path: str) -> bytes:
         with open(path, 'rb') as f:
             return f.read()
 
-    def source_to_code(self, data, path, *, _optimize=-1):
+    def source_to_code(self, data, path, *, _optimize=-1):  # type: ignore[no-untyped-def,override]
         tree = parse(data, filename=path)
         new_tree = transform_fstrings(tree)
         return compile(new_tree, path, 'exec', optimize=_optimize)
 
 
 class TransformingFinder(PathFinder):
-    def __init__(self, prefixes: List[str]):
+    def __init__(self, prefixes: List[str]) -> None:
         self._sqlbind_prefixes = prefixes
 
-    def find_spec(self, fullname, path, target=None):
+    def find_spec(self, fullname, path, target=None):  # type: ignore[no-untyped-def,override]
         spec = super().find_spec(fullname, path, target=target)
         if any(fullname.startswith(it) for it in self._sqlbind_prefixes):
             if spec and spec.origin and spec.origin.endswith('.py'):
@@ -128,5 +128,5 @@ class TransformingFinder(PathFinder):
         return spec
 
 
-def init(prefixes: List[str]):
+def init(prefixes: List[str]) -> None:
     sys.meta_path.insert(0, TransformingFinder(prefixes))

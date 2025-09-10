@@ -1,6 +1,8 @@
 from typing import Any
 
 from wadwise.sqlbind_t import EMPTY, SET, SQL, VALUES, WHERE, QMarkQueryParams, in_range, not_none, text
+from wadwise.sqlbind_t.template import Interpolation
+from wadwise.sqlbind_t.template import t as tt
 from wadwise.sqlbind_t.tstring import t
 
 
@@ -8,7 +10,18 @@ def render(sql: SQL) -> tuple[str, list[Any]]:
     return QMarkQueryParams().render(sql)
 
 
+def test_repr():
+    assert repr(Interpolation(10)) == 'Interpolation(10)'
+    assert str(Interpolation(10)) == '10'
+
+
 def test_simple():
+    s, p = render(tt('SELECT * from {text("boo")} WHERE name = {10}'))
+    assert s == 'SELECT * from boo WHERE name = ?'
+    assert p == [10]
+
+
+def test_simple_tf_strings():
     s, p = render(t(f'!! SELECT * from {text("boo")} WHERE name = {10}'))
     assert s == 'SELECT * from boo WHERE name = ?'
     assert p == [10]
