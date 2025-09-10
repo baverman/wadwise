@@ -1,46 +1,15 @@
-import ast
-import sys
-from ast import Expression, FormattedValue
 from typing import Any, Dict, Iterator, List, Optional, Sequence, Tuple, Union
+
+from .template import Interpolation, Template
 
 UNDEFINED = object()
 
 
-class Interpolation:
-    def __init__(self, value: Any) -> None:
-        self.value = value
-
-    def __str__(self) -> str:
-        return str(self.value)
-
-    def __repr__(self) -> str:
-        return f'Interpolation({self.value!r})'
-
-
 Part = Union[str, Interpolation]
+SQLType = Union['SQL', Template]
 
 
-def parse_template(string: str) -> 'SQL':
-    root = ast.parse('f' + repr(string), mode='eval')
-    frame = sys._getframe(1)
-    values: List[Union[str, Interpolation]] = []
-    for it in root.body.values:  # type: ignore[attr-defined]
-        if type(it) is FormattedValue:
-            code = compile(Expression(it.value), '<string>', 'eval')
-            value = eval(code, frame.f_globals, frame.f_locals)
-            if isinstance(value, SQL):
-                values.extend(value)
-            else:
-                values.append(Interpolation(value))
-        else:
-            values.append(it.value)
-    return SQL(values)
-
-
-t = parse_template
-
-
-class SQL(Tuple[Part, ...]):
+class SQL(Template):
     def __or__(self, other: 'SQL') -> 'SQL':
         return OR(self, other)
 
@@ -49,12 +18,20 @@ class SQL(Tuple[Part, ...]):
 
     def __invert__(self) -> 'SQL':
         if self:
-            return SQL(('NOT ',) + self)
+            return SQL('NOT ', *self)
         else:
             return EMPTY
 
 
-EMPTY = SQL()
+class EmptyType(SQL):
+    def __iter__(self) -> Iterator[Part]:
+        return iter([])
+
+    def __bool__(self) -> bool:
+        return False
+
+
+EMPTY = EmptyType()
 
 
 def AND(*fragments: SQL) -> SQL:
@@ -81,17 +58,17 @@ def join_fragments(sep: str, flist: Sequence[SQL], wrap: Optional[Tuple[str, str
     result.pop()
     if wrap:
         result.append(wrap[1])
-    return SQL(result)
+    return SQL(*result)
 
 
 def prefix_join(prefix: str, sep: str, flist: Sequence[SQL], wrap: Optional[Tuple[str, str]] = None) -> SQL:
     e = join_fragments(sep, flist, wrap)
-    return SQL((prefix,) + e) if e else EMPTY
+    return SQL(prefix, *e) if e else EMPTY
 
 
 def WHERE(*cond: SQL, **kwargs: Any) -> SQL:
     flist = list(cond) + [
-        SQL((f'{field} IS NULL',)) if value is None else SQL((f'{field} = ', Interpolation(value)))
+        SQL(f'{field} IS NULL') if value is None else SQL(f'{field} = ', Interpolation(value))
         for field, value in kwargs.items()
         if value is not UNDEFINED
     ]
@@ -113,20 +90,20 @@ def VALUES(data: Optional[List[Dict[str, Any]]] = None, **kwargs: Any) -> SQL:
         result.append(', ')
 
     result.pop()
-    return SQL(result)
+    return SQL(*result)
 
 
 def assign(**kwargs: Any) -> SQL:
-    flist = [SQL((f'{field} = ', Interpolation(value))) for field, value in kwargs.items() if value is not UNDEFINED]
+    flist = [SQL(f'{field} = ', Interpolation(value)) for field, value in kwargs.items() if value is not UNDEFINED]
     return join_fragments(', ', flist)
 
 
 def SET(**kwargs: Any) -> SQL:
-    return SQL(('SET ',) + assign(**kwargs))
+    return SQL('SET ', *assign(**kwargs))
 
 
 def text(expr: str) -> SQL:
-    return SQL((expr,))
+    return SQL(expr)
 
 
 class NotNone:
@@ -141,8 +118,8 @@ not_none = NotNone()
 
 def _in_range(field: str, lop: str, left: Any, rop: str, right: Any) -> SQL:
     return AND(
-        SQL((f'{field} {lop} ', Interpolation(left))) if left is not UNDEFINED else EMPTY,
-        SQL((f'{field} {rop} ', Interpolation(right))) if right is not UNDEFINED else EMPTY,
+        SQL(f'{field} {lop} ', Interpolation(left)) if left is not UNDEFINED else EMPTY,
+        SQL(f'{field} {rop} ', Interpolation(right)) if right is not UNDEFINED else EMPTY,
     )
 
 
@@ -157,13 +134,13 @@ def in_crange(field: str, left: Any, right: Any) -> SQL:
 class ListQueryParams:
     mark: str
 
-    def render(self, sql: SQL) -> Tuple[str, List[Any]]:
+    def render(self, sql: SQLType) -> Tuple[str, List[Any]]:
         params: List[Any] = []
         return ''.join(self.iter(sql, params)), params
 
-    def iter(self, sql: SQL, params: List[Any]) -> Iterator[str]:
+    def iter(self, sql: SQLType, params: List[Any]) -> Iterator[str]:
         mark = self.mark
-        for i, it in enumerate(sql):
+        for it in sql:
             if type(it) is str:
                 yield it
             else:

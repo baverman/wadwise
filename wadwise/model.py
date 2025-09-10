@@ -16,7 +16,8 @@ from wadwise.db import (
     transaction,
     update,
 )
-from wadwise.sqlbind_tpl import VALUES, WHERE, in_range, not_none, t
+from wadwise.sqlbind_t import VALUES, WHERE, in_range, not_none
+from wadwise.sqlbind_t.template import t
 
 _used = VALUES, WHERE, in_range, not_none
 

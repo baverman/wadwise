@@ -7,7 +7,8 @@ import threading
 import time
 from typing import Any, Iterator, Literal, Optional, TypeVar, Union, cast, overload
 
-from wadwise.sqlbind_tpl import SET, SQL, VALUES, WHERE, QMarkQueryParams, t, text
+from wadwise.sqlbind_t import SET, SQL, VALUES, WHERE, QMarkQueryParams, text, SQLType
+from wadwise.sqlbind_t.template import t
 
 _used = SET, VALUES, WHERE, text
 
@@ -100,14 +101,14 @@ class QueryList(list[T]):
 
 
 @overload
-def execute(sql: SQL) -> QueryList[TupleResult]: ...
+def execute(sql: SQLType) -> QueryList[TupleResult]: ...
 
 
 @overload
-def execute(sql: SQL, as_dict: Literal[True]) -> QueryList[DictResult]: ...
+def execute(sql: SQLType, as_dict: Literal[True]) -> QueryList[DictResult]: ...
 
 
-def execute(sql: SQL, as_dict: bool = False) -> Union[QueryList[TupleResult], QueryList[DictResult]]:
+def execute(sql: SQLType, as_dict: bool = False) -> Union[QueryList[TupleResult], QueryList[DictResult]]:
     query, params = sqlite_params.render(sql)
     cur = execute_raw(query, params)
     data = cur.fetchall()
@@ -120,7 +121,7 @@ def execute(sql: SQL, as_dict: bool = False) -> Union[QueryList[TupleResult], Qu
     return result
 
 
-def execute_d(sql: SQL) -> QueryList[DictResult]:
+def execute_d(sql: SQLType) -> QueryList[DictResult]:
     r = execute(sql, True)
     return r
 

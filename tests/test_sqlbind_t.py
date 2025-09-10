@@ -1,6 +1,7 @@
 from typing import Any
 
-from wadwise.sqlbind_tpl import EMPTY, SET, SQL, VALUES, WHERE, QMarkQueryParams, in_range, not_none, t, text
+from wadwise.sqlbind_t import EMPTY, SET, SQL, VALUES, WHERE, QMarkQueryParams, in_range, not_none, text
+from wadwise.sqlbind_t.template import t
 
 _used = SET, VALUES, text
 
