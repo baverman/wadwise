@@ -1,0 +1,132 @@
+import importlib.abc
+import sys
+from ast import (
+    AST,
+    Call,
+    Constant,
+    FormattedValue,
+    ImportFrom,
+    JoinedStr,
+    Load,
+    Module,
+    Name,
+    NodeTransformer,
+    alias,
+    copy_location,
+    fix_missing_locations,
+    parse,
+)
+from ast import (
+    List as AstList,
+)
+from importlib.machinery import PathFinder
+from typing import List, Union
+
+from .template import Interpolation, Template
+
+_use = (Interpolation,)
+
+PREFIX = '!! '
+IMPORTED_CALL_NAME = '__sqlbind_t_template'
+IMPORTED_INTERPOLATE_NAME = '__sqlbind_t_interpolate'
+
+
+class FStringTransformer(NodeTransformer):
+    def visit_JoinedStr(self, node: JoinedStr) -> AST:
+        if type(node.values[0]) is Constant and node.values[0].value.startswith(PREFIX):  # type: ignore[union-attr,arg-type]
+            self.has_transform = True
+            node.values[0].value = node.values[0].value[len(PREFIX) :]  # type: ignore[index]
+            replace = []
+            for value in node.values:
+                arg: AST
+                if type(value) is FormattedValue:
+                    arg = copy_location(
+                        Call(func=Name(id=IMPORTED_INTERPOLATE_NAME, ctx=Load()), args=[value.value], keywords=[]),
+                        value,
+                    )
+                else:
+                    arg = value
+                replace.append(arg)
+            return copy_location(
+                Call(func=Name(id=IMPORTED_CALL_NAME, ctx=Load()), args=[AstList(replace, ctx=Load())], keywords=[]),
+                node,
+            )
+        return node
+
+
+def transform_fstrings(tree: Module) -> Module:
+    transformer = FStringTransformer()
+    new_tree: Module = transformer.visit(tree)
+
+    if getattr(transformer, 'has_transform', None):
+        new_tree.body.insert(
+            0,
+            ImportFrom(
+                module='wadwise.sqlbind_t.tstring',
+                names=[
+                    alias(name='make_template', asname=IMPORTED_CALL_NAME),
+                    alias(name='Interpolation', asname=IMPORTED_INTERPOLATE_NAME),
+                ],
+                level=0,
+            ),
+        )
+
+    fix_missing_locations(new_tree)
+    return new_tree
+
+
+def make_template(parts: List[Union[str, Interpolation]]) -> Template:
+    args = []
+    for it in parts:
+        if type(it) is str:
+            args.append(it)
+        elif isinstance(it.value, Template):
+            args.extend(it.value)
+        else:
+            args.append(it)
+
+    return Template(*args)
+
+
+def check_template(arg: str) -> Template:
+    if isinstance(arg, Template):
+        return arg
+    raise RuntimeError('Check your f-string prefix')
+
+
+t = check_template
+
+
+class TransformingLoader(importlib.abc.SourceLoader):
+    def __init__(self, fullname, path):
+        self.fullname = fullname
+        self.path = path
+
+    def get_filename(self, fullname):
+        return self.path
+
+    def get_data(self, path):
+        with open(path, 'rb') as f:
+            return f.read()
+
+    def source_to_code(self, data, path, *, _optimize=-1):
+        tree = parse(data, filename=path)
+        new_tree = transform_fstrings(tree)
+        return compile(new_tree, path, 'exec', optimize=_optimize)
+
+
+class TransformingFinder(PathFinder):
+    def __init__(self, prefixes: List[str]):
+        self._sqlbind_prefixes = prefixes
+
+    def find_spec(self, fullname, path, target=None):
+        spec = super().find_spec(fullname, path, target=target)
+        if any(fullname.startswith(it) for it in self._sqlbind_prefixes):
+            if spec and spec.origin and spec.origin.endswith('.py'):
+                spec.loader = TransformingLoader(fullname, spec.origin)
+                return spec
+        return spec
+
+
+def init(prefixes: List[str]):
+    sys.meta_path.insert(0, TransformingFinder(prefixes))

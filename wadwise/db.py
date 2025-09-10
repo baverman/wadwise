@@ -8,7 +8,7 @@ import time
 from typing import Any, Iterator, Literal, Optional, TypeVar, Union, cast, overload
 
 from wadwise.sqlbind_t import SET, VALUES, WHERE, QMarkQueryParams, SQLType, text
-from wadwise.sqlbind_t.template import t
+from wadwise.sqlbind_t.tstring import t
 
 _used = SET, VALUES, WHERE, text
 
@@ -56,25 +56,25 @@ def execute_raw(sql: str, params: Optional[Union[dict[str, Any], list[Any]]] = N
 
 
 def insert(table: str, **params: Any) -> 'QueryList[TupleResult]':
-    return execute(t('INSERT INTO {text(table)} {VALUES(**params)}'))
+    return execute(t(f'!! INSERT INTO {text(table)} {VALUES(**params)}'))
 
 
 def replace(table: str, **params: Any) -> 'QueryList[TupleResult]':
-    return execute(t('REPLACE INTO {text(table)} {VALUES(**params)}'))
+    return execute(t(f'!! REPLACE INTO {text(table)} {VALUES(**params)}'))
 
 
 def update(table: str, pk: str, pk_value: Optional[Any] = None, **params: Any) -> 'QueryList[TupleResult]':
     if pk_value is None:
         pk_value = params.pop(pk)
-    return execute(t('UPDATE {text(table)} {SET(**params)} WHERE {text(pk)} = {pk_value}'))
+    return execute(t(f'!! UPDATE {text(table)} {SET(**params)} WHERE {text(pk)} = {pk_value}'))
 
 
 def delete(table: str, **eq: Any) -> 'QueryList[TupleResult]':
-    return execute(t('DELETE FROM {text(table)} {WHERE(**eq)}'))
+    return execute(t(f'!! DELETE FROM {text(table)} {WHERE(**eq)}'))
 
 
 def select(table: str, fields: str, **eq: Any) -> 'QueryList[DictResult]':
-    return execute_d(t('SELECT {text(fields)} FROM {text(table)} {WHERE(**eq)}'))
+    return execute_d(t(f'!! SELECT {text(fields)} FROM {text(table)} {WHERE(**eq)}'))
 
 
 def gen_id() -> str:

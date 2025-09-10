@@ -17,9 +17,7 @@ from wadwise.db import (
     update,
 )
 from wadwise.sqlbind_t import VALUES, WHERE, in_range, not_none
-from wadwise.sqlbind_t.template import t
-
-_used = VALUES, WHERE, in_range, not_none
+from wadwise.sqlbind_t.tstring import t
 
 
 class Operation(TypedDict):
@@ -139,7 +137,7 @@ def delete_transaction(tid: str) -> None:
 def account_transactions(**eq: Any) -> list[TransactionAny]:
     data: QueryList[TransactionRaw] = execute_d(
         t(
-            """\
+            f"""!! \
                 SELECT tid, date, desc,
                        json_group_array(json_array(aid, amount/100.0, cur)) as ops
                 FROM (SELECT distinct(tid) FROM ops {WHERE(**eq)})
@@ -206,7 +204,7 @@ def get_param(name: str, default: str) -> str: ...
 
 
 def get_param(name: str, default: Optional[str] = None) -> Optional[str]:
-    return execute(t('SELECT value FROM params WHERE name = {name}')).scalar(default)  # type: ignore[no-any-return]
+    return execute(t(f'!! SELECT value FROM params WHERE name = {name}')).scalar(default)  # type: ignore[no-any-return]
 
 
 @transaction()
@@ -227,7 +225,7 @@ def account_parents(aid: Optional[str], amap: AccountMap, cache: dict[str, tuple
 
 
 def account_list() -> AccountMap:
-    all_accounts: QueryList[AccountExt] = execute_d(t('SELECT * FROM accounts'))  # type: ignore[assignment]
+    all_accounts: QueryList[AccountExt] = execute_d(t(f'!! SELECT * FROM accounts'))  # type: ignore[assignment]
     amap = AccountMap({it['aid']: it for it in all_accounts})
     amap[None] = {}  # type: ignore[typeddict-item,index]
 
@@ -259,11 +257,11 @@ def op2(a1: str, a2: str, amount: float, currency: str) -> tuple[Operation, Oper
 def balance(start: Optional[float] = None, end: Optional[float] = None) -> Balance:
     data = execute_d(
         t(
-            """\
+            f"""!! \
                 SELECT aid, cur, sum(amount) / 100.0 AS total
                 FROM transactions AS t
                 INNER JOIN ops t USING (tid)
-                {WHERE(in_range('t.date', not_none/start, not_none/end))}
+                {WHERE(in_range('t.date', not_none / start, not_none / end))}
                 GROUP BY aid, cur
             """
         )
@@ -349,7 +347,7 @@ def create_tables() -> None:
 
 
 def create_initial_accounts() -> None:
-    if execute(t('SELECT count(1) from accounts')).scalar(0) > 0:
+    if execute(t(f'!! SELECT count(1) from accounts')).scalar(0) > 0:
         return
 
     initial_accounts = [
@@ -360,7 +358,7 @@ def create_initial_accounts() -> None:
         (AccType.EQUITY, 'Equity'),
     ]
     for aid, name in initial_accounts:
-        execute(t('INSERT OR IGNORE INTO accounts {VALUES(aid=aid, type=aid, name=name)}'))
+        execute(t(f'!! INSERT OR IGNORE INTO accounts {VALUES(aid=aid, type=aid, name=name)}'))
 
 
 @transaction()

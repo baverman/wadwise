@@ -1,9 +1,7 @@
 from typing import Any
 
 from wadwise.sqlbind_t import EMPTY, SET, SQL, VALUES, WHERE, QMarkQueryParams, in_range, not_none, text
-from wadwise.sqlbind_t.template import t
-
-_used = SET, VALUES, text
+from wadwise.sqlbind_t.tstring import t
 
 
 def render(sql: SQL) -> tuple[str, list[Any]]:
@@ -11,7 +9,7 @@ def render(sql: SQL) -> tuple[str, list[Any]]:
 
 
 def test_simple():
-    s, p = render(t('SELECT * from {text("boo")} WHERE name = {10}'))
+    s, p = render(t(f'!! SELECT * from {text("boo")} WHERE name = {10}'))
     assert s == 'SELECT * from boo WHERE name = ?'
     assert p == [10]
 
@@ -31,10 +29,10 @@ def test_in_range():
 
 
 def test_values():
-    sql = t('INSERT INTO boo {VALUES(boo=10, foo=None)}')
+    sql = t(f'!! INSERT INTO boo {VALUES(boo=10, foo=None)}')
     assert render(sql) == ('INSERT INTO boo (boo, foo) VALUES (?, ?)', [10, None])
 
 
 def test_set():
-    sql = t('UPDATE boo {SET(boo=10, foo=None, bar=not_none/None)}')
+    sql = t(f'!! UPDATE boo {SET(boo=10, foo=None, bar=not_none / None)}')
     assert render(sql) == ('UPDATE boo SET boo = ?, foo = ?', [10, None])
