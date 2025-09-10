@@ -89,9 +89,11 @@ def make_template(parts: List[Union[str, Interpolation]]) -> Template:
 
 
 def check_template(arg: str) -> Template:
+    # arg is str from type checker perspective, but transform
+    # converts prefixed f-strings into a Template instances.
     if isinstance(arg, Template):
         return arg
-    raise RuntimeError('Check your f-string prefix')
+    raise RuntimeError(f't (check_template) accepts only a prefixed f-string like t(f"{PREFIX} ...")')
 
 
 t = check_template

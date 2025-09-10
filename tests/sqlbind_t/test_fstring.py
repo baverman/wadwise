@@ -40,5 +40,5 @@ def test_type_check():
             """
         )
     )
-    with pytest.raises(RuntimeError, match='Check your f-string'):
+    with pytest.raises(RuntimeError, match='prefixed f-string'):
         ctx['boo']('zoom')
