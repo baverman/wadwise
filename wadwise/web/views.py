@@ -8,9 +8,8 @@ from covador.flask import form, query_string
 from flask import abort, flash, redirect, render_template, request, url_for
 from werkzeug.wrappers import Response
 
-from wadwise import db
+from wadwise import db, state, utils
 from wadwise import model as m
-from wadwise import state, utils
 from wadwise.web import app
 
 datetime_t = DateTime('%Y-%m-%d%H:%M')
@@ -146,7 +145,7 @@ def transaction_save_helper(
     for op in ops:
         aid = op['aid']
         if aid != dest and amap[aid]['is_sheet']:
-            flash(f'''{amap[aid]['full_name']}: {cbal[aid].total.get(op['cur'], 0)} {op['cur']}''')
+            flash(f"""{amap[aid]['full_name']}: {cbal[aid].total.get(op['cur'], 0)} {op['cur']}""")
 
     return redirect(url_for('account_view', aid=dest, _anchor=tid and f't-{tid}'))
 

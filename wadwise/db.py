@@ -7,7 +7,7 @@ import threading
 import time
 from typing import Any, Iterator, Literal, Optional, TypeVar, Union, cast, overload
 
-from wadwise.sqlbind_t import SET, SQL, VALUES, WHERE, QMarkQueryParams, text, SQLType
+from wadwise.sqlbind_t import SET, VALUES, WHERE, QMarkQueryParams, SQLType, text
 from wadwise.sqlbind_t.template import t
 
 _used = SET, VALUES, WHERE, text

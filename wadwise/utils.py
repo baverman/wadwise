@@ -1,8 +1,7 @@
 import logging
 from datetime import date as dt_date
-from datetime import datetime
+from datetime import datetime, timedelta
 from datetime import time as dt_time
-from datetime import timedelta
 from functools import wraps
 from typing import TYPE_CHECKING, Any, Callable, Mapping, TypeVar
 

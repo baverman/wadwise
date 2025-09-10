@@ -139,7 +139,7 @@ def delete_transaction(tid: str) -> None:
 def account_transactions(**eq: Any) -> list[TransactionAny]:
     data: QueryList[TransactionRaw] = execute_d(
         t(
-            '''\
+            """\
                 SELECT tid, date, desc,
                        json_group_array(json_array(aid, amount/100.0, cur)) as ops
                 FROM (SELECT distinct(tid) FROM ops {WHERE(**eq)})
@@ -147,7 +147,7 @@ def account_transactions(**eq: Any) -> list[TransactionAny]:
                 INNER JOIN ops USING(tid)
                 GROUP BY tid
                 ORDER BY date DESC
-            '''
+            """
         )
     )  # type: ignore[assignment]
 
@@ -259,13 +259,13 @@ def op2(a1: str, a2: str, amount: float, currency: str) -> tuple[Operation, Oper
 def balance(start: Optional[float] = None, end: Optional[float] = None) -> Balance:
     data = execute_d(
         t(
-            '''\
+            """\
                 SELECT aid, cur, sum(amount) / 100.0 AS total
                 FROM transactions AS t
                 INNER JOIN ops t USING (tid)
                 {WHERE(in_range('t.date', not_none/start, not_none/end))}
                 GROUP BY aid, cur
-            '''
+            """
         )
     )
 
@@ -299,7 +299,7 @@ def combine_states(*states: BState) -> BState:  # pragma: no cover
 def create_tables() -> None:
     # Initial tables
     execute_raw(
-        '''\
+        """\
             CREATE TABLE IF NOT EXISTS accounts (
                 aid TEXT NOT NULL PRIMARY KEY,
                 type TEXT NOT NULL,
@@ -308,37 +308,37 @@ def create_tables() -> None:
                 parent TEXT,
                 is_placeholder INTEGER NOT NULL DEFAULT 0
             )
-        '''
+        """
     )
 
     execute_raw(
-        '''\
+        """\
             CREATE TABLE IF NOT EXISTS transactions (
                 tid TEXT NOT NULL PRIMARY KEY,
                 date INTEGER NOT NULL,
                 desc TEXT
             )
-        '''
+        """
     )
 
     execute_raw(
-        '''\
+        """\
             CREATE TABLE IF NOT EXISTS ops (
                 tid TEXT NOT NULL,
                 aid TEXT NOT NULL,
                 amount INTEGER NOT NULL,
                 cur TEXT NOT NULL
             )
-        '''
+        """
     )
 
     execute_raw(
-        '''\
+        """\
             CREATE TABLE IF NOT EXISTS params (
                 name TEXT NOT NULL PRIMARY KEY,
                 value TEXT
             )
-        '''
+        """
     )
 
     # Indexes

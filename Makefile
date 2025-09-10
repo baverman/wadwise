@@ -1,11 +1,11 @@
 .PHONY: fmt lint all
 
 fmt:
-	isort $$(find . -name '*.py')
-	black .
+	ruff check --select I --fix
+	ruff format
 
 lint:
-	flake8 .
+	ruff check
 	mypy
 
 all: fmt lint

@@ -80,7 +80,7 @@ def VALUES(data: Optional[List[Dict[str, Any]]] = None, **kwargs: Any) -> SQL:
         data = [kwargs]
 
     names = list(data[0].keys())
-    result: List[Part] = [f"({', '.join(names)}) VALUES "]
+    result: List[Part] = [f'({", ".join(names)}) VALUES ']
     for it in data:
         result.append('(')
         for f in names:

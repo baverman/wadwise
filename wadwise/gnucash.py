@@ -54,10 +54,7 @@ def slot_dict(value):
 
 gnc_schema = make_schema(XmlGetter(gnucash_ns))
 
-slot_t = gnc_schema(
-    key=item(xml_text, src='slot:key'),
-    value=item(xml_text, src='slot:value'),
-)
+slot_t = gnc_schema(key=item(xml_text, src='slot:key'), value=item(xml_text, src='slot:value'))
 
 account_t = gnc_schema(
     aid=item(xml_text, src='act:id') | b64id,
