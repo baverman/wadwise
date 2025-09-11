@@ -36,9 +36,9 @@ def test_where():
 
 def test_in_range():
     assert render(in_range('col', 10, 20)) == ('(col >= ? AND col < ?)', [10, 20])
-    assert render(in_range('col', 10, not_none / None)) == ('col >= ?', [10])
-    assert render(in_range('col', not_none / None, 20)) == ('col < ?', [20])
-    assert render(in_range('col', not_none / None, not_none / None)) == ('', [])
+    assert render(in_range('col', 10, None)) == ('col >= ?', [10])
+    assert render(in_range('col', None, 20)) == ('col < ?', [20])
+    assert render(in_range('col', None, None)) == ('', [])
 
 
 def test_values():
@@ -49,3 +49,14 @@ def test_values():
 def test_set():
     sql = t(f'!! UPDATE boo {SET(boo=10, foo=None, bar=not_none / None)}')
     assert render(sql) == ('UPDATE boo SET boo = ?, foo = ?', [10, None])
+
+
+def test_sql_ops():
+    sql = text('some') & t(f'!! {10}')
+    assert render(sql) == ('(some AND ?)', [10])
+
+    sql = text('some') | t(f'!! {10}')
+    assert render(sql) == ('(some OR ?)', [10])
+
+    sql = ~SQL(t(f'!! {10}'))
+    assert render(sql) == ('NOT ?', [10])

@@ -16,7 +16,7 @@ from wadwise.db import (
     transaction,
     update,
 )
-from wadwise.sqlbind_t import VALUES, WHERE, in_range, not_none, text
+from wadwise.sqlbind_t import VALUES, WHERE, in_range, text
 from wadwise.sqlbind_t.tstring import t
 
 
@@ -261,7 +261,7 @@ def balance(start: Optional[float] = None, end: Optional[float] = None) -> Balan
                 SELECT aid, cur, sum(amount) / 100.0 AS total
                 FROM transactions AS t
                 INNER JOIN ops t USING (tid)
-                {WHERE(in_range('t.date', not_none / start, not_none / end))}
+                {WHERE(in_range('t.date', start, end))}
                 GROUP BY aid, cur
             """
         )

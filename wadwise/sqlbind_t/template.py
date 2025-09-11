@@ -37,10 +37,7 @@ def parse_template(string: str) -> Template:
         if type(it) is FormattedValue:
             code = compile(Expression(it.value), '<string>', 'eval')
             value = eval(code, frame.f_globals, frame.f_locals)
-            if isinstance(value, Template):
-                values.extend(value)
-            else:
-                values.append(Interpolation(value))
+            values.append(Interpolation(value))
         else:
             values.append(it.value)
     return Template(*values)

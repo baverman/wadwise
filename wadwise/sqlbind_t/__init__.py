@@ -10,20 +10,64 @@ SQLType = Union['SQL', Template]
 
 
 class SQL(Template):
-    def __or__(self, other: 'SQL') -> 'SQL':
+    def __init__(self, template: SQLType) -> None:
+        self._template = template
+
+    def __iter__(self) -> Iterator[Part]:
+        yield Interpolation(self._template)
+
+    def __or__(self, other: SQLType) -> 'SQL':
         return OR(self, other)
 
-    def __and__(self, other: 'SQL') -> 'SQL':
+    def __and__(self, other: SQLType) -> 'SQL':
         return AND(self, other)
 
     def __invert__(self) -> 'SQL':
         if self:
-            return SQL('NOT ', *self)
+            return SQLText('NOT ', Interpolation(self))
         else:
             return EMPTY
 
+    def __bool__(self) -> bool:
+        return True
+
+
+class SQLText(SQL):
+    def __init__(self, *parts: Part) -> None:
+        self._parts = parts
+
+    def __iter__(self) -> Iterator[Part]:
+        return iter(self._parts)
+
+
+class Compound(SQL):
+    def __init__(self, prefix: str, sep: str, flist: Sequence[SQLType], wrap: Optional[Tuple[str, str]] = None) -> None:
+        self._prefix = prefix
+        self._sep = sep
+        self._wrap = wrap
+        self._flist = flist
+
+    def __iter__(self) -> Iterator[Part]:
+        if self._prefix:
+            yield self._prefix
+
+        if self._wrap:
+            yield self._wrap[0]
+
+        sep = self._sep
+        for i, it in enumerate(self._flist):
+            if i > 0:
+                yield sep
+            yield Interpolation(it)
+
+        if self._wrap:
+            yield self._wrap[1]
+
 
 class EmptyType(SQL):
+    def __init__(self) -> None:
+        pass
+
     def __iter__(self) -> Iterator[Part]:
         return iter([])
 
@@ -34,45 +78,31 @@ class EmptyType(SQL):
 EMPTY = EmptyType()
 
 
-def AND(*fragments: SQL) -> SQL:
+def AND(*fragments: SQLType) -> SQL:
     return join_fragments(' AND ', fragments, ('(', ')'))
 
 
-def OR(*fragments: SQL) -> SQL:
+def OR(*fragments: SQLType) -> SQL:
     return join_fragments(' OR ', fragments, ('(', ')'))
 
 
-def join_fragments(sep: str, flist: Sequence[SQL], wrap: Optional[Tuple[str, str]] = None) -> SQL:
+def join_fragments(sep: str, flist: Sequence[SQLType], wrap: Optional[Tuple[str, str]] = None, prefix: str = '') -> SQL:
     flist = list(filter(None, flist))
     if not flist:
         return EMPTY
     elif len(flist) == 1:
-        return flist[0]
+        return Compound(prefix, sep, flist)
 
-    result: list[Part] = []
-    if wrap:
-        result.append(wrap[0])
-    for it in flist:
-        result.extend(it)
-        result.append(sep)
-    result.pop()
-    if wrap:
-        result.append(wrap[1])
-    return SQL(*result)
-
-
-def prefix_join(prefix: str, sep: str, flist: Sequence[SQL], wrap: Optional[Tuple[str, str]] = None) -> SQL:
-    e = join_fragments(sep, flist, wrap)
-    return SQL(prefix, *e) if e else EMPTY
+    return Compound(prefix, sep, flist, wrap)
 
 
 def WHERE(*cond: SQL, **kwargs: Any) -> SQL:
     flist = list(cond) + [
-        SQL(f'{field} IS NULL') if value is None else SQL(f'{field} = ', Interpolation(value))
+        SQLText(f'{field} IS NULL') if value is None else SQLText(f'{field} = ', Interpolation(value))
         for field, value in kwargs.items()
         if value is not UNDEFINED
     ]
-    return prefix_join('WHERE ', ' AND ', flist)
+    return join_fragments(' AND ', flist, prefix='WHERE ')
 
 
 def VALUES(data: Optional[List[Dict[str, Any]]] = None, **kwargs: Any) -> SQL:
@@ -90,20 +120,20 @@ def VALUES(data: Optional[List[Dict[str, Any]]] = None, **kwargs: Any) -> SQL:
         result.append(', ')
 
     result.pop()
-    return SQL(*result)
+    return SQLText(*result)
 
 
 def assign(**kwargs: Any) -> SQL:
-    flist = [SQL(f'{field} = ', Interpolation(value)) for field, value in kwargs.items() if value is not UNDEFINED]
+    flist = [SQLText(f'{field} = ', Interpolation(value)) for field, value in kwargs.items() if value is not UNDEFINED]
     return join_fragments(', ', flist)
 
 
 def SET(**kwargs: Any) -> SQL:
-    return SQL('SET ', *assign(**kwargs))
+    return SQLText('SET ', *assign(**kwargs))
 
 
 def text(expr: str) -> SQL:
-    return SQL(expr)
+    return SQLText(expr)
 
 
 class NotNone:
@@ -118,8 +148,8 @@ not_none = NotNone()
 
 def _in_range(field: str, lop: str, left: Any, rop: str, right: Any) -> SQL:
     return AND(
-        SQL(f'{field} {lop} ', Interpolation(left)) if left is not UNDEFINED else EMPTY,
-        SQL(f'{field} {rop} ', Interpolation(right)) if right is not UNDEFINED else EMPTY,
+        SQLText(f'{field} {lop} ', Interpolation(left)) if left is not None else EMPTY,
+        SQLText(f'{field} {rop} ', Interpolation(right)) if right is not None else EMPTY,
     )
 
 
@@ -144,8 +174,11 @@ class ListQueryParams:
             if type(it) is str:
                 yield it
             else:
-                yield mark
-                params.append(it.value)  # type: ignore[union-attr]
+                if isinstance(it.value, Template):  # type: ignore[union-attr]
+                    yield from self.iter(it.value, params)  # type: ignore[union-attr]
+                else:
+                    yield mark
+                    params.append(it.value)  # type: ignore[union-attr]
 
 
 class QMarkQueryParams(ListQueryParams):

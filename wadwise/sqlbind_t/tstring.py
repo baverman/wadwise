@@ -16,15 +16,10 @@ from ast import (
     fix_missing_locations,
     parse,
 )
-from ast import (
-    List as AstList,
-)
 from importlib.machinery import PathFinder
-from typing import List, Union
+from typing import List
 
-from .template import Interpolation, Template
-
-_use = (Interpolation,)
+from .template import Template
 
 PREFIX = '!! '
 IMPORTED_CALL_NAME = '__sqlbind_t_template'
@@ -48,7 +43,7 @@ class FStringTransformer(NodeTransformer):
                     arg = value
                 replace.append(arg)
             return copy_location(
-                Call(func=Name(id=IMPORTED_CALL_NAME, ctx=Load()), args=[AstList(replace, ctx=Load())], keywords=[]),
+                Call(func=Name(id=IMPORTED_CALL_NAME, ctx=Load()), args=replace, keywords=[]),
                 node,
             )
         return node
@@ -62,9 +57,9 @@ def transform_fstrings(tree: Module) -> Module:
         new_tree.body.insert(
             0,
             ImportFrom(
-                module='wadwise.sqlbind_t.tstring',
+                module='wadwise.sqlbind_t.template',
                 names=[
-                    alias(name='make_template', asname=IMPORTED_CALL_NAME),
+                    alias(name='Template', asname=IMPORTED_CALL_NAME),
                     alias(name='Interpolation', asname=IMPORTED_INTERPOLATE_NAME),
                 ],
                 level=0,
@@ -73,19 +68,6 @@ def transform_fstrings(tree: Module) -> Module:
 
     fix_missing_locations(new_tree)
     return new_tree
-
-
-def make_template(parts: List[Union[str, Interpolation]]) -> Template:
-    args: List[Union[str, Interpolation]] = []
-    for it in parts:
-        if isinstance(it, str):
-            args.append(it)
-        elif isinstance(it.value, Template):
-            args.extend(it.value)
-        else:
-            args.append(it)
-
-    return Template(*args)
 
 
 def check_template(arg: str) -> Template:
