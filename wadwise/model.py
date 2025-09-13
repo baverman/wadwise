@@ -135,19 +135,16 @@ def delete_transaction(tid: str) -> None:
 
 
 def account_transactions(**eq: Any) -> list[TransactionAny]:
-    data: QueryList[TransactionRaw] = execute_d(
-        t(
-            f"""!! \
-                SELECT tid, date, desc,
-                       json_group_array(json_array(aid, amount/100.0, cur)) as ops
-                FROM (SELECT distinct(tid) FROM ops {WHERE(**eq)})
-                INNER JOIN transactions t USING(tid)
-                INNER JOIN ops USING(tid)
-                GROUP BY tid
-                ORDER BY date DESC
-            """
-        )
-    )  # type: ignore[assignment]
+    query = f"""!! \
+        SELECT tid, date, desc,
+               json_group_array(json_array(aid, amount/100.0, cur)) as ops
+        FROM (SELECT distinct(tid) FROM ops {WHERE(**eq)})
+        INNER JOIN transactions t USING(tid)
+        INNER JOIN ops USING(tid)
+        GROUP BY tid
+        ORDER BY date DESC
+    """
+    data: QueryList[TransactionRaw] = execute_d(t(query))  # type: ignore[assignment]
 
     aid = eq.pop('aid', None)
     by_amount = operator.itemgetter(1)
@@ -255,17 +252,14 @@ def op2(a1: str, a2: str, amount: float, currency: str) -> tuple[Operation, Oper
 
 
 def balance(start: Optional[float] = None, end: Optional[float] = None) -> Balance:
-    data = execute_d(
-        t(
-            f"""!! \
-                SELECT aid, cur, sum(amount) / 100.0 AS total
-                FROM transactions AS t
-                INNER JOIN ops t USING (tid)
-                {WHERE(in_range('t.date', start, end))}
-                GROUP BY aid, cur
-            """
-        )
-    )
+    query = f"""!! \
+        SELECT aid, cur, sum(amount) / 100.0 AS total
+        FROM transactions AS t
+        INNER JOIN ops t USING (tid)
+        {WHERE(in_range('t.date', start, end))}
+        GROUP BY aid, cur
+    """
+    data = execute_d(t(query))
 
     result: Balance = {}
     for it in data:
