@@ -8,6 +8,7 @@ import time
 from typing import Any, Iterator, Literal, Optional, TypeVar, Union, cast, overload
 
 from sqlbind_t import SET, VALUES, WHERE, AnySQL, sql, sqlf, text
+from sqlbind_t.sqlite import Dialect
 
 _used = SET, VALUES, WHERE, text
 
@@ -16,6 +17,7 @@ TupleResult = tuple[Any, ...]
 DictResult = dict[str, Any]
 
 DB = 'data.sqlite'
+dialect = Dialect()
 
 
 @contextlib.contextmanager
@@ -107,7 +109,7 @@ def execute(query: AnySQL, as_dict: Literal[True]) -> QueryList[DictResult]: ...
 
 
 def execute(query: AnySQL, as_dict: bool = False) -> Union[QueryList[TupleResult], QueryList[DictResult]]:
-    qstr, params = sql(query).split()
+    qstr, params = sql(query).split(dialect=dialect)
     cur = execute_raw(qstr, params)
     data = cur.fetchall()
     if as_dict:

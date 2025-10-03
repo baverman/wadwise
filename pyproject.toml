@@ -16,6 +16,12 @@ skip-magic-trailing-comma = false
 [tool.ruff.lint]
 ignore = ["E731", "E402"]
 
+[tool.coverage.run]
+source = ["wadwise"]
+
+# [tool.coverage.report]
+# fail_under = 100
+
 # [[tool.mypy.overrides]]
 # module = []
 # ignore_missing_imports = true
