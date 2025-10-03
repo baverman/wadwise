@@ -3,6 +3,8 @@ import operator
 from datetime import datetime
 from typing import Any, Iterable, Literal, Optional, TypedDict, Union, overload
 
+from sqlbind_t import VALUES, WHERE, in_range, sqlf, text
+
 from wadwise.db import (
     QueryList,
     delete,
@@ -16,8 +18,6 @@ from wadwise.db import (
     transaction,
     update,
 )
-from wadwise.sqlbind_t import VALUES, WHERE, in_range, text
-from wadwise.sqlbind_t.tstring import t
 
 
 class Operation(TypedDict):
@@ -144,7 +144,7 @@ def account_transactions(**eq: Any) -> list[TransactionAny]:
         GROUP BY tid
         ORDER BY date DESC
     """
-    data: QueryList[TransactionRaw] = execute_d(t(query))  # type: ignore[assignment]
+    data: QueryList[TransactionRaw] = execute_d(sqlf(query))  # type: ignore[assignment]
 
     aid = eq.pop('aid', None)
     by_amount = operator.itemgetter(1)
@@ -201,7 +201,7 @@ def get_param(name: str, default: str) -> str: ...
 
 
 def get_param(name: str, default: Optional[str] = None) -> Optional[str]:
-    return execute(t(f'!! SELECT value FROM params WHERE name = {name}')).scalar(default)  # type: ignore[no-any-return]
+    return execute(sqlf(f'!! SELECT value FROM params WHERE name = {name}')).scalar(default)  # type: ignore[no-any-return]
 
 
 @transaction()
@@ -259,7 +259,7 @@ def balance(start: Optional[float] = None, end: Optional[float] = None) -> Balan
         {WHERE(in_range('t.date', start, end))}
         GROUP BY aid, cur
     """
-    data = execute_d(t(query))
+    data = execute_d(sqlf(query))
 
     result: Balance = {}
     for it in data:
@@ -352,7 +352,7 @@ def create_initial_accounts() -> None:
         (AccType.EQUITY, 'Equity'),
     ]
     for aid, name in initial_accounts:
-        execute(t(f'!! INSERT OR IGNORE INTO accounts {VALUES(aid=aid, type=aid, name=name)}'))
+        execute(sqlf(f'!! INSERT OR IGNORE INTO accounts {VALUES(aid=aid, type=aid, name=name)}'))
 
 
 @transaction()

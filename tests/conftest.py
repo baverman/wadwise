@@ -1,6 +1,6 @@
-from wadwise.sqlbind_t import tstring
+from sqlbind_t import tfstring
 
-tstring.init(['wadwise.', 'tests.'])
+tfstring.init(['tests.'])
 
 from wadwise import web
 
