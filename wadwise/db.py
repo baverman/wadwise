@@ -7,7 +7,8 @@ import threading
 import time
 from typing import Any, Iterator, Literal, Optional, TypeVar, Union, cast, overload
 
-from sqlbind_t import SET, VALUES, WHERE, AnySQL, sql, sqlf, text
+from sqlbind_t import SET, VALUES, WHERE, AnySQL, sqlf, text
+from sqlbind_t.dialect import unwrap
 from sqlbind_t.sqlite import Dialect
 
 _used = SET, VALUES, WHERE, text
@@ -56,25 +57,25 @@ def execute_raw(sql: str, params: Optional[Union[dict[str, Any], list[Any]]] = N
 
 
 def insert(table: str, **params: Any) -> 'QueryList[TupleResult]':
-    return execute(sqlf(f'!! INSERT INTO {text(table)} {VALUES(**params)}'))
+    return execute(sqlf(f'@INSERT INTO {text(table)} {VALUES(**params)}'))
 
 
 def replace(table: str, **params: Any) -> 'QueryList[TupleResult]':
-    return execute(sqlf(f'!! REPLACE INTO {text(table)} {VALUES(**params)}'))
+    return execute(sqlf(f'@REPLACE INTO {text(table)} {VALUES(**params)}'))
 
 
 def update(table: str, pk: str, pk_value: Optional[Any] = None, **params: Any) -> 'QueryList[TupleResult]':
     if pk_value is None:
         pk_value = params.pop(pk)
-    return execute(sqlf(f'!! UPDATE {text(table)} {SET(**params)} WHERE {text(pk)} = {pk_value}'))
+    return execute(sqlf(f'@UPDATE {text(table)} {SET(**params)} WHERE {text(pk)} = {pk_value}'))
 
 
 def delete(table: str, **eq: Any) -> 'QueryList[TupleResult]':
-    return execute(sqlf(f'!! DELETE FROM {text(table)} {WHERE(**eq)}'))
+    return execute(sqlf(f'@DELETE FROM {text(table)} {WHERE(**eq)}'))
 
 
 def select(table: str, fields: str, **eq: Any) -> 'QueryList[DictResult]':
-    return execute_d(sqlf(f'!! SELECT {text(fields)} FROM {text(table)} {WHERE(**eq)}'))
+    return execute_d(sqlf(f'@SELECT {text(fields)} FROM {text(table)} {WHERE(**eq)}'))
 
 
 def gen_id() -> str:
@@ -109,7 +110,7 @@ def execute(query: AnySQL, as_dict: Literal[True]) -> QueryList[DictResult]: ...
 
 
 def execute(query: AnySQL, as_dict: bool = False) -> Union[QueryList[TupleResult], QueryList[DictResult]]:
-    qstr, params = sql(query).split(dialect=dialect)
+    qstr, params = unwrap(query, dialect=dialect)
     cur = execute_raw(qstr, params)
     data = cur.fetchall()
     if as_dict:

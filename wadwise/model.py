@@ -3,7 +3,7 @@ import operator
 from datetime import datetime
 from typing import Any, Iterable, Literal, Optional, TypedDict, Union, overload
 
-from sqlbind_t import VALUES, WHERE, in_range, sqlf, text
+from sqlbind_t import VALUES, WHERE, E, in_range, sqlf, text
 
 from wadwise.db import (
     QueryList,
@@ -135,7 +135,7 @@ def delete_transaction(tid: str) -> None:
 
 
 def account_transactions(**eq: Any) -> list[TransactionAny]:
-    query = f"""!! \
+    query = f"""@\
         SELECT tid, date, desc,
                json_group_array(json_array(aid, amount/100.0, cur)) as ops
         FROM (SELECT distinct(tid) FROM ops {WHERE(**eq)})
@@ -201,7 +201,7 @@ def get_param(name: str, default: str) -> str: ...
 
 
 def get_param(name: str, default: Optional[str] = None) -> Optional[str]:
-    return execute(sqlf(f'!! SELECT value FROM params WHERE name = {name}')).scalar(default)  # type: ignore[no-any-return]
+    return execute(sqlf(f'@SELECT value FROM params WHERE name = {name}')).scalar(default)  # type: ignore[no-any-return]
 
 
 @transaction()
@@ -252,11 +252,11 @@ def op2(a1: str, a2: str, amount: float, currency: str) -> tuple[Operation, Oper
 
 
 def balance(start: Optional[float] = None, end: Optional[float] = None) -> Balance:
-    query = f"""!! \
+    query = f"""@\
         SELECT aid, cur, sum(amount) / 100.0 AS total
         FROM transactions AS t
         INNER JOIN ops t USING (tid)
-        {WHERE(in_range('t.date', start, end))}
+        {WHERE(in_range(E.t.date, start, end))}
         GROUP BY aid, cur
     """
     data = execute_d(sqlf(query))
@@ -352,7 +352,7 @@ def create_initial_accounts() -> None:
         (AccType.EQUITY, 'Equity'),
     ]
     for aid, name in initial_accounts:
-        execute(sqlf(f'!! INSERT OR IGNORE INTO accounts {VALUES(aid=aid, type=aid, name=name)}'))
+        execute(sqlf(f'@INSERT OR IGNORE INTO accounts {VALUES(aid=aid, type=aid, name=name)}'))
 
 
 @transaction()
