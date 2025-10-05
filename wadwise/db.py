@@ -8,7 +8,6 @@ import time
 from typing import Any, Iterator, Literal, Optional, TypeVar, Union, cast, overload
 
 from sqlbind_t import SET, VALUES, WHERE, AnySQL, sqlf, text
-from sqlbind_t.dialect import unwrap
 from sqlbind_t.sqlite import Dialect
 
 _used = SET, VALUES, WHERE, text
@@ -110,7 +109,7 @@ def execute(query: AnySQL, as_dict: Literal[True]) -> QueryList[DictResult]: ...
 
 
 def execute(query: AnySQL, as_dict: bool = False) -> Union[QueryList[TupleResult], QueryList[DictResult]]:
-    qstr, params = unwrap(query, dialect=dialect)
+    qstr, params = dialect.unwrap(query)
     cur = execute_raw(qstr, params)
     data = cur.fetchall()
     if as_dict:
