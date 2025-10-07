@@ -110,6 +110,7 @@ def execute(query: AnySQL, as_dict: Literal[True]) -> QueryList[DictResult]: ...
 
 def execute(query: AnySQL, as_dict: bool = False) -> Union[QueryList[TupleResult], QueryList[DictResult]]:
     qstr, params = dialect.unwrap(query)
+    # print('@@', qstr, params)
     cur = execute_raw(qstr, params)
     data = cur.fetchall()
     if as_dict:

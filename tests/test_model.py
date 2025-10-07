@@ -6,19 +6,9 @@ from wadwise import db
 from wadwise import model as m
 
 
-def get_acc(name):
-    parent = None
-    parts = name.split(':')
-    for p in parts:
-        parent = m.account_by_name(parent and parent['aid'], p)
-        if not parent:
-            return None
-    return parent
-
-
 def make_acc(name, type=None):
     head, _, acc = name.rpartition(':')
-    parent = get_acc(head)
+    parent = m.account_by_name(head)
     assert parent
     return m.create_account(parent['aid'], acc, type or parent['type'])
 
@@ -56,7 +46,7 @@ def test_account_flow(dbconn):
     accs = sorted(it['name'] for it in m.get_sub_accounts(None))
     assert accs == ['a', 'e', 'i', 'l', 'q']
 
-    accs = sorted(it['name'] for it in m.get_sub_accounts(get_acc('a')['aid']))
+    accs = sorted(it['name'] for it in m.get_sub_accounts(m.account_by_name('a')['aid']))
     assert accs == ['foo']
 
     make_acc('a:bank')
@@ -66,9 +56,9 @@ def test_account_flow(dbconn):
 def test_delete_account(dbconn):
     a1 = make_acc('a:bank')
     a2 = make_acc('a:bank:main')
-    m.delete_account(a1, get_acc('e')['aid'])
+    m.delete_account(a1, m.account_by_name('e')['aid'])
     a = m.account_by_id(a2)
-    assert a['parent'] == get_acc('e')['aid']
+    assert a['parent'] == m.account_by_name('e')['aid']
 
 
 def test_transaction_flow(dbconn):

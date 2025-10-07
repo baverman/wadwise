@@ -3,7 +3,7 @@ import operator
 from datetime import datetime
 from typing import Any, Iterable, Literal, Optional, TypedDict, Union, overload
 
-from sqlbind_t import VALUES, WHERE, E, in_range, sqlf, text
+from sqlbind_t import VALUES, WHERE, E, in_range, sqlf, text, AnySQL
 
 from wadwise.db import (
     QueryList,
@@ -135,12 +135,16 @@ def delete_transaction(tid: str) -> None:
 
 
 def account_transactions(**eq: Any) -> list[TransactionAny]:
+    start_date = eq.pop('start_date')
+    end_date = eq.pop('end_date')
+    cond = [in_range(E.t.date, start_date and start_date.timestamp(), end_date and end_date.timestamp())]
     query = f"""@\
         SELECT tid, date, desc,
                json_group_array(json_array(aid, amount/100.0, cur)) as ops
         FROM (SELECT distinct(tid) FROM ops {WHERE(**eq)})
         INNER JOIN transactions t USING(tid)
         INNER JOIN ops USING(tid)
+        {WHERE(*cond)}
         GROUP BY tid
         ORDER BY date DESC
     """
@@ -180,8 +184,14 @@ def delete_account(aid: str, new_parent: Optional[str]) -> None:
     delete('accounts', aid=aid)
 
 
-def account_by_name(parent: str, name: str) -> Optional[Account]:
-    return select('accounts', '*', parent=parent, name=name).first()  # type: ignore[return-value]
+def account_by_name(name: str) -> Optional[Account]:
+    parent: Optional[Account] = None
+    parts = name.split(':')
+    for p in parts:
+        parent = select('accounts', '*', parent=parent and parent['aid'], name=p).first()  # type: ignore[assignment]
+        if not parent:
+            return None
+    return parent
 
 
 def account_by_id(aid: str) -> Optional[Account]:
