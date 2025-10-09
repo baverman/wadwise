@@ -232,8 +232,9 @@ def import_monzo(src: str) -> str:
     if 'monzo' in request.files:
         data = monzo.prepare(io.StringIO(request.files['monzo'].read().decode()))
 
-    max_dt = data[-1]['date']
-    min_dt = data[0]['date']
+    data.sort(reverse=True, key=lambda x: x['date'])
+    max_dt = data[0]['date']
+    min_dt = data[-1]['date']
 
     def get_amount(tr: m.TransactionAny) -> tuple[float, str]:
         for aid, amount, cur in tr['ops']:
@@ -251,9 +252,8 @@ def import_monzo(src: str) -> str:
         it['date'] = dt.timestamp()  # type: ignore[typeddict-item]
         it['date_str'] = dt.strftime('%Y-%m-%d')  # type: ignore[typeddict-unknown-key]
 
-    data.sort(reverse=True, key=lambda x: x['date'])
-    bend = state.current_balance(max_dt)[src].total
-    return render_template('import_transactions.html', src=src, balance=bend, transactions=data)
+    bend = state.current_balance(utils.next_month_start(max_dt))[src].total
+    return render_template('import_transactions.html', src=src, balance=bend, transactions=data, bdate=max_dt)
 
 
 @app.route('/import/transactions', methods=['POST'])
