@@ -1,8 +1,19 @@
 {% extends 'base.html' %}
+{% from 'widgets.html' import select_group %}
 
 {% block content %}
+<p>
 <form method="POST" enctype="multipart/form-data">
     GNUCash: <input type="file" name="gnucash" accept=".gnca" /><br>
     <button type="submit">Import</button>
 </form>
+</p>
+
+<p>
+<form method="POST" action="./monzo" enctype="multipart/form-data">
+    Account: {{ select_group('src', '---', env.account_groups) }}<br>
+    Monzo: <input type="file" name="monzo" accept=".csv" /><br>
+    <button type="submit">Import</button>
+</form>
+</p>
 {% endblock %}

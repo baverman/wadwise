@@ -8,6 +8,9 @@
 
 {% macro select_group(name, value, options) %}
 <select name="{{ name }}" {{ kwargs | xmlattr }}>
+    {% if value == '---' %}
+        <option value="">---</option>
+    {% endif %}
     {% for gtitle, group in options %}
     <optgroup label="{{ gtitle }}">
         {%- for ovalue, otitle, ohidden in group %}

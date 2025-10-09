@@ -1,5 +1,6 @@
 pytest
+pytest-mock
 mypy
 ruff
 typing_extensions
-types-Flask==1.1.6
+coverage

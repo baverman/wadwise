@@ -29,7 +29,7 @@ def setup_context_processor() -> dict[str, Any]:
     return {'env': state.Env(today), 'today': today, 'today_str': today.strftime('%Y-%m-%d')}
 
 
-@app.template_global()  # type: ignore[misc]
+@app.template_global()
 def fmt_num(value: float) -> str:
     if value:
         return '{:_.2f}'.format(value).replace('_', '<span class="delim"></span>')

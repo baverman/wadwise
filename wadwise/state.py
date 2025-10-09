@@ -161,7 +161,7 @@ def day_balance(dt: date) -> BalanceMap:
 
 @utils.cached
 def current_balance(dt: Optional[datetime] = None) -> BalanceMap:
-    return BalanceMap(m.balance(end=dt and dt.timestamp()), account_map())
+    return BalanceMap(m.balance(end=dt.timestamp() if dt else None), account_map())
 
 
 def accounts_changed() -> None:

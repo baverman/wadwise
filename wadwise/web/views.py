@@ -1,3 +1,5 @@
+import io
+import json
 import subprocess
 from datetime import date as dt_date
 from datetime import datetime, timedelta
@@ -8,7 +10,7 @@ from covador.flask import form, query_string
 from flask import abort, flash, redirect, render_template, request, url_for
 from werkzeug.wrappers import Response
 
-from wadwise import db, state, utils
+from wadwise import db, monzo, state, utils
 from wadwise import model as m
 from wadwise.web import app
 
@@ -222,6 +224,43 @@ def import_data_apply() -> Response:
     state.accounts_changed()
     state.transactions_changed()
     return redirect(url_for('account_view'))
+
+
+@app.route('/import/monzo', methods=['POST'])
+@form(src=str)
+def import_monzo(src: str) -> str:
+    if 'monzo' in request.files:
+        data = monzo.prepare(io.StringIO(request.files['monzo'].read().decode()))
+
+    max_dt = data[-1]['date']
+    min_dt = data[0]['date']
+
+    def get_amount(tr: m.TransactionAny) -> tuple[float, str]:
+        for aid, amount, cur in tr['ops']:
+            if aid == src:
+                return (amount, cur)
+        raise RuntimeError('Never')
+
+    existing = m.account_transactions(aid=src, start_date=min_dt, end_date=max_dt + timedelta(seconds=1))
+    existing_keys = set((it['date'], get_amount(it)) for it in existing)
+
+    for it in data:
+        dt = it['date']
+        if (dt, (it['amount'], it['cur'])) in existing_keys:
+            it['ignore'] = True
+        it['date'] = dt.timestamp()  # type: ignore[typeddict-item]
+        it['date_str'] = dt.strftime('%Y-%m-%d')  # type: ignore[typeddict-unknown-key]
+
+    bend = state.current_balance(max_dt)[src].total
+    return render_template('import_transactions.html', src=src, balance=bend, transactions=data)
+
+
+@app.route('/import/transactions', methods=['POST'])
+@form(src=str, transactions=json.loads)
+def import_transactions_apply(src: str, transactions: list[monzo.ImportTransaction]) -> Response:
+    monzo.import_data(src, transactions)
+    state.transactions_changed()
+    return redirect(url_for('account_view', aid=src))
 
 
 @app.route('/settings/')

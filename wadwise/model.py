@@ -1,9 +1,9 @@
 import json
 import operator
 from datetime import datetime
-from typing import Any, Iterable, Literal, Optional, TypedDict, Union, overload
+from typing import Iterable, Literal, Optional, TypedDict, Union, overload
 
-from sqlbind_t import VALUES, WHERE, E, in_range, sqlf, text, AnySQL
+from sqlbind_t import VALUES, WHERE, E, in_range, sqlf, text
 
 from wadwise.db import (
     QueryList,
@@ -134,9 +134,9 @@ def delete_transaction(tid: str) -> None:
     delete('transactions', tid=tid)
 
 
-def account_transactions(**eq: Any) -> list[TransactionAny]:
-    start_date = eq.pop('start_date')
-    end_date = eq.pop('end_date')
+def account_transactions(
+    *, start_date: datetime | None = None, end_date: datetime | None = None, **eq: object
+) -> list[TransactionAny]:
     cond = [in_range(E.t.date, start_date and start_date.timestamp(), end_date and end_date.timestamp())]
     query = f"""@\
         SELECT tid, date, desc,
@@ -150,7 +150,7 @@ def account_transactions(**eq: Any) -> list[TransactionAny]:
     """
     data: QueryList[TransactionRaw] = execute_d(sqlf(query))  # type: ignore[assignment]
 
-    aid = eq.pop('aid', None)
+    aid: str = eq.pop('aid', None)  # type: ignore[assignment]
     by_amount = operator.itemgetter(1)
 
     result: list[TransactionAny] = []

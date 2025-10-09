@@ -3,39 +3,32 @@ from datetime import date as dt_date
 from datetime import datetime, timedelta
 from datetime import time as dt_time
 from functools import wraps
-from typing import TYPE_CHECKING, Any, Callable, Mapping, TypeVar
+from typing import Any, Callable, Mapping, ParamSpec, TypeVar
 
 K = TypeVar('K')
 V = TypeVar('V')
 R = TypeVar('R', covariant=True)
-
-if TYPE_CHECKING:
-    from typing_extensions import ParamSpec, TypeVarTuple, Unpack
-
-    P = ParamSpec('P')
-    Ts = TypeVarTuple('Ts')
-else:
-    Unpack, P, Ts, ParamSpec, TypeVarTuple = [list] * 5
+P = ParamSpec('P')
 
 
 def pick_keys(d: Mapping[K, V], *keys: K) -> dict[K, V]:
     return {k: d[k] for k in keys}
 
 
-def cached(fn: Callable[[Unpack[Ts]], R]) -> Callable[[Unpack[Ts]], R]:
+def cached(fn: Callable[P, R]) -> Callable[P, R]:
     cache: dict[Any, R] = {}
 
     @wraps(fn)
-    def inner(*args: Unpack[Ts]) -> R:
+    def inner(*args: P.args, **kwargs: P.kwargs) -> R:
         try:
             return cache[args]
         except KeyError:
             pass
 
-        result = cache[args] = fn(*args)
+        result = cache[args] = fn(*args, **kwargs)
         return result
 
-    def invalidate(*args: Unpack[Ts]) -> None:
+    def invalidate(*args: P.args, **kwargs: P.kwargs) -> None:
         cache.pop(args, None)
 
     inner.invalidate = invalidate  # type: ignore[attr-defined]

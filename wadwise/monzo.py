@@ -1,12 +1,10 @@
 import csv
-import sys
 import functools
 from datetime import datetime
-from pprint import pprint
+from typing import IO, TypedDict
 
-import click
+from .model import Account, Operation, account_by_id, account_by_name, create_transaction, op, op2
 
-from .model import account_by_name, op, Account, op2, create_transaction
 
 @functools.lru_cache(None)
 def get_acc(name: str) -> Account:
@@ -16,85 +14,83 @@ def get_acc(name: str) -> Account:
 
 
 FMT = '%d/%m/%Y:%H:%M:%S'
-IFMT = '"%Y-%m-%d %H:%M'
 
 
-def action_joint_me(acc, amount):
+def action_joint_me(src: str, amount: float, cur: str) -> tuple[list[Operation], str]:
     ira = get_acc('Assets:Ira')['aid']
     joint = get_acc('Expenses:Joint')['aid']
     return (
-        [op(acc['aid'], amount, 'GBP'), op(ira, -amount/2, 'GBP'), op(joint, -amount/2, 'GBP')],
-        f'Joint deposit {-amount}'
-    )
-
-def action_joint_ira(acc, amount):
-    assert False
-    ira = get_acc('Assets:Ira')['aid']
-    joint = get_acc('Expenses:Joint')['aid']
-    return (
-        [op(acc['aid'], amount, 'GBP'), op(ira, -amount/2, 'GBP'), op(joint, -amount/2, 'GBP')],
-        f'Joint deposit {-amount}'
+        [op(src, amount, cur), op(ira, -amount / 2, cur), op(joint, -amount / 2, 'GBP')],
+        f'Joint deposit {-amount}',
     )
 
 
-@click.group()
-def cli():
-    pass
+# def action_joint_partner(src, amount):
+#     assert False
+#     ira = get_acc('Assets:Ira')['aid']
+#     joint = get_acc('Expenses:Joint')['aid']
+#     return (
+#         [op(src, amount, 'GBP'), op(ira, -amount / 2, 'GBP'), op(joint, -amount / 2, 'GBP')],
+#         f'Joint deposit {-amount}',
+#     )
 
 
-@cli.command('prepare')
-@click.argument('data_fname')
-def prepare(data_fname):
-    data = csv.DictReader(open(data_fname))
+class TransactionData(TypedDict):
+    date: datetime
+    type: str
+    cur: str
+    key: str
+    amount: float
+    category: str
+    name: str
+    ignore: bool
 
-    fields = ['Date', 'Action', 'Desc', 'Type', 'Category', 'Name', 'Amount']
-    writer = csv.DictWriter(sys.stdout, fieldnames=fields)
-    writer.writeheader()
 
+def prepare(data_stream: IO[str]) -> list[TransactionData]:
+    data = csv.DictReader(data_stream)
+    result: list[TransactionData] = []
     for row in data:
         amount = float(row['Amount'])
         dt = datetime.strptime(row['Date'].strip() + ':' + row['Time'].strip(), FMT)
-        out = {'Date': '"' + dt.strftime('%Y-%m-%d %H:%M'), 'Type': row['Type'].strip(),
-               'Amount': amount, 'Category': row['Category'].strip(), 'Name': row['Name'].strip()}
-        writer.writerow(out)
+        key = row['Type'].strip() + ':' + row['Name'].strip()
+        result.append(
+            {
+                'date': dt,
+                'type': row['Type'].strip(),
+                'cur': 'GBP',
+                'key': key,
+                'amount': amount,
+                'category': row['Category'].strip(),
+                'name': row['Name'].strip(),
+                'ignore': False,
+            }
+        )
+    return result
 
 
-@cli.command('import')
-@click.argument('account')
-@click.argument('data_fname')
-@click.option('-n', '--dry', is_flag=True)
-def import_data(account, data_fname, dry):
-    acc = get_acc(account)
-    data = csv.DictReader(open(data_fname))
-    transactions = []
-    for it in  data:
-        if not it['Date']:
-            continue
+class ImportTransaction(TypedDict):
+    date: float
+    amount: float
+    cur: str
+    dest: str
+    name: str | None
+    desc: str | None
 
-        assert it['Action']
-        action, _, param = it['Action'].partition(':')
-        amount = float(it['Amount'])
-        dt = datetime.strptime(it['Date'], IFMT)
-        if action == 'dest':
-            dest = get_acc(param)
-            transactions.append((
-                op2(acc['aid'], dest['aid'], -amount, 'GBP'),
-                dt,
-                it['Desc'] or None
-            ))
-        elif action == 'joint-me':
-            ops, desc = action_joint_me(acc, amount)
+
+def import_data(src: str, data: list[ImportTransaction]) -> None:
+    transactions: list[tuple[list[Operation], datetime, str | None]] = []
+    for it in data:
+        dt = datetime.fromtimestamp(it['date'])
+        dest = it['dest']
+        amount = it['amount']
+        cur = it['cur']
+        if dest == 'joint-me':
+            ops, desc = action_joint_me(src, amount, cur)
             transactions.append((ops, dt, desc))
         else:
-            raise Exception(f'Unknown action: {action}')
+            _account = account_by_id(dest)
+            assert _account, f'{dest} not found'
+            transactions.append((list(op2(src, dest, -amount, cur)), dt, it.get('desc') or it['name'] or None))
 
-    if dry:
-        for it in transactions:
-            print(it)
-    else:
-        for it in transactions:
-            create_transaction(*it)
-
-
-if __name__ == '__main__':
-    cli()
+    for tran in transactions:
+        create_transaction(*tran)

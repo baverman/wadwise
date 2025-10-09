@@ -1,6 +1,7 @@
 # type: ignore
 import json
 from datetime import datetime
+
 import click
 
 
@@ -28,6 +29,7 @@ def report():
 @cli.command('list-accounts')
 def list_accounts():
     from wadwise import model as m
+
     amap = m.account_list()
     for it in sorted(amap.values(), key=lambda x: x['full_name']):
         print(it['full_name'])
@@ -38,7 +40,7 @@ def list_accounts():
 @click.option('--month')
 def transactions(account, month):
     from wadwise import model as m
-    from wadwise import utils, state
+    from wadwise import state, utils
 
     dt = datetime.strptime(month, '%Y-%m')
     acc = m.account_by_name(account)
@@ -54,7 +56,9 @@ def transactions(account, month):
     def get_dest(ops):
         return ' / '.join(amap[it[0]]['full_name'] for it in ops if it[0] != acc['aid'])
 
-    result = m.account_transactions(aid=acc['aid'], start_date=utils.month_start(dt), end_date=utils.next_month_start(dt))
+    result = m.account_transactions(
+        aid=acc['aid'], start_date=utils.month_start(dt), end_date=utils.next_month_start(dt)
+    )
     for r in reversed(result):
         print(r['date'].strftime('%Y-%m-%d %H:%M'), get_amount(r['ops']), get_dest(r['ops']), sep='\t')
 
