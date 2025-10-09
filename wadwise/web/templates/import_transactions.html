@@ -67,7 +67,7 @@ function tran_form() {
     <input name="transactions" x-ref="transactions" hidden />
     <p>
         Account: {{ env.amap[src].full_name }}<br>
-        Balance: <span x-text="balance.GBP"></span> + <span x-text="total()"></span> = <span x-text="balance.GBP + total()"></span>
+        Balance: <span x-text="balance.GBP.toFixed(2)"></span> + <span x-text="total().toFixed(2)"></span> = <span x-text="(balance.GBP + total()).toFixed(2)"></span>
     </p>
 
     <template x-if="error"><p x-text="error"></p></template>

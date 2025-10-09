@@ -251,6 +251,7 @@ def import_monzo(src: str) -> str:
         it['date'] = dt.timestamp()  # type: ignore[typeddict-item]
         it['date_str'] = dt.strftime('%Y-%m-%d')  # type: ignore[typeddict-unknown-key]
 
+    data.sort(reverse=True, key=lambda x: x['date'])
     bend = state.current_balance(max_dt)[src].total
     return render_template('import_transactions.html', src=src, balance=bend, transactions=data)
 
