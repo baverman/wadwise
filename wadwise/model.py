@@ -297,6 +297,47 @@ def combine_states(*states: BState) -> BState:  # pragma: no cover
     return rstate
 
 
+class Joint:
+    def __init__(self, *, my_joint: str, partner_joint: str, partner_acc: str, clear: str):
+        mjacc = account_by_id(my_joint)
+        pjacc = account_by_id(partner_joint)
+        assert mjacc and pjacc
+        p1 = mjacc['parent']
+        p2 = pjacc['parent']
+        assert p1 and p1 == p2
+        self.parent_joint = p1
+        self.my_joint = my_joint
+        self.partner_joint = partner_joint
+        self.partner_acc = partner_acc
+        self.clear = clear
+
+    def transaction(
+        self, src: str, dest: str, amount: float, cur: str, date: datetime | None = None, desc: str | None = None
+    ) -> str:
+        if dest == self.parent_joint:
+            if src == self.partner_acc:
+                ops = [
+                    op(self.partner_joint, amount, cur),
+                    op(src, -amount / 2, cur),
+                    op(self.clear, -amount / 2, cur),
+                ]
+            else:
+                ops = [
+                    *op2(src, self.my_joint, amount, cur),
+                    *op2(self.clear, self.partner_acc, amount / 2, cur),
+                ]
+        elif src == self.parent_joint:
+            ops = [
+                op(self.my_joint, -amount / 2, cur),
+                op(self.partner_joint, -amount / 2, cur),
+                op(dest, amount / 2, cur),
+                op(self.clear, amount / 2, cur),
+            ]
+        else:
+            raise RuntimeError(f'Invalid src/dest account: {src}/{dest}')
+        return create_transaction(ops, date, desc)
+
+
 @transaction()
 def create_tables() -> None:
     # Initial tables

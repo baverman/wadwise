@@ -4,3 +4,4 @@
 *.http
 sqlbind.py
 .coverage
+model.gnumeric

@@ -2,7 +2,7 @@ import datetime
 
 import pytest
 
-from wadwise import db
+from wadwise import db, state
 from wadwise import model as m
 
 
@@ -128,3 +128,55 @@ def test_create_initial(dbconn):
     m.create_initial_accounts()
     db.execute_raw('DELETE FROM accounts')
     m.create_initial_accounts()
+
+
+def test_joint_transactions_case(dbconn):
+    cur = 'GBP'
+    make_acc('a:partner')
+    a_me = make_acc('a:personal')
+    a_partner = make_acc('a:partner:joint')
+    i = make_acc('i:salary')
+    q_joint = make_acc('q:joint')
+    q_joint_me = make_acc('q:joint:me')
+    q_joint_partner = make_acc('q:joint:partner')
+    q_clear = make_acc('q:clear')
+    e_joint = make_acc('e:joint')
+
+    j = m.Joint(my_joint=q_joint_me, partner_joint=q_joint_partner, partner_acc=a_partner, clear=q_clear)
+
+    m.create_transaction(m.op2(i, a_me, 5000, cur))
+
+    j.transaction(a_me, q_joint, 1000, cur, from_ts(10))
+    j.transaction(a_me, q_joint, 2000, cur, from_ts(20))
+    j.transaction(a_partner, q_joint, 1500, cur, from_ts(30))
+    j.transaction(a_partner, q_joint, 700, cur, from_ts(40))
+
+    bal = state.current_balance()
+    assert bal[a_me].total[cur] == 2000
+    assert bal[a_partner].total[cur] == 400
+    assert bal[q_joint].total[cur] == 5200
+    assert bal[q_joint_me].total[cur] == 3000
+    assert bal[q_joint_partner].total[cur] == 2200
+    assert bal[q_clear].total[cur] == -2600
+
+    j.transaction(q_joint, e_joint, 4000, cur, from_ts(50))
+    state.transactions_changed()
+
+    bal = state.current_balance()
+    assert bal[a_me].total[cur] == 2000
+    assert bal[a_partner].total[cur] == 400
+    assert bal[q_joint].total[cur] == 1200
+    assert bal[q_joint_me].total[cur] == 1000
+    assert bal[q_joint_partner].total[cur] == 200
+    assert bal[q_clear].total[cur] == -600
+
+    j.transaction(q_joint, e_joint, 1200, cur, from_ts(60))
+    state.transactions_changed()
+
+    bal = state.current_balance()
+    assert bal[a_me].total[cur] == 2000
+    assert bal[a_partner].total[cur] == 400
+    assert bal[q_joint].total[cur] == 0
+    assert bal[q_joint_me].total[cur] == 400
+    assert bal[q_joint_partner].total[cur] == -400
+    assert bal[q_clear].total[cur] == 0
