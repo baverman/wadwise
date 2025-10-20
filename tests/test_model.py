@@ -142,7 +142,9 @@ def test_joint_transactions_case(dbconn):
     q_clear = make_acc('q:clear')
     e_joint = make_acc('e:joint')
 
-    j = m.Joint(my_joint=q_joint_me, partner_joint=q_joint_partner, partner_acc=a_partner, clear=q_clear)
+    ja = {'parent': q_joint, 'clear': q_clear, 'joints': [q_joint_me, q_joint_partner], 'assets': [a_partner]}
+
+    j = m.Joint(ja)
 
     m.create_transaction(m.op2(i, a_me, 5000, cur))
 

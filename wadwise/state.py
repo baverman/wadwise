@@ -167,7 +167,7 @@ def set_cur_list(cur_list: list[str]) -> None:
     m.set_param('cur_list', json.dumps(cur_list))
 
 
-def get_joint_accounts() -> list[dict[str, object]]:
+def get_joint_accounts() -> list[m.JointAccount]:
     return json.loads(m.get_param('accounts.joint') or '[]') or []
 
 

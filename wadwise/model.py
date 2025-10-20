@@ -88,6 +88,13 @@ class AccType:
     LIABILITY = 'l'
 
 
+class JointAccount(TypedDict):
+    parent: str
+    clear: str
+    joints: str
+    assets: str
+
+
 acc_types = [(v, k.capitalize()) for k, v in vars(AccType).items() if not k.startswith('_')]
 sheet_accounts = {AccType.EQUITY, AccType.ASSET, AccType.LIABILITY}
 
@@ -327,18 +334,12 @@ def combine_states(*states: BState) -> BState:  # pragma: no cover
 
 
 class Joint:
-    def __init__(self, *, my_joint: str, partner_joint: str, partner_acc: str, clear: str):
-        mjacc = account_by_id(my_joint)
-        pjacc = account_by_id(partner_joint)
-        assert mjacc and pjacc
-        p1 = mjacc['parent']
-        p2 = pjacc['parent']
-        assert p1 and p1 == p2
-        self.parent_joint = p1
-        self.my_joint = my_joint
-        self.partner_joint = partner_joint
-        self.partner_acc = partner_acc
-        self.clear = clear
+    def __init__(self, account: JointAccount):
+        self.parent_joint = account['parent']
+        self.my_joint = account['joints'][0]
+        self.partner_joint = account['joints'][1]
+        self.partner_acc = account['assets'][0]
+        self.clear = account['clear']
 
     def transaction(
         self, src: str, dest: str, amount: float, cur: str, date: datetime | None = None, desc: str | None = None
