@@ -19,6 +19,7 @@ class Env:
     cur_sort_key = lambda r, d={'RUB': 'zzzzz'}: d.get(r[0], r[0])
     cur_sort_key1 = lambda r, d={'RUB': 'zzzzz'}: d.get(r, r)
     hidden_options = [Option2('', 'Inherit'), Option2('1', 'Hide'), Option2('0', 'Show')]
+    special_types = {'': '', m.Joint.type: ' (joint)'}
 
     def __init__(self, today: Optional[date] = None) -> None:
         self.today = today or date.today()
@@ -68,6 +69,15 @@ class Env:
             v.sort(key=key)
 
         result.extend((amap[gaid]['name'], children) for gaid, children in groups.items())
+
+        joints = self.joint_accounts
+        if joints:
+            result.append(
+                (
+                    'Joint Ops',
+                    [Option(f'_joint/{it["parent"]}', amap[it['parent']]['name'], False) for it in joints.values()],
+                )
+            )
         return result
 
     def account_list(self, exclude: Optional[str] = None, root: bool = False) -> list[Option]:
@@ -117,6 +127,10 @@ class Env:
             keys |= self.total(it).keys()
         return sorted(keys, key=Env.cur_sort_key1)
 
+    @cached_property
+    def joint_accounts(self) -> dict[str, m.JointAccount]:
+        return {it['parent']: it for it in m.get_joint_accounts()}
+
 
 class AccState:
     def __init__(self, account: m.AccountExt, bmap: 'BalanceMap'):
@@ -165,14 +179,6 @@ def get_cur_list() -> list[str]:
 
 def set_cur_list(cur_list: list[str]) -> None:
     m.set_param('cur_list', json.dumps(cur_list))
-
-
-def get_joint_accounts() -> list[m.JointAccount]:
-    return json.loads(m.get_param('accounts.joint') or '[]') or []
-
-
-def set_joint_accounts(joint_accounts: list[object]) -> None:
-    m.set_param('accounts.joint', json.dumps(joint_accounts))
 
 
 @utils.cached

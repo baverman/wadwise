@@ -97,8 +97,8 @@ def account_delete(aid: str) -> Response:
 
 
 @app.route('/transaction/edit')
-@query_string(dest=str, tid=opt(str), split=opt(bool))
-def transaction_edit(dest: str, tid: Optional[str], split: bool) -> str:
+@query_string(dest=str, tid=opt(str), split=opt(bool), type=opt(str, ''))
+def transaction_edit(dest: str, tid: Optional[str], split: bool, type: str) -> str:
     assert tid or dest
     if tid:
         (trn,) = m.account_transactions(aid=dest, tid=tid)
@@ -111,19 +111,27 @@ def transaction_edit(dest: str, tid: Optional[str], split: bool) -> str:
     if split or form.get('split'):
         return render_template('transaction/split.html', form=form, cur_list=cur_list)
     else:
-        return render_template('transaction/edit.html', form=form, cur_list=cur_list)
+        return render_template('transaction/edit.html', form=form, cur_list=cur_list, type=type)
 
 
 transaction_actions_t = opt(str) | enum('delete', 'copy', 'copy-now')
 
 
 @app.route('/transaction/edit', methods=['POST'])
-@query_string(dest=str, tid=opt(str))
+@query_string(dest=str, tid=opt(str), type=opt(str, ''))
 @form(src=str, amount=float, desc=opt(str), cur=str, action=transaction_actions_t, _=combine_date(), **split_date())
 def transaction_save(
-    tid: Optional[str], src: str, dest: str, amount: float, cur: str, action: str, desc: Optional[str], date: datetime
+    tid: Optional[str],
+    src: str,
+    dest: str,
+    amount: float,
+    cur: str,
+    action: str,
+    desc: Optional[str],
+    date: datetime,
+    type: str,
 ) -> Response:
-    ops = m.op2(src, dest, amount, cur)
+    ops = m.dop2(type, src, dest, amount, cur)
     return transaction_save_helper(action, tid, ops, dest, date, desc)
 
 
@@ -268,7 +276,7 @@ def import_transactions_apply(src: str, transactions: list[monzo.ImportTransacti
 @app.route('/settings/')
 def settings() -> str:
     return render_template(
-        'settings.html', fav_ids=state.get_favs(), cur_list=state.get_cur_list(), joints=state.get_joint_accounts()
+        'settings.html', fav_ids=state.get_favs(), cur_list=state.get_cur_list(), joints=m.get_joint_accounts()
     )
 
 
@@ -282,7 +290,7 @@ def favs_edit_apply(ids: list[str]) -> Response:
 @app.route('/settings/joint-accounts', methods=['POST'])
 @form(data=json.loads)
 def join_accounts_edit_apply(data: list[object]) -> Response:
-    state.set_joint_accounts(data)
+    m.set_joint_accounts(data)
     return redirect(url_for('settings'))
 
 

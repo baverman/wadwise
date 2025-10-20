@@ -1,12 +1,10 @@
 # ToDo
 * Joint account import
-  * Add special accounts into selector
-  * Generic handling of special accounts
   * Remove specials from import transaction views
   * Reconcile current joint transactions to a new scheme
 
+* Second precise times in transactions
 * Manual import decisions should not be overrided by [Set similar]
-
 * make global date selector to be able to navigate through
   transactions for particular period
 * balance table should be by line per currency if cur num is > 3
