@@ -57,7 +57,7 @@ def account_view(aid: Optional[str]) -> str:
 @app.route('/account/edit')
 @query_string(aid=opt(str), parent=opt(str))
 def account_edit(aid: Optional[str], parent: Optional[str]) -> str:
-    form: Union[dict[str, str], m.Account]
+    form: Union[dict[str, str | None], m.Account]
     if aid:
         account = m.account_by_id(aid)
         if not account:
@@ -67,7 +67,7 @@ def account_edit(aid: Optional[str], parent: Optional[str]) -> str:
         pacc = m.account_by_id(parent)
         if not pacc:
             return abort(404)
-        form = {'type': pacc['type'], 'parent': parent}
+        form = {'type': pacc['type'], 'parent': parent, 'is_hidden': None}
     form['hidden_value'] = '' if form['is_hidden'] is None else str(int(form['is_hidden']))  # type: ignore[typeddict-unknown-key]
     return render_template('account/edit.html', form=form)
 
@@ -267,13 +267,22 @@ def import_transactions_apply(src: str, transactions: list[monzo.ImportTransacti
 
 @app.route('/settings/')
 def settings() -> str:
-    return render_template('settings.html', fav_ids=state.get_favs(), cur_list=state.get_cur_list())
+    return render_template(
+        'settings.html', fav_ids=state.get_favs(), cur_list=state.get_cur_list(), joints=state.get_joint_accounts()
+    )
 
 
 @app.route('/settings/favs', methods=['POST'])
 @form(ids=opt(str, src='acc', multi=True))
 def favs_edit_apply(ids: list[str]) -> Response:
     state.set_favs(ids)
+    return redirect(url_for('settings'))
+
+
+@app.route('/settings/joint-accounts', methods=['POST'])
+@form(data=json.loads)
+def join_accounts_edit_apply(data: list[object]) -> Response:
+    state.set_joint_accounts(data)
     return redirect(url_for('settings'))
 
 

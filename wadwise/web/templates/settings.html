@@ -16,6 +16,27 @@ function favs_form() {
         }
     }
 }
+
+function joint_form() {
+    return {
+        'joints': {{ joints | tojson }},
+        add() {
+            this.joints.push({parent: '', joints: ['', ''], assets:[''], clear: ''})
+        },
+        add_party(idx) {
+            this.joints[idx].joints.push('')
+            this.joints[idx].assets.push('')
+        },
+        remove_party(idx, jidx) {
+            this.joints[idx].joints.splice(jidx+1, 1)
+            this.joints[idx].assets.splice(jidx, 1)
+        },
+        remove(idx) {
+            this.joints.splice(idx, 1)
+        }
+    }
+}
+
 </script>
 
 <a href="{{ url_for('account_view') }}">Back</a>
@@ -27,12 +48,40 @@ function favs_form() {
 <form method="POST" action="./favs" x-data="favs_form">
     <template x-for="(it, idx) in ids" :key="idx">
     <p>
-        {{ select_group('acc', '', env.account_groups, **{'x-model': "ids[idx]"}) }}
+        {{ select_group('acc', '---', env.account_groups, **{'x-model': "ids[idx]"}) }}
         <button @click.prevent="remove(idx)">Remove</button>
     </p>
     </template>
     <p>
         <button @click.prevent="add">Add</button>
+    </p>
+    <p>
+        <button type="submit">Save</button>
+    </p>
+</form>
+
+<h2>Joint accounts</h2>
+
+<form method="POST" action="./joint-accounts" x-data="joint_form">
+    <textarea name="data" x-text="JSON.stringify(joints)" hidden></textarea>
+    <template x-for="(it, idx) in joints" :key="idx">
+    <p>
+        Main: {{ select_group('parent', '---', env.account_groups, **{'x-model': "it.parent"}) }}<br>
+        Me: {{ select_group('me', '---', env.account_groups, **{'x-model': "it.joints[0]"}) }}<br>
+        Clear: {{ select_group('clear', '---', env.account_groups, **{'x-model': "it.clear"}) }}<br>
+        <template x-for="j in it.assets.length">
+            <p>
+                Joint <span x-text="j"></span>: {{ select_group('parent', '---', env.account_groups, **{'x-model': "it.joints[j]"}) }}<br>
+                Asset <span x-text="j"></span>: {{ select_group('parent', '---', env.account_groups, **{'x-model': "it.assets[j-1]"}) }}<br>
+                <button @click.prevent="remove_party(idx, j-1)">Remove Party</button>
+            </p>
+        </template>
+        <button @click.prevent="add_party(idx)">Add Party</button>
+        <button @click.prevent="remove(idx)">Remove Joint</button>
+    </p>
+    </template>
+    <p>
+        <button @click.prevent="add">Add Joint</button>
     </p>
     <p>
         <button type="submit">Save</button>

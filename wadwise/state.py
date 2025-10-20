@@ -167,6 +167,14 @@ def set_cur_list(cur_list: list[str]) -> None:
     m.set_param('cur_list', json.dumps(cur_list))
 
 
+def get_joint_accounts() -> list[dict[str, object]]:
+    return json.loads(m.get_param('accounts.joint') or '[]') or []
+
+
+def set_joint_accounts(joint_accounts: list[object]) -> None:
+    m.set_param('accounts.joint', json.dumps(joint_accounts))
+
+
 @utils.cached
 def month_balance(dt: datetime) -> BalanceMap:
     balances = m.balance(start=dt.timestamp(), end=utils.next_month_start(dt).timestamp())

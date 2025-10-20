@@ -1,6 +1,5 @@
 # ToDo
 * Joint account import
-  * Joint account settings editor
   * Add special accounts into selector
   * Generic handling of special accounts
   * Remove specials from import transaction views
