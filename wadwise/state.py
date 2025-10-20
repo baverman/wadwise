@@ -18,6 +18,7 @@ class Env:
     acc_types = [Option2(*it) for it in m.acc_types]
     cur_sort_key = lambda r, d={'RUB': 'zzzzz'}: d.get(r[0], r[0])
     cur_sort_key1 = lambda r, d={'RUB': 'zzzzz'}: d.get(r, r)
+    hidden_options = [Option2('', 'Inherit'), Option2('1', 'Hide'), Option2('0', 'Show')]
 
     def __init__(self, today: Optional[date] = None) -> None:
         self.today = today or date.today()
@@ -37,10 +38,30 @@ class Env:
         if favs:
             result.append(('Favorites', [Option(it['aid'], it['full_name'], False) for it in favs]))
 
+        hidden: dict[str | None, bool] = {}
+
+        def is_hidden(aid: str | None) -> bool:
+            try:
+                return hidden[aid]
+            except KeyError:
+                pass
+
+            if aid is None:
+                result = False
+            else:
+                acc = amap[aid]
+                if acc['is_hidden'] is not None:
+                    result = acc['is_hidden']
+                else:
+                    result = is_hidden(acc['parent'])
+
+            hidden[aid] = result
+            return result
+
         for it in amap.values():
-            if it['parent'] and it['aid'] not in fids:
+            if it['parent'] and it['aid']:
                 atitle = ':'.join([amap[p]['name'] for p in it['parents'][1:]] + [it['name']])
-                groups.setdefault(it['parents'][0], []).append(Option(it['aid'], atitle, it['is_placeholder']))
+                groups.setdefault(it['parents'][0], []).append(Option(it['aid'], atitle, is_hidden(it['aid'])))
 
         key = itemgetter(1)
         for v in groups.values():

@@ -68,12 +68,13 @@ def account_edit(aid: Optional[str], parent: Optional[str]) -> str:
         if not pacc:
             return abort(404)
         form = {'type': pacc['type'], 'parent': parent}
+    form['hidden_value'] = '' if form['is_hidden'] is None else str(int(form['is_hidden']))  # type: ignore[typeddict-unknown-key]
     return render_template('account/edit.html', form=form)
 
 
 @app.route('/account/edit', methods=['POST'])
 @query_string(aid=opt(str))
-@form(name=str, parent=opt(str), type=str, desc=opt(str), is_placeholder=opt(bool, False))
+@form(name=str, parent=opt(str), type=str, desc=opt(str), is_placeholder=opt(bool, False), is_hidden=opt(bool))
 def account_save(aid: Optional[str], **form: Unpack[m.AccountB]) -> Response:
     if aid:
         m.update_account(aid, **form)

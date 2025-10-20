@@ -135,3 +135,11 @@ def backup() -> str:
         src.backup(dst)
     dst.close()
     return fname
+
+
+def get_version() -> int:
+    return execute(text('pragma user_version')).scalar()  # type: ignore[no-any-return]
+
+
+def set_version(version: int) -> None:
+    execute_raw(f'pragma user_version = {version}')

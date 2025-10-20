@@ -12,6 +12,7 @@
     <p><textarea placeholder="description" name="desc">{{ form.desc or ''}}</textarea></p>
     <p>{{ checkbox('is_placeholder', form.is_placeholder, id="is_placeholder") }}
        <label for="is_placeholder">Placeholder account</label></p>
+    <p>Show: {{ select('is_hidden', form.hidden_value, env.hidden_options) }}</p>
     <button type="submit">Save</button>
     {% if form.aid %}
     <button formaction="{{ url_for('account_delete', aid=form.aid) }}"

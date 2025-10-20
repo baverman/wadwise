@@ -12,9 +12,11 @@ from wadwise.db import (
     execute_d,
     execute_raw,
     gen_id,
+    get_version,
     insert,
     replace,
     select,
+    set_version,
     transaction,
     update,
 )
@@ -55,6 +57,7 @@ class AccountB(TypedDict):
     desc: Optional[str]
     parent: Optional[str]
     is_placeholder: bool
+    is_hidden: bool | None
 
 
 class Account(AccountB):
@@ -97,17 +100,43 @@ def create_account(
     desc: Optional[str] = None,
     aid: Optional[str] = None,
     is_placeholder: bool = False,
+    is_hidden: bool | None = None,
 ) -> str:
     aid = aid or gen_id()
-    insert('accounts', aid=aid, parent=parent, name=name, type=type, desc=desc, is_placeholder=is_placeholder)
+    insert(
+        'accounts',
+        aid=aid,
+        parent=parent,
+        name=name,
+        type=type,
+        desc=desc,
+        is_placeholder=is_placeholder,
+        is_hidden=is_hidden,
+    )
     return aid
 
 
 @transaction()
 def update_account(
-    aid: str, parent: Optional[str], name: str, type: str, desc: Optional[str], is_placeholder: bool
+    aid: str,
+    parent: Optional[str],
+    name: str,
+    type: str,
+    desc: Optional[str],
+    is_placeholder: bool,
+    is_hidden: bool | None,
 ) -> None:
-    update('accounts', 'aid', aid=aid, parent=parent, name=name, type=type, desc=desc, is_placeholder=is_placeholder)
+    update(
+        'accounts',
+        'aid',
+        aid=aid,
+        parent=parent,
+        name=name,
+        type=type,
+        desc=desc,
+        is_placeholder=is_placeholder,
+        is_hidden=is_hidden,
+    )
 
 
 @transaction()
@@ -341,54 +370,60 @@ class Joint:
 @transaction()
 def create_tables() -> None:
     # Initial tables
-    execute_raw(
-        """\
-            CREATE TABLE IF NOT EXISTS accounts (
-                aid TEXT NOT NULL PRIMARY KEY,
-                type TEXT NOT NULL,
-                name TEXT NOT NULL,
-                desc TEXT,
-                parent TEXT,
-                is_placeholder INTEGER NOT NULL DEFAULT 0
-            )
-        """
-    )
+    if get_version() < 1:
+        execute_raw(
+            """\
+                CREATE TABLE IF NOT EXISTS accounts (
+                    aid TEXT NOT NULL PRIMARY KEY,
+                    type TEXT NOT NULL,
+                    name TEXT NOT NULL,
+                    desc TEXT,
+                    parent TEXT,
+                    is_placeholder INTEGER NOT NULL DEFAULT 0
+                )
+            """
+        )
 
-    execute_raw(
-        """\
-            CREATE TABLE IF NOT EXISTS transactions (
-                tid TEXT NOT NULL PRIMARY KEY,
-                date INTEGER NOT NULL,
-                desc TEXT
-            )
-        """
-    )
+        execute_raw(
+            """\
+                CREATE TABLE IF NOT EXISTS transactions (
+                    tid TEXT NOT NULL PRIMARY KEY,
+                    date INTEGER NOT NULL,
+                    desc TEXT
+                )
+            """
+        )
 
-    execute_raw(
-        """\
-            CREATE TABLE IF NOT EXISTS ops (
-                tid TEXT NOT NULL,
-                aid TEXT NOT NULL,
-                amount INTEGER NOT NULL,
-                cur TEXT NOT NULL
-            )
-        """
-    )
+        execute_raw(
+            """\
+                CREATE TABLE IF NOT EXISTS ops (
+                    tid TEXT NOT NULL,
+                    aid TEXT NOT NULL,
+                    amount INTEGER NOT NULL,
+                    cur TEXT NOT NULL
+                )
+            """
+        )
 
-    execute_raw(
-        """\
-            CREATE TABLE IF NOT EXISTS params (
-                name TEXT NOT NULL PRIMARY KEY,
-                value TEXT
-            )
-        """
-    )
+        execute_raw(
+            """\
+                CREATE TABLE IF NOT EXISTS params (
+                    name TEXT NOT NULL PRIMARY KEY,
+                    value TEXT
+                )
+            """
+        )
 
-    # Indexes
-    execute_raw('CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_uniq_name ON accounts (parent, name)')
-    execute_raw('CREATE INDEX IF NOT EXISTS idx_ops_tid ON ops (tid)')
-    execute_raw('CREATE INDEX IF NOT EXISTS idx_ops_aid ON ops (aid)')
-    execute_raw('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions (date, tid)')
+        # Indexes
+        execute_raw('CREATE UNIQUE INDEX IF NOT EXISTS idx_accounts_uniq_name ON accounts (parent, name)')
+        execute_raw('CREATE INDEX IF NOT EXISTS idx_ops_tid ON ops (tid)')
+        execute_raw('CREATE INDEX IF NOT EXISTS idx_ops_aid ON ops (aid)')
+        execute_raw('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions (date, tid)')
+        set_version(1)
+
+    if get_version() < 2:
+        execute_raw('ALTER TABLE accounts ADD COLUMN is_hidden INTEGER')
+        set_version(2)
 
 
 def create_initial_accounts() -> None:
@@ -412,3 +447,4 @@ def drop_tables() -> None:
     execute_raw('DROP TABLE IF EXISTS transactions')
     execute_raw('DROP TABLE IF EXISTS ops')
     execute_raw('DROP TABLE IF EXISTS params')
+    set_version(0)

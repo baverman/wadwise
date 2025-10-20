@@ -1,7 +1,6 @@
 # ToDo
 * Joint account import
-  * Joint account settings, parse `#joint`
-  * Joint account preload
+  * Joint account settings editor
   * Add special accounts into selector
   * Generic handling of special accounts
   * Remove specials from import transaction views
@@ -9,7 +8,6 @@
 
 * Manual import decisions should not be overrided by [Set similar]
 
-* Hide Z accounts from selector
 * make global date selector to be able to navigate through
   transactions for particular period
 * balance table should be by line per currency if cur num is > 3
