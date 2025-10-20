@@ -14,7 +14,7 @@ from wadwise import db, monzo, state, utils
 from wadwise import model as m
 from wadwise.web import app
 
-datetime_t = DateTime('%Y-%m-%d%H:%M')
+datetime_t = DateTime('%Y-%m-%d%H:%M:%S')
 datetime_trunc_t = DateTime('%Y-%m-%d')
 date_t = Date('%Y-%m-%d')
 
