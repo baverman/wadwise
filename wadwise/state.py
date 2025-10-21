@@ -75,7 +75,7 @@ class Env:
             result.append(
                 (
                     'Joint Ops',
-                    [Option(f'_joint/{it["parent"]}', amap[it['parent']]['name'], False) for it in joints.values()],
+                    [Option(f'{it["parent"]}.joint', amap[it['parent']]['name'], False) for it in joints.values()],
                 )
             )
         return result
@@ -130,6 +130,10 @@ class Env:
     @cached_property
     def joint_accounts(self) -> dict[str, m.JointAccount]:
         return {it['parent']: it for it in m.get_joint_accounts()}
+
+    def account_title(self, aid: str) -> str:
+        aid, _, typ = aid.partition('.')
+        return self.amap[aid]['full_name'] + self.special_types[typ]
 
 
 class AccState:

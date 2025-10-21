@@ -4,7 +4,7 @@
 {% block content %}
 <form method="POST">
     <p>From:<br>{{ select_group('src', form.src, env.account_groups, tabindex='3') }}<p>
-    <p>To: {{ env.amap[form.dest].full_name }}{{ env.special_types[type] }}</p>
+    <p>To: {{ env.account_title(form.dest) }}</p>
     <p><input type="text" placeholder="amount" inputmode="decimal" name="amount"
               x-data="{}" @input="neg_input($event.target)"
               autofocus tabindex=1 value="{{ form.amount }}" size="8em" autocomplete="off">

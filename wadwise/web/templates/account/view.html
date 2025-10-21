@@ -108,7 +108,7 @@
 | <a href="{{ url_for('transaction_edit', dest=account.aid, split=1) }}">Add split</a>
 | <a href="{{ url_for('transaction_transfer_over', aid=account.aid, today=today_str) }}">Transfer over</a>
 {% if account.aid in env.joint_accounts %}
-| <a href="{{ url_for('transaction_edit', dest=account.aid, type='_joint') }}">Joint</a>
+| <a href="{{ url_for('transaction_edit', dest=account.aid + '.joint') }}">Joint</a>
 {% endif %}
 
 <div class="transaction-list">

@@ -97,8 +97,8 @@ def account_delete(aid: str) -> Response:
 
 
 @app.route('/transaction/edit')
-@query_string(dest=str, tid=opt(str), split=opt(bool), type=opt(str, ''))
-def transaction_edit(dest: str, tid: Optional[str], split: bool, type: str) -> str:
+@query_string(dest=str, tid=opt(str), split=opt(bool))
+def transaction_edit(dest: str, tid: Optional[str], split: bool) -> str:
     assert tid or dest
     if tid:
         (trn,) = m.account_transactions(aid=dest, tid=tid)
@@ -111,27 +111,19 @@ def transaction_edit(dest: str, tid: Optional[str], split: bool, type: str) -> s
     if split or form.get('split'):
         return render_template('transaction/split.html', form=form, cur_list=cur_list)
     else:
-        return render_template('transaction/edit.html', form=form, cur_list=cur_list, type=type)
+        return render_template('transaction/edit.html', form=form, cur_list=cur_list)
 
 
 transaction_actions_t = opt(str) | enum('delete', 'copy', 'copy-now')
 
 
 @app.route('/transaction/edit', methods=['POST'])
-@query_string(dest=str, tid=opt(str), type=opt(str, ''))
+@query_string(dest=str, tid=opt(str))
 @form(src=str, amount=float, desc=opt(str), cur=str, action=transaction_actions_t, _=combine_date(), **split_date())
 def transaction_save(
-    tid: Optional[str],
-    src: str,
-    dest: str,
-    amount: float,
-    cur: str,
-    action: str,
-    desc: Optional[str],
-    date: datetime,
-    type: str,
+    tid: Optional[str], src: str, dest: str, amount: float, cur: str, action: str, desc: Optional[str], date: datetime
 ) -> Response:
-    ops = m.dop2(type, src, dest, amount, cur)
+    dest, ops = m.dop2(src, dest, amount, cur)
     return transaction_save_helper(action, tid, ops, dest, date, desc)
 
 

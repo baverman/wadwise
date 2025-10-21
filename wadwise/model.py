@@ -298,11 +298,11 @@ def op2(a1: str, a2: str, amount: float, currency: str) -> tuple[Operation, Oper
     return op(a1, -amount, currency), op(a2, amount, currency)
 
 
-def dop2(type: str, a1: str, a2: str, amount: float, currency: str) -> Collection[Operation]:
-    ops = Joint.try_ops(type, a1, a2, amount, currency)
-    if ops is not None:
-        return ops
-    return op2(a1, a2, amount, currency)
+def dop2(a1: str, a2: str, amount: float, currency: str) -> tuple[str, Collection[Operation]]:
+    result = Joint.try_ops(a1, a2, amount, currency)
+    if result is not None:
+        return result
+    return a2, op2(a1, a2, amount, currency)
 
 
 def balance(start: Optional[float] = None, end: Optional[float] = None) -> Balance:
@@ -342,7 +342,7 @@ def combine_states(*states: BState) -> BState:  # pragma: no cover
 
 
 class Joint:
-    type = '_joint'
+    type = 'joint'
 
     def __init__(self, account: JointAccount):
         self.parent_joint = account['parent']
@@ -352,22 +352,20 @@ class Joint:
         self.clear = account['clear']
 
     @staticmethod
-    def try_ops(type: str, src: str, dest: str, amount: float, cur: str) -> list[Operation] | None:
-        prefix = f'{Joint.type}/'
+    def try_ops(src: str, dest: str, amount: float, cur: str) -> tuple[str, list[Operation]] | None:
+        suffix = f'.{Joint.type}'
         applicable = False
-        if src.startswith(prefix):
-            src = src[len(prefix) :]
+        main = ''
+        if src.endswith(suffix):
+            main = src = src[: -len(suffix)]
             applicable = True
-        if dest.startswith(prefix):
-            dest = dest[len(prefix) :]
-            applicable = True
-        if type == Joint.type:
+        elif dest.endswith(suffix):
+            main = dest = dest[: -len(suffix)]
             applicable = True
 
         if applicable:
             joints = {it['parent']: it for it in get_joint_accounts()}
-            main = src if src in joints else dest
-            return Joint(joints[main]).ops(src, dest, amount, cur)
+            return dest, Joint(joints[main]).ops(src, dest, amount, cur)
         return None
 
     def ops(self, src: str, dest: str, amount: float, cur: str) -> list[Operation]:
