@@ -129,10 +129,10 @@ class Env:
 
     @cached_property
     def joint_accounts(self) -> dict[str, m.JointAccount]:
-        return {it['parent']: it for it in m.get_joint_accounts()}
+        return m.get_joint_accounts()
 
     def account_title(self, aid: str) -> str:
-        aid, _, typ = aid.partition('.')
+        aid, typ = m.decode_account_id(aid)
         return self.amap[aid]['full_name'] + self.special_types[typ]
 
 

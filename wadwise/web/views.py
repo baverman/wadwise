@@ -123,8 +123,8 @@ transaction_actions_t = opt(str) | enum('delete', 'copy', 'copy-now')
 def transaction_save(
     tid: Optional[str], src: str, dest: str, amount: float, cur: str, action: str, desc: Optional[str], date: datetime
 ) -> Response:
-    dest, ops = m.dop2(src, dest, amount, cur)
-    return transaction_save_helper(action, tid, ops, dest, date, desc)
+    ops = m.dop2(src, dest, amount, cur)
+    return transaction_save_helper(action, tid, ops, m.decode_account_id(dest)[0], date, desc)
 
 
 def transaction_save_helper(
@@ -233,17 +233,29 @@ def import_monzo(src: str) -> str:
     if 'monzo' in request.files:
         data = monzo.prepare(io.StringIO(request.files['monzo'].read().decode()))
 
+    src_aid = m.decode_account_id(src)[0]
     data.sort(reverse=True, key=lambda x: x['date'])
     max_dt = data[0]['date']
     min_dt = data[-1]['date']
 
     def get_amount(tr: m.TransactionAny) -> tuple[float, str]:
         for aid, amount, cur in tr['ops']:
-            if aid == src:
+            if aid in src_aids:
                 return (amount, cur)
         raise RuntimeError('Never')
 
-    existing = m.account_transactions(aid=src, start_date=min_dt, end_date=max_dt + timedelta(seconds=1))
+    joints = m.get_joint_accounts()
+    src_joint = joints.get(src_aid)
+    if src_joint:
+        src_aids = set(src_joint['joints'])
+        data = [it for it in data if it['amount'] > 0]
+        existing = m.account_transactions(
+            aids=src_joint['joints'], start_date=min_dt, end_date=max_dt + timedelta(seconds=1)
+        )
+    else:
+        src_aids = {src_aid}
+        existing = m.account_transactions(aid=src_aid, start_date=min_dt, end_date=max_dt + timedelta(seconds=1))
+
     existing_keys = set((it['date'], get_amount(it)) for it in existing)
 
     for it in data:
@@ -253,7 +265,7 @@ def import_monzo(src: str) -> str:
         it['date'] = dt.timestamp()  # type: ignore[typeddict-item]
         it['date_str'] = dt.strftime('%Y-%m-%d')  # type: ignore[typeddict-unknown-key]
 
-    bend = state.current_balance(utils.next_month_start(max_dt))[src].total
+    bend = state.current_balance(utils.next_month_start(max_dt))[src_aid].total
     return render_template('import_transactions.html', src=src, balance=bend, transactions=data, bdate=max_dt)
 
 
@@ -262,13 +274,16 @@ def import_monzo(src: str) -> str:
 def import_transactions_apply(src: str, transactions: list[monzo.ImportTransaction]) -> Response:
     monzo.import_data(src, transactions)
     state.transactions_changed()
-    return redirect(url_for('account_view', aid=src))
+    return redirect(url_for('account_view', aid=m.decode_account_id(src)[0]))
 
 
 @app.route('/settings/')
 def settings() -> str:
     return render_template(
-        'settings.html', fav_ids=state.get_favs(), cur_list=state.get_cur_list(), joints=m.get_joint_accounts()
+        'settings.html',
+        fav_ids=state.get_favs(),
+        cur_list=state.get_cur_list(),
+        joints=list(m.get_joint_accounts().values()),
     )
 
 

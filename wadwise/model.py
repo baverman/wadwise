@@ -4,7 +4,7 @@ from collections.abc import Collection
 from datetime import datetime
 from typing import Iterable, Literal, Optional, TypedDict, Union, overload
 
-from sqlbind_t import VALUES, WHERE, E, in_range, sqlf, text
+from sqlbind_t import VALUES, WHERE, E, in_range, not_none, sqlf, text
 
 from wadwise.db import (
     QueryList,
@@ -92,8 +92,8 @@ class AccType:
 class JointAccount(TypedDict):
     parent: str
     clear: str
-    joints: str
-    assets: str
+    joints: list[str]
+    assets: list[str]
 
 
 acc_types = [(v, k.capitalize()) for k, v in vars(AccType).items() if not k.startswith('_')]
@@ -172,13 +172,13 @@ def delete_transaction(tid: str) -> None:
 
 
 def account_transactions(
-    *, start_date: datetime | None = None, end_date: datetime | None = None, **eq: object
+    *, start_date: datetime | None = None, end_date: datetime | None = None, aids: list[str] | None = None, **eq: object
 ) -> list[TransactionAny]:
     cond = [in_range(E.t.date, start_date and start_date.timestamp(), end_date and end_date.timestamp())]
     query = f"""@\
         SELECT tid, date, desc,
                json_group_array(json_array(aid, amount/100.0, cur)) as ops
-        FROM (SELECT distinct(tid) FROM ops {WHERE(**eq)})
+        FROM (SELECT distinct(tid) FROM ops {WHERE(E.aid.IN(not_none / aids), **eq)})
         INNER JOIN transactions t USING(tid)
         INNER JOIN ops USING(tid)
         {WHERE(*cond)}
@@ -298,11 +298,11 @@ def op2(a1: str, a2: str, amount: float, currency: str) -> tuple[Operation, Oper
     return op(a1, -amount, currency), op(a2, amount, currency)
 
 
-def dop2(a1: str, a2: str, amount: float, currency: str) -> tuple[str, Collection[Operation]]:
-    result = Joint.try_ops(a1, a2, amount, currency)
-    if result is not None:
-        return result
-    return a2, op2(a1, a2, amount, currency)
+def dop2(a1: str, a2: str, amount: float, currency: str) -> Collection[Operation]:
+    ops = Joint.try_ops(a1, a2, amount, currency)
+    if ops is not None:
+        return ops
+    return op2(a1, a2, amount, currency)
 
 
 def balance(start: Optional[float] = None, end: Optional[float] = None) -> Balance:
@@ -352,7 +352,7 @@ class Joint:
         self.clear = account['clear']
 
     @staticmethod
-    def try_ops(src: str, dest: str, amount: float, cur: str) -> tuple[str, list[Operation]] | None:
+    def try_ops(src: str, dest: str, amount: float, cur: str) -> list[Operation] | None:
         suffix = f'.{Joint.type}'
         applicable = False
         main = ''
@@ -364,8 +364,8 @@ class Joint:
             applicable = True
 
         if applicable:
-            joints = {it['parent']: it for it in get_joint_accounts()}
-            return dest, Joint(joints[main]).ops(src, dest, amount, cur)
+            joints = get_joint_accounts()
+            return Joint(joints[main]).ops(src, dest, amount, cur)
         return None
 
     def ops(self, src: str, dest: str, amount: float, cur: str) -> list[Operation]:
@@ -398,12 +398,18 @@ class Joint:
         return create_transaction(ops, date, desc)
 
 
-def get_joint_accounts() -> list[JointAccount]:
-    return json.loads(get_param('accounts.joint') or '[]') or []
+def get_joint_accounts() -> dict[str, JointAccount]:
+    accs: list[JointAccount] = json.loads(get_param('accounts.joint') or '[]') or []
+    return {it['parent']: it for it in accs}
 
 
 def set_joint_accounts(joint_accounts: list[object]) -> None:
     set_param('accounts.joint', json.dumps(joint_accounts))
+
+
+def decode_account_id(aid: str) -> tuple[str, str]:
+    aid, _, typ = aid.partition('.')
+    return aid, typ
 
 
 @transaction()

@@ -1,8 +1,6 @@
 {% extends 'base.html' %}
 {% from 'widgets.html' import select_group %}
 
-{% set dest_options = [('Custom', [('joint-me', 'Joint from me', False)])] + env.account_groups %}
-
 {% block content %}
 <style>
     .transaction-item.ignored {
@@ -66,7 +64,7 @@ function tran_form() {
     <input name="src" x-ref="transactions" value="{{ src }}" hidden />
     <input name="transactions" x-ref="transactions" hidden />
     <p>
-        Account: {{ env.amap[src].full_name }}<br>
+        Account: {{ env.account_title(src) }}<br>
         Balance: <span x-text="balance.GBP.toFixed(2)"></span> + <span x-text="total().toFixed(2)"></span> = <span x-text="(balance.GBP + total()).toFixed(2)"></span>
     </p>
 
@@ -92,7 +90,7 @@ function tran_form() {
                 </tr>
                 <tr><td colspan=2 x-text="it.category"></td></tr>
                 <tr><td colspan=2>
-                    {{ select_group('dest', '---', dest_options, **{'x-model': "it.dest"}) }}
+                    {{ select_group('dest', '---', env.account_groups, **{'x-model': "it.dest"}) }}
                 </td></tr>
                 <tr><td colspan=2>
                     <input type="text" x-model="it.desc" name="desc" />
