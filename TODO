@@ -1,4 +1,6 @@
 # ToDo
+* Remove "Transfer over"
+* Remember ignore import decision
 * Links to accounts in toasts
 * Manual import decisions should not be overrided by [Set similar]
 * make global date selector to be able to navigate through

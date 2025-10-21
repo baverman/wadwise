@@ -1,7 +1,6 @@
 import io
 import json
 import subprocess
-from datetime import date as dt_date
 from datetime import datetime, timedelta
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, Union, cast
 
@@ -176,33 +175,6 @@ def transaction_split_save(
 ) -> Response:
     ops = [m.op(*it) for it in zip(acc, amount, cur)]
     return transaction_save_helper(action, tid, ops, dest, date, desc)
-
-
-@app.route('/transaction/over')
-@query_string(aid=str, today=str | date_t)
-def transaction_transfer_over(aid: str, today: dt_date) -> str:
-    next_date = today.replace(day=1)
-    prev_date = next_date - timedelta(days=1)
-    return render_template(
-        'transaction/over.html',
-        aid=aid,
-        next_date=utils.fmt_date(next_date),
-        prev_date=utils.fmt_date(prev_date),
-        cur_list=state.get_cur_list(),
-    )
-
-
-@app.route('/transaction/over', methods=['POST'])
-@query_string(aid=str)
-@form(over=str, cur=str, amount=float, next_date=str | datetime_trunc_t, prev_date=str | datetime_trunc_t)
-def transaction_transfer_over_save(
-    aid: str, over: str, cur: str, amount: float, next_date: datetime, prev_date: datetime
-) -> Response:
-    with db.transaction():
-        m.create_transaction(m.op2(aid, over, amount, cur), prev_date, 'Transfer over')
-        tid = m.create_transaction(m.op2(over, aid, amount, cur), next_date, 'Transfer over')
-    state.transactions_changed()
-    return redirect(url_for('account_view', aid=aid, _anchor=f't-{tid}'))
 
 
 @app.route('/')
