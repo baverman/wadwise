@@ -149,7 +149,7 @@ def test_joint_transactions_case(dbconn):
     m.create_transaction(m.op2(i, a_me, 5000, cur))
 
     j.transaction(a_me, q_joint, 1000, cur, from_ts(10))
-    j.transaction(a_me, q_joint, 2000, cur, from_ts(20))
+    j.transaction(q_joint, a_me, -2000, cur, from_ts(20))
     j.transaction(a_partner, q_joint, 1500, cur, from_ts(30))
     j.transaction(a_partner, q_joint, 700, cur, from_ts(40))
 

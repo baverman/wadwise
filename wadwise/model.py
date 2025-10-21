@@ -369,6 +369,10 @@ class Joint:
         return None
 
     def ops(self, src: str, dest: str, amount: float, cur: str) -> list[Operation]:
+        if amount < 0:
+            amount = -amount
+            src, dest = dest, src
+
         if dest == self.parent_joint:
             if src == self.partner_acc:
                 return [
