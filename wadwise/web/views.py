@@ -2,6 +2,7 @@ import io
 import json
 import subprocess
 from datetime import datetime, timedelta
+from itertools import groupby
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, Union, cast
 
 from covador import Date, DateTime, enum, item, opt
@@ -43,7 +44,13 @@ def account_view(aid: Optional[str]) -> str:
     else:
         account = {}  # type: ignore[typeddict-item]
     accounts = m.get_sub_accounts(aid)
-    transactions = m.account_transactions(aid=aid)
+    data = m.account_transactions(aid=aid)
+
+    key = lambda x: x['date'].date()
+    transactions = []
+    for k, g in groupby(data, key):
+        transactions.append((k, list(g)))
+
     return render_template(
         'account/view.html',
         accounts=accounts,

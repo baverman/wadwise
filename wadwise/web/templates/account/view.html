@@ -104,41 +104,60 @@
 
 {% if account  %}
 <hr>
-<a href="{{ url_for('transaction_edit', dest=account.aid) }}">Add transaction</a>
-| <a href="{{ url_for('transaction_edit', dest=account.aid, split=1) }}">Add split</a>
-{% if account.aid in env.joint_accounts %}
-| <a href="{{ url_for('transaction_edit', dest=account.aid + '.joint') }}">Joint</a>
-{% endif %}
-
-<div class="transaction-list">
-{% for it in transactions %}
-<div class="transaction-item">
-    <table>
-        <tr {{ {'class': [None, 'transaction-header'][it.split], 'id': 't-' + it.tid} | xmlattr}} >
-            <td>{{ it.desc or '' }}</td>
-            <td class="tright">
-                <a href="{{ url_for('transaction_edit', tid=it.tid, dest=account.aid) }}" class="date">
-                    &#x270E;{{ it.date.date() }}
-                </a>
-            </td>
-        </tr>
-        {% if it.split %}
-            {% for op_acc, op_amnt, op_cur in it.ops %}
-            <tr>
-                <td>{{ env.amap[op_acc].full_name }}</td>
-                <td class="tright">{{ '%.2f' % op_amnt }}&nbsp;<span class="cur">{{ op_cur }}</span></td>
-            </tr>
-            {% endfor %}
-        {% else %}
-            <tr>
-                <td>{{ env.amap[it.src].full_name }}&nbsp;&rarr;</td>
-                <td class="tright">{{ '%.2f' % it.amount }}&nbsp;<span class="cur">{{ it.cur }}</span></td>
-            </tr>
-        {% endif %}
-        </div>
-    </table>
+<div>
+    <a href="{{ url_for('transaction_edit', dest=account.aid) }}">Add transaction</a>
+    | <a href="{{ url_for('transaction_edit', dest=account.aid, split=1) }}">Add split</a>
+    {% if account.aid in env.joint_accounts %}
+    | <a href="{{ url_for('transaction_edit', dest=account.aid + '.joint') }}">Joint</a>
+    {% endif %}
 </div>
+
+<div class="gap gap-l"></div>
+
+<div class="vstack gap-xl" id="transaction-list">
+{% for gdt, tlist in transactions %}
+    <div>
+        <div style="font-size:90%; font-weight: bold; color: #777; line-height: 1.5; margin-bottom: 0.2em">{{ gdt.strftime('%d %B %Y') }}</div>
+        <div class="vstack">
+            {% for it in tlist %}
+            <div class="card transaction-item">
+                <table id="t-{{ it.tid }}" data-href="{{ url_for('transaction_edit', tid=it.tid, dest=account.aid) }}">
+                    {% if it.desc %}
+                        <tr {{ {'class': [None, 'transaction-header'][it.split]} | xmlattr}} >
+                            <td colspan="2">{{ it.desc }}</td>
+                        </tr>
+                    {% endif %}
+                    {% if it.split %}
+                        {% for op_acc, op_amnt, op_cur in it.ops %}
+                        <tr>
+                            <td>{{ env.amap[op_acc].full_name }}</td>
+                            <td class="tright">{{ '%.2f' % op_amnt }}&nbsp;<span class="cur">{{ op_cur }}</span></td>
+                        </tr>
+                        {% endfor %}
+                    {% else %}
+                        <tr>
+                            <td>{{ env.amap[it.src].full_name }}</td>
+                            <td class="tright">{{ '%.2f' % it.amount }}&nbsp;<span class="cur">{{ it.cur }}</span></td>
+                        </tr>
+                    {% endif %}
+                </table>
+            </div>
+            {% endfor %}
+        </div>
+    </div>
 {% endfor %}
 </div>
 {% endif %}
+
+<script>
+const container = document.querySelector('#transaction-list');
+
+container.addEventListener('click', event => {
+  const target = event.target.closest('[data-href]');
+  if (target) {
+    window.location.href = target.dataset.href;
+  }
+});
+</script>
+
 {% endblock %}

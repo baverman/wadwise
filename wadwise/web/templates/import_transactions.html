@@ -74,9 +74,9 @@ function tran_form() {
         <button type='submit'>Import</button>
     </p>
 
-    <div class="transaction-list">
+    <div class="vstack">
         <template x-for="(it, idx) in transactions" :key="idx">
-        <div :class="{'transaction-item': true, 'ignored': it.ignore, 'ok': !it.ignore && it.dest}">
+        <div :class="{'card': true, 'ignored': it.ignore, 'ok': !it.ignore && it.dest}">
             <table>
                 <tr>
                     <td x-text="it.type"></td>

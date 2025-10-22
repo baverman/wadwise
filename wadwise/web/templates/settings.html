@@ -62,9 +62,9 @@ function joint_form() {
 
 <form method="POST" action="./joint-accounts" x-data="joint_form">
     <textarea name="data" x-text="JSON.stringify(joints)" hidden></textarea>
-    <div class="transaction-list">
+    <div class="vstack">
         <template x-for="(it, idx) in joints" :key="idx">
-            <div class="transaction-item">
+            <div class="card">
                 Main: {{ select_group('parent', '---', env.account_groups, **{'x-model': "it.parent"}) }}<br>
                 Me: {{ select_group('me', '---', env.account_groups, **{'x-model': "it.joints[0]"}) }}<br>
                 Clear: {{ select_group('clear', '---', env.account_groups, **{'x-model': "it.clear"}) }}<br>
