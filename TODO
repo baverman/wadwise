@@ -5,4 +5,3 @@
 * make global date selector to be able to navigate through
   transactions for particular period
 * balance table should be by line per currency if cur num is > 3
-* operation colors

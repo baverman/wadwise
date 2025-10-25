@@ -41,6 +41,8 @@
 </script>
 
 {% if account %}
+{% set hlpos = account.type in 'qa' %}
+{% set hlneg = account.type in 'iel' %}
 <div>
   <a href="{{ url_for('account_view') }}">Root</a>:{% for p in account.parents %}<a href="{{ url_for('account_view', aid=p) }}">{{ env.amap[p].name }}</a>:{% endfor %}<a href="{{ url_for('account_edit', aid=account.aid) }}">{{ account.name }}</a>
   {% with messages = get_flashed_messages() %}
@@ -131,13 +133,13 @@
                         {% for op_acc, op_amnt, op_cur in it.ops %}
                         <tr>
                             <td>{{ env.amap[op_acc].full_name }}</td>
-                            <td class="tright">{{ '%.2f' % op_amnt }}&nbsp;<span class="cur">{{ op_cur }}</span></td>
+                            <td class="tright"><span class="{{ "good-amount" if (op_acc == account.aid) and ((hlpos and op_amnt > 0) or (hlneg and op_amnt < 0)) else '' }}">{{ '%.2f' % op_amnt }}</span>&nbsp;<span class="cur">{{ op_cur }}</span></td>
                         </tr>
                         {% endfor %}
                     {% else %}
                         <tr>
                             <td>{{ env.amap[it.src].full_name }}</td>
-                            <td class="tright">{{ '%.2f' % it.amount }}&nbsp;<span class="cur">{{ it.cur }}</span></td>
+                            <td class="tright"><span class="{{ "good-amount" if (hlpos and it.amount > 0) or (hlneg and it.amount < 0) else '' }}">{{ '%.2f' % it.amount }}</span>&nbsp;<span class="cur">{{ it.cur }}</span></td>
                         </tr>
                     {% endif %}
                 </table>
