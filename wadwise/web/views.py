@@ -1,13 +1,14 @@
 import io
 import json
 import subprocess
+from datetime import date as ddate
 from datetime import datetime, timedelta
 from itertools import groupby
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, Union, cast
 
 from covador import Date, DateTime, enum, item, opt
 from covador.flask import form, query_string
-from flask import abort, flash, redirect, render_template, request, url_for
+from flask import abort, flash, jsonify, redirect, render_template, request, url_for
 from werkzeug.wrappers import Response
 
 from wadwise import db, monzo, state, utils
@@ -293,3 +294,10 @@ def backup_db() -> Response:
     fname = db.backup()
     subprocess.run(['termux-open', '--send', fname], check=True)
     return redirect(url_for('settings'))
+
+
+@app.route('/api/balance')
+@query_string(aid=str, date=str | date_t)
+def api_account_balance(aid: str, date: ddate) -> Response:
+    aid = m.decode_account_id(aid)[0]
+    return jsonify({'result': state.current_balance(utils.next_month_start(date))[aid].total})
