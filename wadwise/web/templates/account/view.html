@@ -119,7 +119,7 @@
 <div class="vstack gap-xl" id="transaction-list">
 {% for gdt, tlist in transactions %}
     <div>
-        <div style="font-size:90%; font-weight: bold; color: #777; line-height: 1.5; margin-bottom: 0.2em">{{ gdt.strftime('%d %B %Y') }}</div>
+        <div class="transaction-date">{{ gdt.strftime('%a %d %B') if gdt.year == today.year else gdt.strftime('%d %B %Y') }}</div>
         <div class="vstack">
             {% for it in tlist %}
             <div class="card transaction-item">
