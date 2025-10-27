@@ -14,21 +14,9 @@
 
 {% block content %}
 <script>
-    function mode_selector_data() {
-        return {
-            mode: {{ total_mode | tojson }},
-            init() {
-                this.$watch('mode', value => {
-                    document.cookie = 'total_mode=' + value
-                    this.$nextTick(() => window.location.reload())
-                })
-            }
-        }
-    }
-
     function today_selector_data() {
         return {
-            today: {{ today_str | tojson }},
+            today: {{ today_month | tojson }},
             init() {
                 this.$watch('today', value => {
                     let params = new URLSearchParams(window.location.search)
@@ -62,19 +50,8 @@
     {% else %}
       {% if account.children %}{{ cur_table_row_s(cur_list, 'This month total', env.month[account.aid].total) }}{% endif %}
       {% if env.month[account.aid].self_total %}{{ cur_table_row_s(cur_list, 'This month', env.month[account.aid].self_total) }}{% endif %}
-      {% if account.children %}{{ cur_table_row_s(cur_list, 'Today total', env.day[account.aid].total) }}{% endif %}
-      {% if env.day[account.aid].self_total %}{{ cur_table_row_s(cur_list, 'Today', env.day[account.aid].self_total) }}{% endif %}
     {% endif %}
   </table>
-  {% endif %}
-  {% if accounts and not account.is_sheet %}
-  <div>
-  <span>Subtotal mode:</span>
-  <select x-data="mode_selector_data" x-init="init" x-model="mode">
-      <option>day</option>
-      <option>month</option>
-  </select>
-  </div>
   {% endif %}
 </div>
 {% else %}
@@ -86,7 +63,7 @@
 {% endif %}
 
 {% if account and not account.is_sheet %}
-<input type="date" x-data="today_selector_data" x-init="init" x-model="today" />
+<input type="month" x-data="today_selector_data" x-model="today" />
 {% endif %}
 
 {% if accounts %}
@@ -98,7 +75,7 @@
         <td>
             <a href="{{ url_for('account_view', aid=it.aid) }}">{{ it.name }}</a>
         </td>
-        {{ cur_table_row(cur_list, env.total(it.aid, total_mode)) }}
+        {{ cur_table_row(cur_list, env.total(it.aid)) }}
     </tr>
     {% endfor %}
 </table>

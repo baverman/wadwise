@@ -57,7 +57,6 @@ def account_view(aid: Optional[str]) -> str:
         accounts=accounts,
         account=account,
         transactions=transactions,
-        total_mode=request.cookies.get('total_mode', 'month'),
     )
 
 

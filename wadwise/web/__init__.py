@@ -21,12 +21,12 @@ def setup_context_processor() -> dict[str, Any]:
     today = request.args.get('today')
     if today:
         try:
-            today = datetime.strptime(today, '%Y-%m-%d').date()
+            today = datetime.strptime(today, '%Y-%m').date()
         except Exception:
             today = None
 
     today = today or date.today()
-    return {'env': state.Env(today), 'today': today, 'today_str': today.strftime('%Y-%m-%d')}
+    return {'env': state.Env(today), 'today': today, 'today_month': today.strftime('%Y-%m')}
 
 
 @app.template_global()

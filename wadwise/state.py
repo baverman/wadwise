@@ -101,19 +101,12 @@ class Env:
         dt = utils.month_start(self.today)
         return month_balance(dt)
 
-    def total(self, aid: str, mode: str = 'month') -> m.BState:
+    def total(self, aid: str) -> m.BState:
         acc = self.amap[aid]
         if acc['is_sheet']:
             return self.current[aid].total
         else:
-            if mode == 'month':
-                return self.month[aid].total
-            else:
-                return self.day[aid].total
-
-    @cached_property
-    def day(self) -> 'BalanceMap':
-        return day_balance(self.today)
+            return self.month[aid].total
 
     def sorted_total(self, total: m.BState) -> list[tuple[str, float]]:
         return sorted(total.items(), key=Env.cur_sort_key)
@@ -192,13 +185,6 @@ def month_balance(dt: datetime) -> BalanceMap:
 
 
 @utils.cached
-def day_balance(dt: date) -> BalanceMap:
-    start, end = utils.day_range(dt)
-    balances = m.balance(start=start.timestamp(), end=end.timestamp())
-    return BalanceMap(balances, account_map())
-
-
-@utils.cached
 def current_balance(dt: Optional[datetime] = None) -> BalanceMap:
     return BalanceMap(m.balance(end=dt.timestamp() if dt else None), account_map())
 
@@ -210,5 +196,4 @@ def accounts_changed() -> None:
 
 def transactions_changed() -> None:
     month_balance.clear()  # type: ignore[attr-defined]
-    day_balance.clear()  # type: ignore[attr-defined]
     current_balance.clear()  # type: ignore[attr-defined]
