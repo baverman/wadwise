@@ -32,7 +32,7 @@ def test_simple(dbconn):
     e = make_acc('e:food')
     m.create_transaction(m.op2(a, e, 100, 'USD'))
     result = m.balance()
-    assert result == {a: {'USD': -100}, e: {'USD': 100}}
+    assert result == {a: {'USD': m.Amount2(-100)}, e: {'USD': m.Amount2(0, 100)}}
 
 
 def test_account_flow(dbconn):
@@ -68,7 +68,8 @@ def test_transaction_flow(dbconn):
 
     m.update_transaction(tid, m.op2(a, e, 200, 'USD'), from_ts(10), 'foo')
     result = m.balance()
-    assert result == {a: {'USD': -200}, e: {'USD': 200}}
+    assert result[a]['USD'].sum == -200
+    assert result[e]['USD'].sum == 200
 
     (data,) = m.account_transactions(tid=tid)
     assert data == {
@@ -96,6 +97,13 @@ def from_ts(ts):
     return datetime.datetime.fromtimestamp(ts)
 
 
+def amnt(value):
+    if value < 0:
+        return m.Amount2(value, 0)
+    else:
+        return m.Amount2(0, value)
+
+
 def test_balance_for_date_range(dbconn):
     a = make_acc('a:cash')
     e = make_acc('e:food')
@@ -106,16 +114,16 @@ def test_balance_for_date_range(dbconn):
     m.create_transaction(m.op2(a, e, 30, 'USD'), from_ts(150))
 
     result = m.balance(end=50)
-    assert result == {a: {'USD': -100}, e: {'USD': 100}}
+    assert result == {a: {'USD': amnt(-100)}, e: {'USD': amnt(100)}}
 
     result = m.balance(start=50, end=150)
-    assert result == {a: {'USD': 180.4}, e: {'USD': 20}, i: {'USD': -200.4}}
+    assert result == {a: {'USD': m.Amount2(-20, 200.4)}, e: {'USD': amnt(20)}, i: {'USD': amnt(-200.4)}}
 
     result = m.balance(start=100)
-    assert result == {a: {'USD': 170.4}, e: {'USD': 30}, i: {'USD': -200.4}}
+    assert result == {a: {'USD': m.Amount2(-30, 200.4)}, e: {'USD': amnt(30)}, i: {'USD': amnt(-200.4)}}
 
     result = m.balance()
-    assert result == {a: {'USD': 50.4}, e: {'USD': 150}, i: {'USD': -200.4}}
+    assert result == {a: {'USD': m.Amount2(-150, 200.4)}, e: {'USD': amnt(150)}, i: {'USD': amnt(-200.4)}}
 
 
 def test_params(dbconn):

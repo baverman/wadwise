@@ -1,6 +1,7 @@
 import json
 import operator
 from collections.abc import Collection
+from dataclasses import dataclass
 from datetime import datetime
 from typing import Iterable, Literal, Optional, TypedDict, Union, overload
 
@@ -72,9 +73,25 @@ class AccountExt(Account):
     full_name: str
 
 
+@dataclass(frozen=True)
+class Amount2:
+    credit: float = 0
+    debit: float = 0
+
+    @property
+    def sum(self) -> float:
+        return self.credit + self.debit
+
+    def combine(self, other: Optional['Amount2'] = None) -> 'Amount2':
+        if other:
+            return Amount2(self.credit + other.credit, self.debit + other.debit)
+        return self
+
+
 TransactionAny = Union[Transaction, Transaction2]
 BState = dict[str, float]
-Balance = dict[str, BState]
+BState2 = dict[str, Amount2]
+Balance = dict[str, BState2]
 
 
 class AccountMap(dict[str, AccountExt]):
@@ -307,7 +324,9 @@ def dop2(a1: str, a2: str, amount: float, currency: str) -> Collection[Operation
 
 def balance(start: Optional[float] = None, end: Optional[float] = None) -> Balance:
     query = f"""@\
-        SELECT aid, cur, sum(amount) / 100.0 AS total
+        SELECT aid, cur,
+            total(amount) FILTER (WHERE amount < 0) / 100.0 AS credit,
+            total(amount) FILTER (WHERE amount >= 0) / 100.0 AS debit
         FROM transactions AS t
         INNER JOIN ops t USING (tid)
         {WHERE(in_range(E.t.date, start, end))}
@@ -317,7 +336,7 @@ def balance(start: Optional[float] = None, end: Optional[float] = None) -> Balan
 
     result: Balance = {}
     for it in data:
-        result.setdefault(it['aid'], {})[it['cur']] = it['total']
+        result.setdefault(it['aid'], {})[it['cur']] = Amount2(it['credit'], it['debit'])
 
     return result
 
@@ -328,16 +347,16 @@ def combine_balances(*balances: Balance) -> Balance:  # pragma: no cover
         for acc, state in b.items():
             rstate = result.setdefault(acc, {})
             for cur, amount in state.items():
-                rstate[cur] = rstate.get(cur, 0) + amount
+                rstate[cur] = amount.combine(rstate.get(cur))
 
     return result
 
 
-def combine_states(*states: BState) -> BState:  # pragma: no cover
-    rstate: BState = {}
+def combine_states(*states: BState2) -> BState2:  # pragma: no cover
+    rstate: BState2 = {}
     for state in states:
         for cur, amount in state.items():
-            rstate[cur] = rstate.get(cur, 0) + amount
+            rstate[cur] = amount.combine(rstate.get(cur))
     return rstate
 
 

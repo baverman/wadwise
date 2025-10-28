@@ -132,14 +132,22 @@ class Env:
 class AccState:
     def __init__(self, account: m.AccountExt, bmap: 'BalanceMap'):
         self.account = account
-        self.self_total = bmap.balances.get(account['aid'], {})
+        self.self_total2 = bmap.balances.get(account['aid'], {})
         self.bmap = bmap
 
     @cached_property
-    def total(self) -> m.BState:
+    def total2(self) -> m.BState2:
         if self.account['children']:
-            return m.combine_states(self.self_total, *(self.bmap[it].total for it in self.account['children']))
-        return self.self_total
+            return m.combine_states(self.self_total2, *(self.bmap[it].total2 for it in self.account['children']))
+        return self.self_total2
+
+    @cached_property
+    def total(self) -> m.BState:
+        return {k: v.sum for k, v in self.total2.items()}
+
+    @cached_property
+    def self_total(self) -> m.BState:
+        return {k: v.sum for k, v in self.self_total2.items()}
 
 
 class BalanceMap:

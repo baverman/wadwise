@@ -96,7 +96,7 @@
     {{ cur_table_header(cur_list) }}
     {% for it in accounts %}
         {% if cur_list | length > 3 and loop.index0 %}
-            <tr><td><div class="gap"></div></td></tr>
+            <tr><td><div class="gap gap-s"></div></td></tr>
         {% endif %}
         {% call cur_table_row(cur_list, env.total(it.aid)) %}
             <a href="{{ url_for('account_view', aid=it.aid) }}">{{ it.name }}</a>
