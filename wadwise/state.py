@@ -97,6 +97,10 @@ class Env:
         return current_balance(utils.next_month_start(self.today))
 
     @cached_property
+    def prev(self) -> 'BalanceMap':
+        return current_balance(utils.month_start(self.today))
+
+    @cached_property
     def month(self) -> 'BalanceMap':
         dt = utils.month_start(self.today)
         return month_balance(dt)
@@ -144,6 +148,14 @@ class AccState:
     @cached_property
     def total(self) -> m.BState:
         return {k: v.sum for k, v in self.total2.items()}
+
+    @cached_property
+    def debit(self) -> m.BState:
+        return {k: v.debit for k, v in self.total2.items()}
+
+    @cached_property
+    def credit(self) -> m.BState:
+        return {k: v.credit for k, v in self.total2.items()}
 
     @cached_property
     def self_total(self) -> m.BState:

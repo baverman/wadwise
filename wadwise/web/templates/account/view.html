@@ -47,7 +47,7 @@
 {% if account %}
 {% set hlpos = account.type in 'qa' %}
 {% set hlneg = account.type in 'iel' %}
-<div>
+<div x-data="{opened: false}">
   <a href="{{ url_for('account_view') }}">Root</a>:{% for p in account.parents %}<a href="{{ url_for('account_view', aid=p) }}">{{ env.amap[p].name }}</a>:{% endfor %}<a href="{{ url_for('account_edit', aid=account.aid) }}">{{ account.name }}</a>
   {% with messages = get_flashed_messages() %}
     {% if messages %}
@@ -67,7 +67,7 @@
     {{ cur_table_header(cur_list) }}
     {% if account.is_sheet %}
       {% if env.current[account.aid].total %}
-          {% call cur_table_row(cur_list, env.current[account.aid].total) %}Balance{% endcall %}
+          {% call cur_table_row(cur_list, env.current[account.aid].total) %}<span @click.prevent="opened = !opened">Balance</span>{% endcall %}
       {% endif %}
     {% else %}
       {% if env.month[account.aid].total %}
@@ -75,6 +75,22 @@
       {% endif %}
     {% endif %}
   </table>
+  {% endif %}
+
+  {% if account.is_sheet %}
+      {% set full_cur_list = env.sorted_curs(merge(env.prev[account.aid].total, env.month[account.aid].total2)) %}
+      {% if full_cur_list %}
+      <table x-cloak x-show="opened" class="w-100">
+          {% if  full_cur_list != cur_list %}
+              {{ cur_table_header(full_cur_list) }}
+          {% endif %}
+          {% if env.prev[account.aid].total %}
+              {% call cur_table_row(full_cur_list, env.prev[account.aid].total) %}Month start{% endcall %}
+          {% endif %}
+          {% call cur_table_row(full_cur_list, env.month[account.aid].debit) %}In{% endcall %}
+          {% call cur_table_row(full_cur_list, env.month[account.aid].credit) %}Out{% endcall %}
+      </table>
+      {% endif %}
   {% endif %}
 </div>
 {% else %}

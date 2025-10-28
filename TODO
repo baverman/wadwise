@@ -1,6 +1,5 @@
 # ToDo
-* Cleanup total balances
-  * In/Out on period for sheet accounts + start balance
+
 * Remember ignore import decision
 * Links to accounts in toasts
 * Manual import decisions should not be overrided by [Set similar]

@@ -36,6 +36,12 @@ def fmt_num(value: float) -> str:
     else:
         return ''
 
+@app.template_global()
+def merge(*values: dict) -> str:
+    result = {}
+    for v in values:
+        result.update(v)
+    return result
 
 from . import views
 
