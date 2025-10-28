@@ -26,7 +26,7 @@ def setup_context_processor() -> dict[str, Any]:
             today = None
 
     today = today or date.today()
-    return {'env': state.Env(today), 'today': today, 'today_month': today.strftime('%Y-%m')}
+    return {'env': state.Env(today), 'today': today, 'today_str': today.strftime('%Y-%m')}
 
 
 @app.template_global()
