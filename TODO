@@ -6,3 +6,4 @@
 * Manual import decisions should not be overrided by [Set similar]
 * Month selector should inherit value for sub accounts
 * Persist original special transaction to show and edit it as simple src/dest transaction.
+* Remove `is_placeholder` account attribute.

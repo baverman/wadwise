@@ -94,7 +94,7 @@ class Env:
 
     @cached_property
     def current(self) -> 'BalanceMap':
-        return current_balance()
+        return current_balance(utils.next_month_start(self.today))
 
     @cached_property
     def month(self) -> 'BalanceMap':

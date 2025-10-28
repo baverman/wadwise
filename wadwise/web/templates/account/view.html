@@ -56,23 +56,22 @@
       {% endfor %}
     {% endif %}
   {% endwith %}
+
+  <div>
+      <input type="month" x-data="today_selector_data" x-model="today" />
+  </div>
+
   {% set cur_list = env.sorted_curs(env.total(account.aid)) %}
   {% if cur_list %}
   <table class="w-100">
     {{ cur_table_header(cur_list) }}
     {% if account.is_sheet %}
-      {% if account.children %}
-          {% call cur_table_row(cur_list, env.current[account.aid].total) %}Total{% endcall %}
-      {% endif %}
-      {% if env.current[account.aid].self_total %}
-          {% call cur_table_row(cur_list, env.current[account.aid].self_total) %}Self{% endcall %}
+      {% if env.current[account.aid].total %}
+          {% call cur_table_row(cur_list, env.current[account.aid].total) %}Balance{% endcall %}
       {% endif %}
     {% else %}
-      {% if account.children %}
-          {% call cur_table_row(cur_list, env.month[account.aid].total) %}This month total{% endcall %}
-      {% endif %}
-      {% if env.month[account.aid].self_total %}
-          {% call cur_table_row(cur_list, env.month[account.aid].self_total) %}This month{% endcall %}
+      {% if env.month[account.aid].total %}
+          {% call cur_table_row(cur_list, env.month[account.aid].total) %}This month{% endcall %}
       {% endif %}
     {% endif %}
   </table>
@@ -84,10 +83,6 @@
 
 {% if not account %}
 <a href="{{ url_for('settings')}}">Settings</a>
-{% endif %}
-
-{% if account and not account.is_sheet %}
-<input type="month" x-data="today_selector_data" x-model="today" />
 {% endif %}
 
 {% if accounts %}
