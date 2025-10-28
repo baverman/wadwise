@@ -1,15 +1,53 @@
 {% extends "base.html" %}
 
 {% macro cur_table_header(cur_list) %}
-<tr><th></th>{% for cur in cur_list %}<th class="tright cur"><span class="cur">{{ cur }}</span></th>{% endfor %}</tr>
+{% if cur_list | length <= 3 %}
+    <tr><th></th>{% for cur in cur_list %}<th class="tright cur"><span class="cur">{{ cur }}</span></th>{% endfor %}</tr>
+{% endif %}
 {% endmacro %}
 
 {% macro cur_table_row(cur_list, total) %}
-{% for cur in cur_list %}<td class="tright amount"><nobr>{{ fmt_num(total[cur]) | safe }}</nobr></td>{% endfor %}
+{% if cur_list | length <= 3 %}
+    <tr>
+        <td>{{ caller() }}</td>
+        {% for cur in cur_list %}
+            <td class="tright amount"><nobr>{{ fmt_num(total[cur]) | safe }}</nobr></td>
+        {% endfor %}
+    </tr>
+{% else %}
+    {% for cur in env.sorted_curs(total) %}
+        <tr>
+            <td>{{ caller() if loop.index == 1 else '' }}</td>
+            <td class="tright amount"><nobr>{{ fmt_num(total[cur]) | safe }}</nobr>&nbsp;<span class="cur">{{ cur }}</span></td>
+        </tr>
+    {% else %}
+        <tr>
+            <td>{{ caller() }}</td>
+        </tr>
+    {% endfor %}
+{% endif %}
 {% endmacro %}
 
 {% macro cur_table_row_s(cur_list, label, total) %}
-<tr><td>{{ label }}</td>{% for cur in cur_list %}<td class="tright amount"><nobr>{{ fmt_num(total[cur]) | safe }}</nobr></td>{% endfor %}</tr>
+{% if cur_list | length <= 3 %}
+    <tr>
+        <td>{{ label }}</td>
+        {% for cur in cur_list %}
+            <td class="tright amount"><nobr>{{ fmt_num(total[cur]) | safe }}</nobr></td>
+        {% endfor %}
+    </tr>
+{% else %}
+    {% for cur in env.sorted_curs(total) %}
+        <tr>
+            <td>{{ label if loop.index == 1 else '' }}</td>
+            <td class="tright amount"><nobr>{{ fmt_num(total[cur]) | safe }}</nobr>&nbsp;<span class="cur">{{ cur }}</span></td>
+        </tr>
+    {% else %}
+        <tr>
+            <td>{{ label }}</td>
+        </tr>
+    {% endfor %}
+{% endif %}
 {% endmacro %}
 
 {% block content %}
@@ -42,7 +80,7 @@
   {% endwith %}
   {% set cur_list = env.sorted_curs(env.total(account.aid)) %}
   {% if cur_list %}
-  <table style="width: 100%">
+  <table class="w-100">
     {{ cur_table_header(cur_list) }}
     {% if account.is_sheet %}
       {% if account.children %}{{ cur_table_row_s(cur_list, 'Total', env.current[account.aid].total) }}{% endif %}
@@ -71,12 +109,9 @@
 <table style="width:100%">
     {{ cur_table_header(cur_list) }}
     {% for it in accounts %}
-    <tr>
-        <td>
+        {% call cur_table_row(cur_list, env.total(it.aid)) %}
             <a href="{{ url_for('account_view', aid=it.aid) }}">{{ it.name }}</a>
-        </td>
-        {{ cur_table_row(cur_list, env.total(it.aid)) }}
-    </tr>
+        {% endcall %}
     {% endfor %}
 </table>
 {% endif %}

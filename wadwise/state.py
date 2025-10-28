@@ -112,7 +112,7 @@ class Env:
         return sorted(total.items(), key=Env.cur_sort_key)
 
     def sorted_curs(self, total: m.BState) -> list[str]:
-        return sorted(total.keys(), key=Env.cur_sort_key1)
+        return sorted((k for k, v in total.items() if v), key=Env.cur_sort_key1)
 
     def top_sorted_curs(self) -> list[str]:
         keys = set[str]()

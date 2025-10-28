@@ -1,11 +1,7 @@
 # ToDo
 * Cleanup total balances
-  * Remove day total
   * In/Out on period for sheet accounts + start balance
-  * Month selector?
 * Remember ignore import decision
 * Links to accounts in toasts
 * Manual import decisions should not be overrided by [Set similar]
-* make global date selector to be able to navigate through
-  transactions for particular period
-* balance table should be by line per currency if cur num is > 3
+* Month selector should inherit value for sub accounts
