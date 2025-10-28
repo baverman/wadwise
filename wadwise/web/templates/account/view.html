@@ -28,28 +28,6 @@
 {% endif %}
 {% endmacro %}
 
-{% macro cur_table_row_s(cur_list, label, total) %}
-{% if cur_list | length <= 3 %}
-    <tr>
-        <td>{{ label }}</td>
-        {% for cur in cur_list %}
-            <td class="tright amount"><nobr>{{ fmt_num(total[cur]) | safe }}</nobr></td>
-        {% endfor %}
-    </tr>
-{% else %}
-    {% for cur in env.sorted_curs(total) %}
-        <tr>
-            <td>{{ label if loop.index == 1 else '' }}</td>
-            <td class="tright amount"><nobr>{{ fmt_num(total[cur]) | safe }}</nobr>&nbsp;<span class="cur">{{ cur }}</span></td>
-        </tr>
-    {% else %}
-        <tr>
-            <td>{{ label }}</td>
-        </tr>
-    {% endfor %}
-{% endif %}
-{% endmacro %}
-
 {% block content %}
 <script>
     function today_selector_data() {
@@ -83,11 +61,19 @@
   <table class="w-100">
     {{ cur_table_header(cur_list) }}
     {% if account.is_sheet %}
-      {% if account.children %}{{ cur_table_row_s(cur_list, 'Total', env.current[account.aid].total) }}{% endif %}
-      {% if env.current[account.aid].self_total %}{{ cur_table_row_s(cur_list, 'Self', env.current[account.aid].self_total) }}{% endif %}
+      {% if account.children %}
+          {% call cur_table_row(cur_list, env.current[account.aid].total) %}Total{% endcall %}
+      {% endif %}
+      {% if env.current[account.aid].self_total %}
+          {% call cur_table_row(cur_list, env.current[account.aid].self_total) %}Self{% endcall %}
+      {% endif %}
     {% else %}
-      {% if account.children %}{{ cur_table_row_s(cur_list, 'This month total', env.month[account.aid].total) }}{% endif %}
-      {% if env.month[account.aid].self_total %}{{ cur_table_row_s(cur_list, 'This month', env.month[account.aid].self_total) }}{% endif %}
+      {% if account.children %}
+          {% call cur_table_row(cur_list, env.month[account.aid].total) %}This month total{% endcall %}
+      {% endif %}
+      {% if env.month[account.aid].self_total %}
+          {% call cur_table_row(cur_list, env.month[account.aid].self_total) %}This month{% endcall %}
+      {% endif %}
     {% endif %}
   </table>
   {% endif %}
@@ -109,6 +95,9 @@
 <table style="width:100%">
     {{ cur_table_header(cur_list) }}
     {% for it in accounts %}
+        {% if cur_list | length > 3 and loop.index0 %}
+            <tr><td><div class="gap"></div></td></tr>
+        {% endif %}
         {% call cur_table_row(cur_list, env.total(it.aid)) %}
             <a href="{{ url_for('account_view', aid=it.aid) }}">{{ it.name }}</a>
         {% endcall %}
