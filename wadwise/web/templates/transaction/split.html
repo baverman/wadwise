@@ -37,7 +37,8 @@ function split_form() {
 }
 </script>
 
-<form method="POST" x-data="split_form" action="{{ url_for('transaction_split_save', tid=form.tid, dest=form.dest) }}">
+<form method="POST" x-data="split_form" action="{{ url_for('transaction_split_save', tid=form.tid, dest=form.dest) }}"
+      class="pure-form">
     <template x-for="(op, idx) in ops" :key="idx">
     <p>
         {{ select_group('acc', '', env.account_groups, **{'x-model': "op[0]"}) }}
@@ -45,22 +46,22 @@ function split_form() {
                @input="neg_input($event.target)"
                x-model.number="op[1]" size="8em" autocomplete="off">
         {{ select_cur('cur', '', cur_list, **{'x-model': "op[2]"}) }}
-        <button @click.prevent="fix_amount(idx)">Fix</button>
-        <button @click.prevent="remove(idx)">Remove</button>
+        <button @click.prevent="fix_amount(idx)" class="pure-button">Fix</button>
+        <button @click.prevent="remove(idx)" class="pure-button">&#x2716;</button>
     </p>
     </template>
     <p>
-        <button @click.prevent="add_op">Add</button><span x-show="same_cur">&nbsp;Total: <span x-text="total"></span></span>
+        <button @click.prevent="add_op" class="pure-button">Add</button><span x-show="same_cur">&nbsp;Total: <span x-text="total"></span></span>
     </p>
     <p><textarea placeholder="description" name="desc">{{ form.desc or ''}}</textarea></p>
     <p><input type="date" name="date" value="{{ form.date.strftime('%Y-%m-%d') }}">
        <input type="hidden" name="date_time" value="{{ form.date.strftime('%H:%M:%S') }}"></p>
     <p>
-        <button type="submit">Save</button>
+        <button type="submit" class="pure-button pure-button-primary">Save</button>
         {% if form.tid %}
-            <button name="action" value="delete" type="submit">Delete</button>
-            <button name="action" value="copy-now" type="submit">Copy Now</button>
-            <button name="action" value="copy" type="submit">Copy</button>
+            <button name="action" value="delete" type="submit" class="pure-button button-error">Delete</button>
+            <button name="action" value="copy-now" type="submit" class="pure-button button-secondary">Copy Now</button>
+            <button name="action" value="copy" type="submit" class="pure-button button-secondary">Copy</button>
         {% endif %}
     </p>
 </form>

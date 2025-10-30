@@ -60,7 +60,7 @@ function tran_form() {
 }
 </script>
 
-<form method="POST" x-data="tran_form" action="{{ url_for('import_transactions_apply') }}" @submit="handleSubmit">
+<form method="POST" x-data="tran_form" action="{{ url_for('import_transactions_apply') }}" @submit="handleSubmit" class="pure-form">
     <input name="src" x-ref="transactions" value="{{ src }}" hidden />
     <input name="transactions" x-ref="transactions" hidden />
     <p>
@@ -71,10 +71,10 @@ function tran_form() {
     <template x-if="error"><p x-text="error"></p></template>
 
     <p>
-        <button type='submit'>Import</button>
+        <button type='submit' class="pure-button pure-button-primary">Import</button>
     </p>
 
-    <div class="vstack">
+    <v-stack>
         <template x-for="(it, idx) in transactions" :key="idx">
         <div :class="{'card': true, 'ignored': it.ignore, 'ok': !it.ignore && it.dest}">
             <table>
@@ -96,19 +96,19 @@ function tran_form() {
                     <input type="text" x-model="it.desc" name="desc" />
                 </td></tr>
                 <tr>
-                    <td><button @click.prevent="setSimilar(idx)">Set similar</button></td>
+                    <td><button @click.prevent="setSimilar(idx)" class="pure-button button-secondary">Set similar</button></td>
                     <td class="tright">
                         <template x-if="!it.ignore">
-                            <button @click.prevent="ignore(idx)">Ignore</button> #}
+                            <button @click.prevent="ignore(idx)" class="pure-button button-secondary">Ignore</button> #}
                         </template>
                         <template x-if="it.ignore">
-                            <button @click.prevent="include(idx)">Include</button>
+                            <button @click.prevent="include(idx)" class="pure-button button-secondary">Include</button>
                         </template>
                     </td>
                 </tr>
             </table>
         </div>
         </template>
-    </div>
+    </v-stack>
 </form>
 {% endblock %}

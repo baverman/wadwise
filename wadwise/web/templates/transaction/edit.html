@@ -23,7 +23,11 @@ function target_form() {
 }
 </script>
 
-<form x-data="target_form" method="POST">
+<div>
+    <a href="{{ url_for('transaction_edit', tid=form.tid, dest=form.dest, split=1) }}">Split</a>
+</div>
+
+<form x-data="target_form" method="POST" class="pure-form">
     <p>From:<br>{{ select_group('src', form.src, env.account_groups, tabindex='3') }}<p>
     <p>To: {{ env.account_title(form.dest) }}</p>
     <template x-if="!is_target">
@@ -32,7 +36,7 @@ function target_form() {
                   x-data="{}" @input="neg_input($event.target)"
                   autofocus tabindex=1 value="{{ form.amount }}" size="8em" autocomplete="off">
             {{ select_cur('cur', form.cur, cur_list) }}
-            <button @click.prevent="enable($root)">Target</button>
+            <button @click.prevent="enable($root)" class="pure-button">Target</button>
         </p>
     </template>
     <template x-if="is_target">
@@ -49,12 +53,11 @@ function target_form() {
     <p><input type="date" tabindex=4 name="date" value="{{ form.date.strftime('%Y-%m-%d') }}">
        <input type="hidden" name="date_time" value="{{ form.date.strftime('%H:%M:%S') }}"></p>
     <p>
-        <button type="submit">Save</button>
+        <button type="submit" class="pure-button pure-button-primary">Save</button>
         {% if form.tid %}
-            <button name="action" value="delete" type="submit">Delete</button>
-            <button name="action" value="copy-now" type="submit">Copy Now</button>
-            <button name="action" value="copy" type="submit">Copy</button>
-            <a href="{{ url_for('transaction_edit', tid=form.tid, dest=form.dest, split=1) }}">Split</a>
+            <button name="action" value="delete" type="submit" class="pure-button button-error">Delete</button>
+            <button name="action" value="copy-now" type="submit" class="pure-button button-secondary">Copy Now</button>
+            <button name="action" value="copy" type="submit" class="pure-button button-secondary">Copy</button>
         {% endif %}
     </p>
 </form>

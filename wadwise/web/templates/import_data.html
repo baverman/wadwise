@@ -2,18 +2,32 @@
 {% from 'widgets.html' import select_group %}
 
 {% block content %}
-<p>
-<form method="POST" enctype="multipart/form-data">
-    GNUCash: <input type="file" name="gnucash" accept=".gnca" /><br>
-    <button type="submit">Import</button>
-</form>
-</p>
+<v-stack>
+    <form method="POST" enctype="multipart/form-data" class="pure-form">
+        <fieldset>
+            <legend>GNUCash</legend>
+            <v-stack>
+                <input type="file" name="gnucash" accept=".gnca" />
+                <div>
+                    <button type="submit" class="pure-button pure-button-primary">Import</button>
+                </div>
+            </v-stack>
+        </fieldset>
+    </form>
 
-<p>
-<form method="POST" action="./monzo" enctype="multipart/form-data">
-    Account: {{ select_group('src', '---', env.account_groups) }}<br>
-    Monzo: <input type="file" name="monzo" accept=".csv" /><br>
-    <button type="submit">Import</button>
-</form>
-</p>
+    <form method="POST" action="./monzo" enctype="multipart/form-data" class="pure-form">
+        <fieldset>
+            <legend>Monzo</legend>
+            <v-stack>
+                <div>
+                    {{ select_group('src', '---', env.account_groups) }}
+                </div>
+                <input type="file" name="monzo" accept=".csv" />
+                <div>
+                    <button type="submit" class="pure-button pure-button-primary">Import</button>
+                </div>
+            </v-stack>
+        </fieldset>
+    </form>
+</v-stack>
 {% endblock %}

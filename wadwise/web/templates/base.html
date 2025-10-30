@@ -5,8 +5,9 @@
    <meta name="viewport" content="width=device-width, initial-scale=1">
    <meta name="theme-color" content="#ffffff">
    <title>{{ title | default('Wadwise')}}</title>
-   <script src="/static/js/alpine.js" defer></script>
    <link rel="manifest" href="/static/manifest.json">
+   <link rel="stylesheet" href="/static/css/pure.css">
+   <script src="/static/js/alpine.js" defer></script>
    <style>
      @property --stack-gap {
         syntax: "<length>";
@@ -17,6 +18,7 @@
      body {
         line-height: 1.5;
         font-family: Arial, sans-serif;
+        padding: 1rem;
      }
 
      /* roboto-condensed-regular - latin */
@@ -37,9 +39,9 @@
         border-collapse: collapse;
      }
 
-     div {
-        box-sizing: border-box;
-     }
+     /* div { */
+     /*    box-sizing: border-box; */
+     /* } */
 
      .inline {
         display: inline-block;
@@ -113,15 +115,16 @@
          margin: 0.5em 0 0.5em 0;
      }
 
-     .vstack {
+     v-stack {
         --stack-gap: 0.6em;
         display: flex;
         flex-direction: column;
         gap: var(--stack-gap);
      }
 
-     .gap {
+     v-gap {
         --stack-gap: 0.6em;
+        display: block;
         content: "";
         height: var(--stack-gap);
      }
@@ -160,6 +163,63 @@
      }
 
      [x-cloak] { display: none !important; }
+
+     button[type="submit"] {
+        margin-top: 0 !important;
+     }
+
+     .pure-form input[type="text"] {
+        display: inline-block;
+        margin-bottom: 0 !important;
+     }
+
+     fieldset legend {
+         font-size: 120%;
+         font-weight: 600;
+     }
+
+     form-aligned {
+        display: grid;
+        grid-template-columns: max-content 1fr;
+        gap: 0.4em 1rem;
+     }
+
+     form-aligned > *, form-aligned > multi-root > * {
+        grid-column: 2;
+        justify-self: start;
+     }
+
+     form-aligned > label, form-aligned > multi-root > label {
+        grid-column: 1;
+     }
+
+    .button-success,
+    .button-error,
+    .button-warning,
+    .button-secondary {
+        color: white;
+        text-shadow: 0 1px 1px rgba(0, 0, 0, 0.2);
+    }
+
+    .button-success {
+        background: rgb(28, 184, 65);
+    }
+
+    .button-error {
+        background: rgb(202, 60, 60);
+    }
+
+    .button-warning {
+        background: rgb(223, 117, 20);
+    }
+
+    .button-secondary {
+        background: rgb(66, 184, 221);
+    }
+
+    multi-root {
+        display: contents;
+    }
    </style>
 </head>
 <body>

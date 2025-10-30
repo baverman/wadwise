@@ -107,7 +107,7 @@
     {{ cur_table_header(cur_list) }}
     {% for it in accounts %}
         {% if cur_list | length > 3 and loop.index0 %}
-            <tr><td><div class="gap gap-s"></div></td></tr>
+            <tr><td><v-gap class="gap-s"></v-gap></td></tr>
         {% endif %}
         {% call cur_table_row(cur_list, env.total(it.aid)) %}
             <a href="{{ url_for('account_view', aid=it.aid, today=today_str) }}">{{ it.name }}</a>
@@ -126,13 +126,13 @@
     {% endif %}
 </div>
 
-<div class="gap gap-l"></div>
+<v-gap class="gap-l"></v-gap>
 
-<div class="vstack gap-xl" id="transaction-list">
+<v-stack class="gap-xl" id="transaction-list">
 {% for gdt, tlist in transactions %}
     <div>
         <div class="transaction-date">{{ gdt.strftime('%a %d %B') if gdt.year == today.year else gdt.strftime('%d %B %Y') }}</div>
-        <div class="vstack">
+        <v-stack>
             {% for it in tlist %}
             <div class="card transaction-item">
                 <table id="t-{{ it.tid }}" data-href="{{ url_for('transaction_edit', tid=it.tid, dest=account.aid) }}">
@@ -157,10 +157,10 @@
                 </table>
             </div>
             {% endfor %}
-        </div>
+        </v-stack>
     </div>
 {% endfor %}
-</div>
+</v-stack>
 {% endif %}
 
 <script>

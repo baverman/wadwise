@@ -39,71 +39,92 @@ function joint_form() {
 
 </script>
 
-<a href="{{ url_for('account_view') }}">Back</a>
-| <a href="{{ url_for('account_edit') }}">Add subaccount</a>
-| <a href="{{ url_for('import_data') }}">Import data</a>
+<div>
+    <a href="{{ url_for('account_view') }}">Back</a>
+    | <a href="{{ url_for('account_edit') }}">Add subaccount</a>
+    | <a href="{{ url_for('import_data') }}">Import data</a>
+</div>
 
-<h2>Favorites</h2>
-
-<form method="POST" action="./favs" x-data="favs_form">
-    <template x-for="(it, idx) in ids" :key="idx">
-    <p>
-        {{ select_group('acc', '---', env.account_groups, **{'x-model': "ids[idx]"}) }}
-        <button @click.prevent="remove(idx)">Remove</button>
-    </p>
-    </template>
-    <p>
-        <button @click.prevent="add">Add</button>
-        <button type="submit">Save</button>
-    </p>
-</form>
-
-<h2>Joint accounts</h2>
-
-<form method="POST" action="./joint-accounts" x-data="joint_form">
-    <textarea name="data" x-text="JSON.stringify(joints)" hidden></textarea>
-    <div class="vstack">
-        <template x-for="(it, idx) in joints" :key="idx">
-            <div class="card">
-                Main: {{ select_group('parent', '---', env.account_groups, **{'x-model': "it.parent"}) }}<br>
-                Me: {{ select_group('me', '---', env.account_groups, **{'x-model': "it.joints[0]"}) }}<br>
-                Clear: {{ select_group('clear', '---', env.account_groups, **{'x-model': "it.clear"}) }}<br>
-                <template x-for="j in it.assets.length">
-                    <p>
-                        Joint <span x-text="j"></span>: {{ select_group('parent', '---', env.account_groups, **{'x-model': "it.joints[j]"}) }}<br>
-                        Asset <span x-text="j"></span>: {{ select_group('parent', '---', env.account_groups, **{'x-model': "it.assets[j-1]"}) }}<br>
-                        <button @click.prevent="remove_party(idx, j-1)">Remove Party</button>
-                    </p>
+<v-stack class="gap-s">
+    <form method="POST" action="./favs" x-data="favs_form" class="pure-form">
+        <fieldset>
+            <legend>Favorites</legend>
+            <v-stack>
+                <template x-for="(it, idx) in ids" :key="idx">
+                    <div>
+                        {{ select_group('acc', '---', env.account_groups, **{'x-model': "ids[idx]"}) }}
+                        <button @click.prevent="remove(idx)" class="pure-button">&#x2716;</button>
+                    </div>
                 </template>
-                <button @click.prevent="add_party(idx)">Add Party</button>
-                <button @click.prevent="remove(idx)">Remove Joint</button>
-            </div>
-        </template>
-    </div>
-    <p>
-        <button @click.prevent="add">Add Joint</button>
-        <button type="submit">Save</button>
-    </p>
-</form>
+                <div>
+                    <button @click.prevent="add" class="pure-button">Add</button>
+                    <button type="submit" class="pure-button pure-button-primary">Save</button>
+                </div>
+            </v-stack>
+        </fieldset>
+    </form>
 
-<h2>Currencies</h2>
+    <form method="POST" action="./joint-accounts" x-data="joint_form" class="pure-form">
+        <fieldset>
+            <legend>Joint accounts</legend>
+            <textarea name="data" x-text="JSON.stringify(joints)" hidden></textarea>
+            <v-stack>
+                <template x-for="(it, idx) in joints" :key="idx">
+                    <div class="card" style="padding: 0.6rem">
+                        <v-stack>
+                            <form-aligned>
+                                <label>Main</label>
+                                {{ select_group('main', '---', env.account_groups, **{'x-model': "it.parent"}) }}
+                                <label>Me</label>
+                                {{ select_group('me', '---', env.account_groups, **{'x-model': "it.joints[0]"}) }}
+                                <label>Clear</label>
+                                {{ select_group('clear', '---', env.account_groups, **{'x-model': "it.clear"}) }}
+                                <template x-for="j in it.assets.length" :key="j">
+                                    <multi-root>
+                                        <div></div>
+                                        <label>Party <span x-text="j"></span></label>
+                                        <button @click.prevent="remove_party(idx, j-2)" class="pure-button">Remove Party</button>
+                                        <label>Joint</label>
+                                        {{ select_group('joint-other', '---', env.account_groups, **{'x-model': "it.joints[j]"}) }}
+                                        <label>Asset</label>
+                                        {{ select_group('parent', '---', env.account_groups, **{'x-model': "it.assets[j-1]"}) }}
+                                    </multi-root>
+                                </template>
+                            </form-aligned>
+                            <div>
+                                <button @click.prevent="add_party(idx)" class="pure-button">Add Party</button>
+                                <button @click.prevent="remove(idx)" class="pure-button">Remove Joint</button>
+                            </div>
+                        </v-stack>
+                    </div>
+                </template>
+                <div>
+                    <button @click.prevent="add" class="pure-button">Add Joint</button>
+                    <button type="submit" class="pure-button pure-button-primary">Save</button>
+                </div>
+            </v-stack>
+        </fieldset>
+    </form>
 
-<form method="POST" action="./cur-list">
-    <p>
-        <textarea name="cur_list" rows="{{ ((cur_list | length) + 2, 3) | max }}"
-            >{{ cur_list | join('\n') }}</textarea>
-    </p>
-    <p>
-        <button type="submit">Save</button>
-    </p>
-</form>
+    <form method="POST" action="./cur-list" class="pure-form">
+        <fieldset>
+            <legend>Currencies</legend>
+            <v-stack>
+                <textarea name="cur_list" rows="{{ ((cur_list | length) + 2, 3) | max }}"
+                    >{{ cur_list | join('\n') }}</textarea>
+                <div>
+                    <button type="submit" class="pure-button pure-button-primary">Save</button>
+                </div>
+            </v-stack>
+        </fieldset>
+    </form>
 
-<h2>Backup</h2>
-
-<form method="POST" action="./backup">
-    <p>
-        <button type="submit">Share database</button>
-    </p>
-</form>
+    <form method="POST" action="./backup" class="pure-form">
+        <fieldset>
+            <legend>Backup</legend>
+            <button type="submit" class="pure-button pure-button-primary">Share database</button>
+        </fieldset>
+    </form>
+</v-stack>
 
 {% endblock %}
