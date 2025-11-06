@@ -5,3 +5,5 @@
 sqlbind.py
 .coverage
 model.gnumeric
+select.html
+node_modules

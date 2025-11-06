@@ -16,27 +16,6 @@ function favs_form() {
         }
     }
 }
-
-function joint_form() {
-    return {
-        'joints': {{ joints | tojson }},
-        add() {
-            this.joints.push({parent: '', joints: ['', ''], assets:[''], clear: ''})
-        },
-        add_party(idx) {
-            this.joints[idx].joints.push('')
-            this.joints[idx].assets.push('')
-        },
-        remove_party(idx, jidx) {
-            this.joints[idx].joints.splice(jidx+1, 1)
-            this.joints[idx].assets.splice(jidx, 1)
-        },
-        remove(idx) {
-            this.joints.splice(idx, 1)
-        }
-    }
-}
-
 </script>
 
 <div>
@@ -64,47 +43,7 @@ function joint_form() {
         </fieldset>
     </form>
 
-    <form method="POST" action="./joint-accounts" x-data="joint_form" class="pure-form">
-        <fieldset>
-            <legend>Joint accounts</legend>
-            <textarea name="data" x-text="JSON.stringify(joints)" hidden></textarea>
-            <v-stack>
-                <template x-for="(it, idx) in joints" :key="idx">
-                    <div class="card" style="padding: 0.6rem">
-                        <v-stack>
-                            <form-aligned>
-                                <label>Main</label>
-                                {{ select_group('main', '---', env.account_groups, **{'x-model': "it.parent"}) }}
-                                <label>Me</label>
-                                {{ select_group('me', '---', env.account_groups, **{'x-model': "it.joints[0]"}) }}
-                                <label>Clear</label>
-                                {{ select_group('clear', '---', env.account_groups, **{'x-model': "it.clear"}) }}
-                                <template x-for="j in it.assets.length" :key="j">
-                                    <multi-root>
-                                        <div></div>
-                                        <label>Party <span x-text="j"></span></label>
-                                        <button @click.prevent="remove_party(idx, j-2)" class="pure-button">Remove Party</button>
-                                        <label>Joint</label>
-                                        {{ select_group('joint-other', '---', env.account_groups, **{'x-model': "it.joints[j]"}) }}
-                                        <label>Asset</label>
-                                        {{ select_group('parent', '---', env.account_groups, **{'x-model': "it.assets[j-1]"}) }}
-                                    </multi-root>
-                                </template>
-                            </form-aligned>
-                            <div>
-                                <button @click.prevent="add_party(idx)" class="pure-button">Add Party</button>
-                                <button @click.prevent="remove(idx)" class="pure-button">Remove Joint</button>
-                            </div>
-                        </v-stack>
-                    </div>
-                </template>
-                <div>
-                    <button @click.prevent="add" class="pure-button">Add Joint</button>
-                    <button type="submit" class="pure-button pure-button-primary">Save</button>
-                </div>
-            </v-stack>
-        </fieldset>
-    </form>
+    <form method="POST" action="./joint-accounts" data-preact="jointForm" class="pure-form"></form>
 
     <form method="POST" action="./cur-list" class="pure-form">
         <fieldset>
@@ -126,5 +65,116 @@ function joint_form() {
         </fieldset>
     </form>
 </v-stack>
+
+<div id="accountSelector" style="display: none">
+    {{ select_group('some', '---', env.account_groups) }}
+</div>
+
+<script type="module">
+    import { h, render, signal, computed, cloneElement,
+            initPreactData, registerPreactData,
+            node2component, idify} from '/static/js/preact-all.js';
+
+    function preventDefault(fn) {
+        return (e) => {
+            e.preventDefault()
+            fn()
+        }
+    }
+
+    function jointForm() {
+        const joints = signal(idify({{ joints | tojson }}))
+        const fdata_raw = computed(() => JSON.stringify(joints.value))
+
+        function add() {
+            joints.value = [...joints.value, {id: crypto.randomUUID(), parent: '', joints: ['', ''], assets:[''], clear: ''}]
+        }
+
+        function add_party(idx) {
+            joints.value[idx].joints.push('')
+            joints.value[idx].assets.push('')
+            joints.value = joints.value.slice()
+        }
+
+        function remove_party(idx, pidx) {
+            joints.value[idx].joints.splice(pidx+1, 1)
+            joints.value[idx].assets.splice(pidx, 1)
+            joints.value = joints.value.slice()
+        }
+
+        function remove(idx) {
+            const v = joints.value.slice()
+            v.splice(idx, 1)
+            joints.value = v
+        }
+
+        function update_value(fn) {
+            return (e) => {
+                const value = e.currentTarget.value;
+                fn(value);
+                joints.value = joints.value.slice();
+            }
+        }
+
+        function partyFrag(it, idx, pidx) {
+            return [
+                h('div'),
+                h('label', null, `Party ${pidx + 1}`),
+                h('button', {'class': 'pure-button', onClick: preventDefault(() => remove_party(idx, pidx))}, 'Remove party'),
+                h('label', null, 'Joint'),
+                cloneElement(accountSelector, {name: 'joint-other', value: it.joints[pidx+1],
+                                               onInput: update_value((v) => it.joints[pidx+1] = v)}),
+                h('label', null, 'Asset'),
+                cloneElement(accountSelector, {name: 'asset-other', value: it.assets[pidx],
+                                               onInput: update_value((v) => it.assets[pidx] = v)}),
+            ]
+        }
+
+        function jointCard(props) {
+            const {it, idx} = props
+            return h('div', {'class': 'card', style: {padding: '0.6rem'}},
+                h('v-stack', null,
+                    h('form-aligned', null,
+                        h('label', null, 'Main'),
+                        cloneElement(accountSelector, {name: 'main', value: it.parent,
+                                                       onInput: update_value((v) => it.parent = v)}),
+                        h('label', null, 'Me'),
+                        cloneElement(accountSelector, {name: 'me', value: it.joints[0],
+                                                       onInput: update_value((v) => it.joints[0] = v)}),
+                        h('label', null, 'Clear'),
+                        cloneElement(accountSelector, {name: 'clear', value: it.clear,
+                                                       onInput: update_value((v) => it.clear = v)}),
+                        it.assets.map((_, pidx) => partyFrag(it, idx, pidx)),
+                    ),
+                    h('div', null,
+                        h('button', {'class': 'pure-button', onClick: preventDefault(() => add_party(idx))}, 'Add Party'),
+                        ' ',
+                        h('button', {'class': 'pure-button', onClick: preventDefault(() => remove(idx))}, 'Remove Joint'),
+                    )
+                )
+            )
+        }
+
+        return [
+            h('fieldset', null,
+                h('legend', null, 'Joint accounts'),
+                h('input', {name: 'data', hidden: true, value: fdata_raw}),
+                h('v-stack', null,
+                    h(() => joints.value.map((it, idx) => h(jointCard, {it, idx, key:it.id}))),
+                    h('div', null,
+                        h('button', {'class': 'pure-button', 'onClick': preventDefault(add)}, 'Add Joint'),
+                        ' ',
+                        h('button', {'type': 'submit', 'class': 'pure-button pure-button-primary'}, 'Save'),
+                    )
+                )
+            )
+        ]
+    }
+
+    const accountSelector = node2component(document.querySelector('#accountSelector select'))
+
+    registerPreactData(jointForm)
+    initPreactData()
+</script>
 
 {% endblock %}
