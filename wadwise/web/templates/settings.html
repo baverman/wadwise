@@ -71,13 +71,9 @@ function favs_form() {
 </div>
 
 <script type="module">
-    import { hh as h, render, signal, computed, cloneElement,
+    import { hh as h, render, signal, computed, cloneElement, effect,
             initPreactData, registerPreactData,
-            node2component, idify} from '/static/js/preact-all.js';
-
-    function aflt(it, attrs) {
-        return true
-    }
+            node2component, idify, fieldModel} from '/static/js/preact-all.js';
 
     function preventDefault(fn) {
         return (e) => {
@@ -111,26 +107,17 @@ function favs_form() {
         joints.value = v
     }
 
-    function update_value(fn) {
-        return (e) => {
-            const value = e.currentTarget.value;
-            fn(value);
-            joints.value = joints.value.slice();
-        }
-    }
-
     function jointForm() {
+        console.log('Render')
         function partyFrag(it, idx, pidx) {
             return [
                 h('div'),
                 h('label', `Party ${pidx + 1}`),
                 h('button.pure-button', {onClick: preventDefault(() => remove_party(idx, pidx))}, 'Remove party'),
                 h('label', 'Joint'),
-                cloneElement(accountSelector, {name: 'joint-other', value: it.joints[pidx+1],
-                                               onInput: update_value((v) => it.joints[pidx+1] = v)}),
+                cloneElement(accountSelector, {name: 'joint-other', ...fieldModel(joints, `${idx}.joints.${pidx+1}`)}),
                 h('label', 'Asset'),
-                cloneElement(accountSelector, {name: 'asset-other', value: it.assets[pidx],
-                                               onInput: update_value((v) => it.assets[pidx] = v)}),
+                cloneElement(accountSelector, {name: 'asset-other', ...fieldModel(joints, `${idx}.assets.${pidx}`)}),
             ]
         }
 
@@ -140,14 +127,11 @@ function favs_form() {
                 h('v-stack',
                     h('form-aligned',
                         h('label', 'Main'),
-                        cloneElement(accountSelector, {name: 'main', value: it.parent,
-                                                       onInput: update_value((v) => it.parent = v)}),
+                        cloneElement(accountSelector, {name: 'main', ...fieldModel(joints, `${idx}.parent`)}),
                         h('label', 'Me'),
-                        cloneElement(accountSelector, {name: 'me', value: it.joints[0],
-                                                       onInput: update_value((v) => it.joints[0] = v)}),
+                        cloneElement(accountSelector, {name: 'me', ...fieldModel(joints, `${idx}.joints.0`)}),
                         h('label', 'Clear'),
-                        cloneElement(accountSelector, {name: 'clear', value: it.clear,
-                                                       onInput: update_value((v) => it.clear = v)}),
+                        cloneElement(accountSelector, {name: 'clear', ...fieldModel(joints, `${idx}.clear`)}),
                         it.assets.map((_, pidx) => partyFrag(it, idx, pidx)),
                     ),
                     h('div',
@@ -159,12 +143,16 @@ function favs_form() {
             )
         }
 
+        function JointList({joints}) {
+            return joints.value.map((it, idx) => h(jointCard, {it, idx, key:it.id}))
+        }
+
         return [
             h('fieldset',
                 h('legend', 'Joint accounts'),
                 h('input', {name: 'data', hidden: true, value: fdata_raw}),
                 h('v-stack',
-                    joints.value.map((it, idx) => h(jointCard, {it, idx, key:it.id})),
+                    h(JointList, {joints}),
                     h('div',
                         h('button.pure-button', {'onClick': preventDefault(add)}, 'Add Joint'),
                         ' ',

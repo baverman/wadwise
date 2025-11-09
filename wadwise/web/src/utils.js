@@ -1,4 +1,5 @@
 import {render, h} from 'preact';
+import dp from 'dot-prop-immutable';
 
 window._wadwiseFuncs = {}
 
@@ -57,4 +58,23 @@ export function hh(tag, pattrs, ...children) {
         attrs['class'] = parts.slice(1).join(' ')
     }
     return h(tag, attrs, child, ...children)
+}
+
+const _ids = new WeakMap();
+let _idCounter = 1;
+
+export function getObjectId(obj) {
+  if (!_ids.has(obj)) {
+    _ids.set(obj, _idCounter++);
+  }
+  return _ids.get(obj);
+}
+
+export function fieldModel(signal, path) {
+    const value = dp.get(signal.value, path);
+    const onInput = (e) => {
+        const v = e.currentTarget.value
+        signal.value = dp.set(signal.value, path, v)
+    }
+    return {value, onInput}
 }
