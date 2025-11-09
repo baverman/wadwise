@@ -76,8 +76,25 @@ const toVNodeTree = (childNodes) => {
 
 const node2component = (element) => _$3(element.nodeName.toLowerCase(), getAttributes(element), toVNodeTree(element.childNodes));
 
+function hh(tag, pattrs, ...children) {
+    var attrs = null;
+    var child = null;
+    if (pattrs && (typeof pattrs == 'object') && !Array.isArray(pattrs) && pattrs.props == undefined) {
+        attrs = pattrs;
+    } else {
+        child = pattrs;
+    }
+    if ((typeof tag == 'string') && tag.includes('.')) {
+        const parts = tag.split('.');
+        tag = parts[0];
+        attrs = attrs || {};
+        attrs['class'] = parts.slice(1).join(' ');
+    }
+    return _$3(tag, attrs, child, ...children)
+}
+
 function _keep_dbg() {
     console.log(dbg);
 }
 
-export { x$2 as Component, k$2 as Fragment, c as Signal, _keep_dbg, o as batch, K as cloneElement, w$1 as computed, Q as createContext, _$3 as createElement, b$4 as createRef, E as effect, _$3 as h, hooks, J as hydrate, idify, initPreactData, t$3 as isValidElement, node2component, l$3 as options, registerPreactData, G as render, d as signal, H as toChildArray, h$1 as untracked, useComputed, useSignal, useSignalEffect };
+export { x$2 as Component, k$2 as Fragment, c as Signal, _keep_dbg, o as batch, K as cloneElement, w$1 as computed, Q as createContext, _$3 as createElement, b$4 as createRef, E as effect, _$3 as h, hh, hooks, J as hydrate, idify, initPreactData, t$3 as isValidElement, node2component, l$3 as options, registerPreactData, G as render, d as signal, H as toChildArray, h$1 as untracked, useComputed, useSignal, useSignalEffect };

@@ -71,9 +71,13 @@ function favs_form() {
 </div>
 
 <script type="module">
-    import { h, render, signal, computed, cloneElement,
+    import { hh as h, render, signal, computed, cloneElement,
             initPreactData, registerPreactData,
             node2component, idify} from '/static/js/preact-all.js';
+
+    function aflt(it, attrs) {
+        return true
+    }
 
     function preventDefault(fn) {
         return (e) => {
@@ -82,49 +86,49 @@ function favs_form() {
         }
     }
 
+    const joints = signal(idify({{ joints | tojson }}))
+    const fdata_raw = computed(() => JSON.stringify(joints.value))
+
+    function add() {
+        joints.value = [...joints.value, {id: crypto.randomUUID(), parent: '', joints: ['', ''], assets:[''], clear: ''}]
+    }
+
+    function add_party(idx) {
+        joints.value[idx].joints.push('')
+        joints.value[idx].assets.push('')
+        joints.value = joints.value.slice()
+    }
+
+    function remove_party(idx, pidx) {
+        joints.value[idx].joints.splice(pidx+1, 1)
+        joints.value[idx].assets.splice(pidx, 1)
+        joints.value = joints.value.slice()
+    }
+
+    function remove(idx) {
+        const v = joints.value.slice()
+        v.splice(idx, 1)
+        joints.value = v
+    }
+
+    function update_value(fn) {
+        return (e) => {
+            const value = e.currentTarget.value;
+            fn(value);
+            joints.value = joints.value.slice();
+        }
+    }
+
     function jointForm() {
-        const joints = signal(idify({{ joints | tojson }}))
-        const fdata_raw = computed(() => JSON.stringify(joints.value))
-
-        function add() {
-            joints.value = [...joints.value, {id: crypto.randomUUID(), parent: '', joints: ['', ''], assets:[''], clear: ''}]
-        }
-
-        function add_party(idx) {
-            joints.value[idx].joints.push('')
-            joints.value[idx].assets.push('')
-            joints.value = joints.value.slice()
-        }
-
-        function remove_party(idx, pidx) {
-            joints.value[idx].joints.splice(pidx+1, 1)
-            joints.value[idx].assets.splice(pidx, 1)
-            joints.value = joints.value.slice()
-        }
-
-        function remove(idx) {
-            const v = joints.value.slice()
-            v.splice(idx, 1)
-            joints.value = v
-        }
-
-        function update_value(fn) {
-            return (e) => {
-                const value = e.currentTarget.value;
-                fn(value);
-                joints.value = joints.value.slice();
-            }
-        }
-
         function partyFrag(it, idx, pidx) {
             return [
                 h('div'),
-                h('label', null, `Party ${pidx + 1}`),
-                h('button', {'class': 'pure-button', onClick: preventDefault(() => remove_party(idx, pidx))}, 'Remove party'),
-                h('label', null, 'Joint'),
+                h('label', `Party ${pidx + 1}`),
+                h('button.pure-button', {onClick: preventDefault(() => remove_party(idx, pidx))}, 'Remove party'),
+                h('label', 'Joint'),
                 cloneElement(accountSelector, {name: 'joint-other', value: it.joints[pidx+1],
                                                onInput: update_value((v) => it.joints[pidx+1] = v)}),
-                h('label', null, 'Asset'),
+                h('label', 'Asset'),
                 cloneElement(accountSelector, {name: 'asset-other', value: it.assets[pidx],
                                                onInput: update_value((v) => it.assets[pidx] = v)}),
             ]
@@ -132,39 +136,39 @@ function favs_form() {
 
         function jointCard(props) {
             const {it, idx} = props
-            return h('div', {'class': 'card', style: {padding: '0.6rem'}},
-                h('v-stack', null,
-                    h('form-aligned', null,
-                        h('label', null, 'Main'),
+            return h('div.card', {style: {padding: '0.6rem'}},
+                h('v-stack',
+                    h('form-aligned',
+                        h('label', 'Main'),
                         cloneElement(accountSelector, {name: 'main', value: it.parent,
                                                        onInput: update_value((v) => it.parent = v)}),
-                        h('label', null, 'Me'),
+                        h('label', 'Me'),
                         cloneElement(accountSelector, {name: 'me', value: it.joints[0],
                                                        onInput: update_value((v) => it.joints[0] = v)}),
-                        h('label', null, 'Clear'),
+                        h('label', 'Clear'),
                         cloneElement(accountSelector, {name: 'clear', value: it.clear,
                                                        onInput: update_value((v) => it.clear = v)}),
                         it.assets.map((_, pidx) => partyFrag(it, idx, pidx)),
                     ),
-                    h('div', null,
-                        h('button', {'class': 'pure-button', onClick: preventDefault(() => add_party(idx))}, 'Add Party'),
+                    h('div',
+                        h('button.pure-button', {onClick: preventDefault(() => add_party(idx))}, 'Add Party'),
                         ' ',
-                        h('button', {'class': 'pure-button', onClick: preventDefault(() => remove(idx))}, 'Remove Joint'),
+                        h('button.pure-button', {onClick: preventDefault(() => remove(idx))}, 'Remove Joint'),
                     )
                 )
             )
         }
 
         return [
-            h('fieldset', null,
-                h('legend', null, 'Joint accounts'),
+            h('fieldset',
+                h('legend', 'Joint accounts'),
                 h('input', {name: 'data', hidden: true, value: fdata_raw}),
-                h('v-stack', null,
-                    h(() => joints.value.map((it, idx) => h(jointCard, {it, idx, key:it.id}))),
-                    h('div', null,
-                        h('button', {'class': 'pure-button', 'onClick': preventDefault(add)}, 'Add Joint'),
+                h('v-stack',
+                    joints.value.map((it, idx) => h(jointCard, {it, idx, key:it.id})),
+                    h('div',
+                        h('button.pure-button', {'onClick': preventDefault(add)}, 'Add Joint'),
                         ' ',
-                        h('button', {'type': 'submit', 'class': 'pure-button pure-button-primary'}, 'Save'),
+                        h('button.pure-button.pure-button-primary', {'type': 'submit'}, 'Save'),
                     )
                 )
             )

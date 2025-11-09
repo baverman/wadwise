@@ -41,3 +41,20 @@ const toVNodeTree = (childNodes) => {
 };
 
 export const node2component = (element) => h(element.nodeName.toLowerCase(), getAttributes(element), toVNodeTree(element.childNodes));
+
+export function hh(tag, pattrs, ...children) {
+    var attrs = null
+    var child = null
+    if (pattrs && (typeof pattrs == 'object') && !Array.isArray(pattrs) && pattrs.props == undefined) {
+        attrs = pattrs
+    } else {
+        child = pattrs
+    }
+    if ((typeof tag == 'string') && tag.includes('.')) {
+        const parts = tag.split('.')
+        tag = parts[0]
+        attrs = attrs || {}
+        attrs['class'] = parts.slice(1).join(' ')
+    }
+    return h(tag, attrs, child, ...children)
+}
