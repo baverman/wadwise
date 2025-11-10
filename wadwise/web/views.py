@@ -235,12 +235,17 @@ def import_monzo(src: str) -> str:
         src_aids = {src_aid}
         existing = m.account_transactions(aid=src_aid, start_date=min_dt, end_date=max_dt + timedelta(seconds=1))
 
-    existing_keys = set((it['date'], get_amount(it)) for it in existing)
+    existing_keys = set(m.seen_tx_key(it['date'], *get_amount(it)) for it in existing)
+    seen_keys = m.seen_transactions(src_aid)
 
     for it in data:
         dt = it['date']
-        if (dt, (it['amount'], it['cur'])) in existing_keys:
-            it['ignore'] = True
+        key = m.seen_tx_key(dt, it['amount'], it['cur'])
+        it['txkey'] = key  # type: ignore[typeddict-unknown-key]
+        if key in existing_keys:
+            it['state'] = 'imported'
+        elif key in seen_keys:
+            it['state'] = 'seen'
         it['date'] = dt.timestamp()  # type: ignore[typeddict-item]
         it['date_str'] = dt.strftime('%Y-%m-%d')  # type: ignore[typeddict-unknown-key]
 
@@ -251,9 +256,15 @@ def import_monzo(src: str) -> str:
 @app.route('/import/transactions', methods=['POST'])
 @form(src=str, transactions=json.loads)
 def import_transactions_apply(src: str, transactions: list[monzo.ImportTransaction]) -> Response:
-    monzo.import_data(src, transactions)
+    aid = m.decode_account_id(src)[0]
+    seen_keys = [it['txkey'] for it in transactions if it['state'] == 'seen']
+    if seen_keys:
+        m.update_seen_transactions(aid, datetime.fromtimestamp(transactions[0]['date']), seen_keys)
+    transactions_to_import = [it for it in transactions if not it['state']]
+    print(transactions_to_import)
+    monzo.import_data(src, transactions_to_import)
     state.transactions_changed()
-    return redirect(url_for('account_view', aid=m.decode_account_id(src)[0]))
+    return redirect(url_for('account_view', aid=aid))
 
 
 @app.route('/settings/')

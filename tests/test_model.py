@@ -190,3 +190,21 @@ def test_joint_transactions_case(dbconn):
     assert bal[q_joint_me].total[cur] == 400
     assert bal[q_joint_partner].total[cur] == -400
     assert bal[q_clear].total[cur] == 0
+
+
+def test_seen_transactions(dbconn):
+    assert m.seen_transactions('acc') == set()
+    m.update_seen_transactions('acc', from_ts(100), ('boo', 'foo'))
+    m.update_seen_transactions('acc', from_ts(200), ('bar',))
+    assert m.seen_transactions('acc') == {'boo', 'foo', 'bar'}
+    assert m.seen_transactions('acc', None, from_ts(100)) == set()
+    assert m.seen_transactions('acc', None, from_ts(200)) == {'boo', 'foo'}
+    assert m.seen_transactions('acc', from_ts(100), from_ts(200)) == {'boo', 'foo'}
+    assert m.seen_transactions('acc', from_ts(200)) == {'bar'}
+
+    assert m.seen_transactions('acc2') == set()
+
+
+def test_seen_tx_key():
+    assert m.seen_tx_key(from_ts(100), 1 / 3, 'GBP') == '100-0.33-GBP'
+    assert m.seen_tx_key(from_ts(100), 1000000.0, 'GBP') == '100-1000000.00-GBP'

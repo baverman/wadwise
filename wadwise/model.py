@@ -435,6 +435,27 @@ def decode_account_id(aid: str) -> tuple[str, str]:
     return aid, typ
 
 
+def seen_transactions(aid: str, start: datetime | None = None, end: datetime | None = None) -> set[str]:
+    q = f"""@\
+        SELECT key
+        FROM seen_transactions
+        {WHERE(in_range(E.date, start and start.timestamp(), end and end.timestamp()), aid=aid)}
+    """
+    return set(execute(sqlf(q)).column())
+
+
+def seen_tx_key(dt: datetime, amount: float, currency: str) -> str:
+    return f'{int(dt.timestamp())}-{amount:.2f}-{currency}'
+
+
+@transaction()
+def update_seen_transactions(aid: str, date: datetime, keys: Iterable[str]) -> None:
+    existing = seen_transactions(aid)
+    new = set(keys) - existing
+    for key in new:
+        insert('seen_transactions', aid=aid, date=date.timestamp(), key=key)
+
+
 @transaction()
 def create_tables() -> None:
     # Initial tables
@@ -493,6 +514,20 @@ def create_tables() -> None:
         execute_raw('ALTER TABLE accounts ADD COLUMN is_hidden INTEGER')
         set_version(2)
 
+    if get_version() < 3:
+        stmts = """\
+            CREATE TABLE seen_transactions (
+                aid TEXT NOT NULL,
+                key TEXT NOT NULL,
+                date INTEGER NOT NULL
+            );
+
+            CREATE UNIQUE INDEX idx_seen_transactions_uniq ON seen_transactions (aid, key);
+        """
+        for q in stmts.split(';\n'):
+            execute_raw(q)
+        set_version(3)
+
 
 def create_initial_accounts() -> None:
     if execute(text('SELECT count(1) from accounts')).scalar(0) > 0:
@@ -515,4 +550,5 @@ def drop_tables() -> None:
     execute_raw('DROP TABLE IF EXISTS transactions')
     execute_raw('DROP TABLE IF EXISTS ops')
     execute_raw('DROP TABLE IF EXISTS params')
+    execute_raw('DROP TABLE IF EXISTS seen_transactions')
     set_version(0)

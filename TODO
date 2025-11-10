@@ -2,7 +2,6 @@
 
 * Remove unneeded currency headers
 * Add gaps between additional balances (add class to first row?)
-* Remember ignore import decision
 * Links to accounts in toasts
 * Manual import decisions should not be overrided by [Set similar]
 * Persist original special transaction to show and edit it as simple src/dest transaction.

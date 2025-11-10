@@ -1,11 +1,13 @@
 import csv
 from collections.abc import Collection
 from datetime import datetime
-from typing import IO, TypedDict
+from typing import IO, Literal, TypedDict
 
 from .model import Operation, account_by_id, create_transaction, decode_account_id, dop2
 
 FMT = '%d/%m/%Y:%H:%M:%S'
+
+State = Literal['imported'] | Literal['seen']
 
 
 class TransactionData(TypedDict):
@@ -16,7 +18,7 @@ class TransactionData(TypedDict):
     amount: float
     category: str
     name: str
-    ignore: bool
+    state: State | None
 
 
 def prepare(data_stream: IO[str]) -> list[TransactionData]:
@@ -35,7 +37,7 @@ def prepare(data_stream: IO[str]) -> list[TransactionData]:
                 'amount': amount,
                 'category': row['Category'].strip(),
                 'name': row['Name'].strip(),
-                'ignore': False,
+                'state': None,
             }
         )
     return result
@@ -48,6 +50,8 @@ class ImportTransaction(TypedDict):
     dest: str
     name: str | None
     desc: str | None
+    state: State | None
+    txkey: str
 
 
 def import_data(src: str, data: list[ImportTransaction]) -> None:

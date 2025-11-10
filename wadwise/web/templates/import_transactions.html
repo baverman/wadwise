@@ -21,17 +21,17 @@ function tran_form() {
         total() {
             let result = 0;
             for(const it of this.transactions) {
-                if (!it.ignore) {
+                if (!it.state) {
                     result += it.amount;
                 }
             }
             return result;
         },
         ignore(idx) {
-            this.transactions[idx].ignore = true;
+            this.transactions[idx].state = 'seen';
         },
         include(idx) {
-            this.transactions[idx].ignore = false;
+            this.transactions[idx].state = null;
         },
         setSimilar(idx) {
             const other = this.transactions[idx];
@@ -48,13 +48,12 @@ function tran_form() {
         },
         handleSubmit(event) {
             this.error = null;
-            if (this.transactions.some(it => !it.ignore && !it.dest)) {
-                this.error = 'All transactions should be with destination or marked as ignored'
+            if (this.transactions.some(it => !it.state && !it.dest)) {
+                this.error = 'All transactions should be with destination or marked as seen'
                 event.preventDefault()
                 return
             }
-            const transactions = this.transactions.filter(it => !it.ignore)
-            this.$refs.transactions.value = JSON.stringify(transactions)
+            this.$refs.transactions.value = JSON.stringify(this.transactions)
         }
     }
 }
@@ -76,7 +75,7 @@ function tran_form() {
 
     <v-stack>
         <template x-for="(it, idx) in transactions" :key="idx">
-        <div :class="{'card': true, 'ignored': it.ignore, 'ok': !it.ignore && it.dest}">
+        <div :class="{'card': true, 'ignored': it.state, 'ok': !it.state && it.dest}">
             <table>
                 <tr>
                     <td x-text="it.type"></td>
@@ -98,10 +97,10 @@ function tran_form() {
                 <tr>
                     <td><button @click.prevent="setSimilar(idx)" class="pure-button button-secondary">Set similar</button></td>
                     <td class="tright">
-                        <template x-if="!it.ignore">
+                        <template x-if="!it.state">
                             <button @click.prevent="ignore(idx)" class="pure-button button-secondary">Ignore</button> #}
                         </template>
-                        <template x-if="it.ignore">
+                        <template x-if="it.state">
                             <button @click.prevent="include(idx)" class="pure-button button-secondary">Include</button>
                         </template>
                     </td>

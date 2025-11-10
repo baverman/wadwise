@@ -1,6 +1,7 @@
 import logging
 import os.path
 import sys
+
 import click
 
 log = logging.getLogger()
@@ -13,6 +14,7 @@ from wadwise import db, web
 
 db.DB = os.environ.get('WADWISE_DB', 'data.sqlite')
 
+
 @click.command()
 @click.option('-b', '--bind', default='127.0.0.10:5000')
 def main(bind):
@@ -24,6 +26,7 @@ def main(bind):
 
     web.init()
     web.app.run(host=host, port=int(port))
+
 
 if __name__ == '__main__':
     main()
