@@ -1,5 +1,4 @@
 import {render, h} from 'preact';
-import dp from 'dot-prop-immutable';
 
 window._wadwiseFuncs = {}
 
@@ -70,11 +69,32 @@ export function getObjectId(obj) {
   return _ids.get(obj);
 }
 
-export function fieldModel(signal, path) {
-    const value = dp.get(signal.value, path);
+export function fieldModel(signal) {
     const onInput = (e) => {
         const v = e.currentTarget.value
-        signal.value = dp.set(signal.value, path, v)
+        signal.value = v
     }
-    return {value, onInput}
+    return {value: signal, onInput}
 }
+
+export function deleteIdx(arr, idx) {
+    const v = arr.slice()
+    v.splice(idx, 1)
+    return v
+}
+
+export function deleteIdxSignal(signal, idx) {
+    signal.value = deleteIdx(signal.value, idx)
+}
+
+export function pushSignal(signal, value) {
+    signal.value = [...signal.value, value]
+}
+
+export function preventDefault(fn) {
+    return (e) => {
+        e.preventDefault()
+        fn()
+    }
+}
+

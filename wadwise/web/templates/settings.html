@@ -71,80 +71,82 @@ function favs_form() {
 </div>
 
 <script type="module">
-    import { hh as h, render, signal, computed, cloneElement, effect,
-            initPreactData, registerPreactData,
-            node2component, idify, fieldModel} from '/static/js/preact-all.js';
+    import {hh as h, render, signal, computed, cloneElement, effect,
+            initPreactData, registerPreactData, batch, deleteIdxSignal,
+            node2component, idify, fieldModel, preventDefault,
+            pushSignal} from '/static/js/preact-all.js';
 
-    function preventDefault(fn) {
-        return (e) => {
-            e.preventDefault()
-            fn()
+    function wrapJointItem(item) {
+        return {
+            ...item,
+            parent: signal(item.parent),
+            clear: signal(item.clear),
+            joints: signal(item.joints.map(signal)),
+            assets: signal(item.assets.map(signal)),
         }
     }
 
-    const joints = signal(idify({{ joints | tojson }}))
-    const fdata_raw = computed(() => JSON.stringify(joints.value))
+    const joints = signal(idify({{ joints | tojson }}).map(wrapJointItem))
+    const fdata_raw = computed(() => JSON.stringify(joints))
+
+    {# effect(() => console.log(fdata_raw.value)) #}
 
     function add() {
-        joints.value = [...joints.value, {id: crypto.randomUUID(), parent: '', joints: ['', ''], assets:[''], clear: ''}]
+        pushSignal(joints, wrapJointItem(
+            {id: crypto.randomUUID(), parent: '', joints: ['', ''], assets:[''], clear: ''}))
     }
 
-    function add_party(idx) {
-        joints.value[idx].joints.push('')
-        joints.value[idx].assets.push('')
-        joints.value = joints.value.slice()
+    function add_party(item) {
+        batch(() => {
+            pushSignal(item.joints, signal(''))
+            pushSignal(item.assets, signal(''))
+        })
     }
 
-    function remove_party(idx, pidx) {
-        joints.value[idx].joints.splice(pidx+1, 1)
-        joints.value[idx].assets.splice(pidx, 1)
-        joints.value = joints.value.slice()
-    }
-
-    function remove(idx) {
-        const v = joints.value.slice()
-        v.splice(idx, 1)
-        joints.value = v
+    function remove_party(item, pidx) {
+        batch(() => {
+            deleteIdxSignal(item.joints, pidx+1)
+            deleteIdxSignal(item.assets, pidx)
+        })
     }
 
     function jointForm() {
-        console.log('Render')
-        function partyFrag(it, idx, pidx) {
+        function partyFrag(card, pidx) {
             return [
                 h('div'),
                 h('label', `Party ${pidx + 1}`),
-                h('button.pure-button', {onClick: preventDefault(() => remove_party(idx, pidx))}, 'Remove party'),
+                h('button.pure-button', {onClick: preventDefault(() => remove_party(card, pidx))}, 'Remove party'),
                 h('label', 'Joint'),
-                cloneElement(accountSelector, {name: 'joint-other', ...fieldModel(joints, `${idx}.joints.${pidx+1}`)}),
+                cloneElement(accountSelector, {name: 'joint-other', ...fieldModel(card.joints.value[pidx+1])}),
                 h('label', 'Asset'),
-                cloneElement(accountSelector, {name: 'asset-other', ...fieldModel(joints, `${idx}.assets.${pidx}`)}),
+                cloneElement(accountSelector, {name: 'asset-other', ...fieldModel(card.assets.value[pidx])}),
             ]
         }
 
-        function jointCard(props) {
-            const {it, idx} = props
+        function jointCard({card, onDelete}) {
             return h('div.card', {style: {padding: '0.6rem'}},
                 h('v-stack',
                     h('form-aligned',
                         h('label', 'Main'),
-                        cloneElement(accountSelector, {name: 'main', ...fieldModel(joints, `${idx}.parent`)}),
+                        cloneElement(accountSelector, {name: 'main', ...fieldModel(card.parent)}),
                         h('label', 'Me'),
-                        cloneElement(accountSelector, {name: 'me', ...fieldModel(joints, `${idx}.joints.0`)}),
+                        cloneElement(accountSelector, {name: 'me', ...fieldModel(card.joints.value[0])}),
                         h('label', 'Clear'),
-                        cloneElement(accountSelector, {name: 'clear', ...fieldModel(joints, `${idx}.clear`)}),
-                        it.assets.map((_, pidx) => partyFrag(it, idx, pidx)),
+                        cloneElement(accountSelector, {name: 'clear', ...fieldModel(card.clear)}),
+                        card.assets.value.map((_, pidx) => partyFrag(card, pidx)),
                     ),
                     h('div',
-                        h('button.pure-button', {onClick: preventDefault(() => add_party(idx))}, 'Add Party'),
+                        h('button.pure-button', {onClick: preventDefault(() => add_party(card))}, 'Add Party'),
                         ' ',
-                        h('button.pure-button', {onClick: preventDefault(() => remove(idx))}, 'Remove Joint'),
+                        h('button.pure-button', {onClick: preventDefault(onDelete)}, 'Remove Joint'),
                     )
                 )
             )
         }
 
         function JointList({joints}) {
-            return joints.value.map((it, idx) => h(jointCard, {it, idx, key:it.id}))
+            return joints.value.map((card, idx) => h(jointCard, {
+                key: card.id, card, onDelete: () => deleteIdxSignal(joints, idx)}))
         }
 
         return [

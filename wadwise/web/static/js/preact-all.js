@@ -3,214 +3,24 @@ var n$1,l$2,u$2,t$2,i$2,r$2,o$2,e$2,f$2,c$2,s$2,a$2,h$3,p$3={},v$3=[],y$3=/acit|
 var t$1,r$1,u$1,i$1,o$1=0,f$1=[],c$1=l$2,e$1=c$1.__b,a$1=c$1.__r,v$2=c$1.diffed,l$1=c$1.__c,m$1=c$1.unmount,s$1=c$1.__;function p$2(n,t){c$1.__h&&c$1.__h(r$1,n,o$1||t),o$1=0;var u=r$1.__H||(r$1.__H={__:[],__h:[]});return n>=u.__.length&&u.__.push({}),u.__[n]}function d$1(n){return o$1=1,h$2(D,n)}function h$2(n,u,i){var o=p$2(t$1++,2);if(o.t=n,!o.__c&&(o.__=[i?i(u):D(void 0,u),function(n){var t=o.__N?o.__N[0]:o.__[0],r=o.t(t,n);t!==r&&(o.__N=[r,o.__[1]],o.__c.setState({}));}],o.__c=r$1,!r$1.__f)){var f=function(n,t,r){if(!o.__c.__H)return  true;var u=o.__c.__H.__.filter(function(n){return !!n.__c});if(u.every(function(n){return !n.__N}))return !c||c.call(this,n,t,r);var i=o.__c.props!==n;return u.forEach(function(n){if(n.__N){var t=n.__[0];n.__=n.__N,n.__N=void 0,t!==n.__[0]&&(i=true);}}),c&&c.call(this,n,t,r)||i};r$1.__f=true;var c=r$1.shouldComponentUpdate,e=r$1.componentWillUpdate;r$1.componentWillUpdate=function(n,t,r){if(this.__e){var u=c;c=void 0,f(n,t,r),c=u;}e&&e.call(this,n,t,r);},r$1.shouldComponentUpdate=f;}return o.__N||o.__}function y$2(n,u){var i=p$2(t$1++,3);!c$1.__s&&C(i.__H,u)&&(i.__=n,i.u=u,r$1.__H.__h.push(i));}function _$2(n,u){var i=p$2(t$1++,4);!c$1.__s&&C(i.__H,u)&&(i.__=n,i.u=u,r$1.__h.push(i));}function A$1(n){return o$1=5,T$1(function(){return {current:n}},[])}function F$1(n,t,r){o$1=6,_$2(function(){if("function"==typeof n){var r=n(t());return function(){n(null),r&&"function"==typeof r&&r();}}if(n)return n.current=t(),function(){return n.current=null}},null==r?r:r.concat(n));}function T$1(n,r){var u=p$2(t$1++,7);return C(u.__H,r)&&(u.__=n(),u.__H=r,u.__h=n),u.__}function q$1(n,t){return o$1=8,T$1(function(){return n},t)}function x$1(n){var u=r$1.context[n.__c],i=p$2(t$1++,9);return i.c=n,u?(null==i.__&&(i.__=true,u.sub(r$1)),u.props.value):n.__}function P(n,t){c$1.useDebugValue&&c$1.useDebugValue(t?t(n):n);}function b$2(n){var u=p$2(t$1++,10),i=d$1();return u.__=n,r$1.componentDidCatch||(r$1.componentDidCatch=function(n,t){u.__&&u.__(n,t),i[1](n);}),[i[0],function(){i[1](void 0);}]}function g$2(){var n=p$2(t$1++,11);if(!n.__){for(var u=r$1.__v;null!==u&&!u.__m&&null!==u.__;)u=u.__;var i=u.__m||(u.__m=[0,0]);n.__="P"+i[0]+"-"+i[1]++;}return n.__}function j(){for(var n;n=f$1.shift();)if(n.__P&&n.__H)try{n.__H.__h.forEach(z),n.__H.__h.forEach(B),n.__H.__h=[];}catch(t){n.__H.__h=[],c$1.__e(t,n.__v);}}c$1.__b=function(n){r$1=null,e$1&&e$1(n);},c$1.__=function(n,t){n&&t.__k&&t.__k.__m&&(n.__m=t.__k.__m),s$1&&s$1(n,t);},c$1.__r=function(n){a$1&&a$1(n),t$1=0;var i=(r$1=n.__c).__H;i&&(u$1===r$1?(i.__h=[],r$1.__h=[],i.__.forEach(function(n){n.__N&&(n.__=n.__N),n.u=n.__N=void 0;})):(i.__h.forEach(z),i.__h.forEach(B),i.__h=[],t$1=0)),u$1=r$1;},c$1.diffed=function(n){v$2&&v$2(n);var t=n.__c;t&&t.__H&&(t.__H.__h.length&&(1!==f$1.push(t)&&i$1===c$1.requestAnimationFrame||((i$1=c$1.requestAnimationFrame)||w$2)(j)),t.__H.__.forEach(function(n){n.u&&(n.__H=n.u),n.u=void 0;})),u$1=r$1=null;},c$1.__c=function(n,t){t.some(function(n){try{n.__h.forEach(z),n.__h=n.__h.filter(function(n){return !n.__||B(n)});}catch(r){t.some(function(n){n.__h&&(n.__h=[]);}),t=[],c$1.__e(r,n.__v);}}),l$1&&l$1(n,t);},c$1.unmount=function(n){m$1&&m$1(n);var t,r=n.__c;r&&r.__H&&(r.__H.__.forEach(function(n){try{z(n);}catch(n){t=n;}}),r.__H=void 0,t&&c$1.__e(t,r.__v));};var k$1="function"==typeof requestAnimationFrame;function w$2(n){var t,r=function(){clearTimeout(u),k$1&&cancelAnimationFrame(t),setTimeout(n);},u=setTimeout(r,35);k$1&&(t=requestAnimationFrame(r));}function z(n){var t=r$1,u=n.__c;"function"==typeof u&&(n.__c=void 0,u()),r$1=t;}function B(n){var t=r$1;n.__c=n.__(),r$1=t;}function C(n,t){return !n||n.length!==t.length||t.some(function(t,r){return t!==n[r]})}function D(n,t){return "function"==typeof t?t(n):t}
 
 var hooks = /*#__PURE__*/Object.freeze({
-	__proto__: null,
-	useCallback: q$1,
-	useContext: x$1,
-	useDebugValue: P,
-	useEffect: y$2,
-	useErrorBoundary: b$2,
-	useId: g$2,
-	useImperativeHandle: F$1,
-	useLayoutEffect: _$2,
-	useMemo: T$1,
-	useReducer: h$2,
-	useRef: A$1,
-	useState: d$1
+  __proto__: null,
+  useCallback: q$1,
+  useContext: x$1,
+  useDebugValue: P,
+  useEffect: y$2,
+  useErrorBoundary: b$2,
+  useId: g$2,
+  useImperativeHandle: F$1,
+  useLayoutEffect: _$2,
+  useMemo: T$1,
+  useReducer: h$2,
+  useRef: A$1,
+  useState: d$1
 });
 
 const i=Symbol.for("preact-signals");function t(){if(r>1){r--;return}let i,t=false;while(void 0!==s){let o=s;s=void 0;f++;while(void 0!==o){const n=o.o;o.o=void 0;o.f&=-3;if(!(8&o.f)&&v$1(o))try{o.c();}catch(o){if(!t){i=o;t=true;}}o=n;}}f=0;r--;if(t)throw i}function o(i){if(r>0)return i();r++;try{return i()}finally{t();}}let n,s;function h$1(i){const t=n;n=void 0;try{return i()}finally{n=t;}}let r=0,f=0,e=0;function u(i){if(void 0===n)return;let t=i.n;if(void 0===t||t.t!==n){t={i:0,S:i,p:n.s,n:void 0,t:n,e:void 0,x:void 0,r:t};if(void 0!==n.s)n.s.n=t;n.s=t;i.n=t;if(32&n.f)i.S(t);return t}else if(-1===t.i){t.i=0;if(void 0!==t.n){t.n.p=t.p;if(void 0!==t.p)t.p.n=t.n;t.p=n.s;t.n=void 0;n.s.n=t;n.s=t;}return t}}function c(i,t){this.v=i;this.i=0;this.n=void 0;this.t=void 0;this.W=null==t?void 0:t.watched;this.Z=null==t?void 0:t.unwatched;this.name=null==t?void 0:t.name;}c.prototype.brand=i;c.prototype.h=function(){return  true};c.prototype.S=function(i){const t=this.t;if(t!==i&&void 0===i.e){i.x=t;this.t=i;if(void 0!==t)t.e=i;else h$1(()=>{var i;null==(i=this.W)||i.call(this);});}};c.prototype.U=function(i){if(void 0!==this.t){const t=i.e,o=i.x;if(void 0!==t){t.x=o;i.e=void 0;}if(void 0!==o){o.e=t;i.x=void 0;}if(i===this.t){this.t=o;if(void 0===o)h$1(()=>{var i;null==(i=this.Z)||i.call(this);});}}};c.prototype.subscribe=function(i){return E(()=>{const t=this.value,o=n;n=void 0;try{i(t);}finally{n=o;}},{name:"sub"})};c.prototype.valueOf=function(){return this.value};c.prototype.toString=function(){return this.value+""};c.prototype.toJSON=function(){return this.value};c.prototype.peek=function(){const i=n;n=void 0;try{return this.value}finally{n=i;}};Object.defineProperty(c.prototype,"value",{get(){const i=u(this);if(void 0!==i)i.i=this.i;return this.v},set(i){if(i!==this.v){if(f>100)throw new Error("Cycle detected");this.v=i;this.i++;e++;r++;try{for(let i=this.t;void 0!==i;i=i.x)i.t.N();}finally{t();}}}});function d(i,t){return new c(i,t)}function v$1(i){for(let t=i.s;void 0!==t;t=t.n)if(t.S.i!==t.i||!t.S.h()||t.S.i!==t.i)return  true;return  false}function l(i){for(let t=i.s;void 0!==t;t=t.n){const o=t.S.n;if(void 0!==o)t.r=o;t.S.n=t;t.i=-1;if(void 0===t.n){i.s=t;break}}}function y$1(i){let t,o=i.s;while(void 0!==o){const i=o.p;if(-1===o.i){o.S.U(o);if(void 0!==i)i.n=o.n;if(void 0!==o.n)o.n.p=i;}else t=o;o.S.n=o.r;if(void 0!==o.r)o.r=void 0;o=i;}i.s=t;}function a(i,t){c.call(this,void 0);this.x=i;this.s=void 0;this.g=e-1;this.f=4;this.W=null==t?void 0:t.watched;this.Z=null==t?void 0:t.unwatched;this.name=null==t?void 0:t.name;}a.prototype=new c;a.prototype.h=function(){this.f&=-3;if(1&this.f)return  false;if(32==(36&this.f))return  true;this.f&=-5;if(this.g===e)return  true;this.g=e;this.f|=1;if(this.i>0&&!v$1(this)){this.f&=-2;return  true}const i=n;try{l(this);n=this;const i=this.x();if(16&this.f||this.v!==i||0===this.i){this.v=i;this.f&=-17;this.i++;}}catch(i){this.v=i;this.f|=16;this.i++;}n=i;y$1(this);this.f&=-2;return  true};a.prototype.S=function(i){if(void 0===this.t){this.f|=36;for(let i=this.s;void 0!==i;i=i.n)i.S.S(i);}c.prototype.S.call(this,i);};a.prototype.U=function(i){if(void 0!==this.t){c.prototype.U.call(this,i);if(void 0===this.t){this.f&=-33;for(let i=this.s;void 0!==i;i=i.n)i.S.U(i);}}};a.prototype.N=function(){if(!(2&this.f)){this.f|=6;for(let i=this.t;void 0!==i;i=i.x)i.t.N();}};Object.defineProperty(a.prototype,"value",{get(){if(1&this.f)throw new Error("Cycle detected");const i=u(this);this.h();if(void 0!==i)i.i=this.i;if(16&this.f)throw this.v;return this.v}});function w$1(i,t){return new a(i,t)}function _$1(i){const o=i.u;i.u=void 0;if("function"==typeof o){r++;const s=n;n=void 0;try{o();}catch(t){i.f&=-2;i.f|=8;b$1(i);throw t}finally{n=s;t();}}}function b$1(i){for(let t=i.s;void 0!==t;t=t.n)t.S.U(t);i.x=void 0;i.s=void 0;_$1(i);}function g$1(i){if(n!==this)throw new Error("Out-of-order effect");y$1(this);n=i;this.f&=-2;if(8&this.f)b$1(this);t();}function p$1(i,t){this.x=i;this.u=void 0;this.s=void 0;this.o=void 0;this.f=32;this.name=null==t?void 0:t.name;}p$1.prototype.c=function(){const i=this.S();try{if(8&this.f)return;if(void 0===this.x)return;const t=this.x();if("function"==typeof t)this.u=t;}finally{i();}};p$1.prototype.S=function(){if(1&this.f)throw new Error("Cycle detected");this.f|=1;this.f&=-9;_$1(this);l(this);r++;const i=n;n=this;return g$1.bind(this,i)};p$1.prototype.N=function(){if(!(2&this.f)){this.f|=2;this.o=s;s=this;}};p$1.prototype.d=function(){this.f|=8;if(!(1&this.f))b$1(this);};p$1.prototype.dispose=function(){this.d();};function E(i,t){const o=new p$1(i,t);try{o.c();}catch(i){o.d();throw i}const n=o.d.bind(o);n[Symbol.dispose]=n;return n}
 
 let h,p,w,m=[],v=[];E(function(){h=this.N;})();function y(i,n){l$2[i]=n.bind(null,l$2[i]||(()=>{}));}function _(i){if(w)w();w=i&&i.S();}function g({data:i}){const t=useSignal(i);t.value=i;const[e,f]=T$1(()=>{let i=this,e=this.__v;while(e=e.__)if(e.__c){e.__c.__$f|=4;break}const o=w$1(()=>{let i=t.value.value;return 0===i?0:true===i?"":i||""}),f=w$1(()=>!Array.isArray(o.value)&&!t$2(o.value)),r=E(function(){this.N=F;if(f.value){const t=o.value;if(i.__v&&i.__v.__e&&3===i.__v.__e.nodeType)i.__v.__e.data=t;}}),u=this.__$u.d;this.__$u.d=function(){r();u.call(this);};return [f,o]},[]);return e.value?f.peek():f.value}g.displayName="ReactiveTextNode";Object.defineProperties(c.prototype,{constructor:{configurable:true,value:void 0},type:{configurable:true,value:g},props:{configurable:true,get(){return {data:this}}},__b:{configurable:true,value:1}});y("__b",(i,t)=>{if("function"==typeof t.type&&"undefined"!=typeof window&&window.__PREACT_SIGNALS_DEVTOOLS__)window.__PREACT_SIGNALS_DEVTOOLS__.exitComponent();if("string"==typeof t.type){let i,n=t.props;for(let e in n){if("children"===e)continue;let o=n[e];if(o instanceof c){if(!i)t.__np=i={};i[e]=o;n[e]=o.peek();}}}i(t);});y("__r",(i,t)=>{if("function"==typeof t.type&&"undefined"!=typeof window&&window.__PREACT_SIGNALS_DEVTOOLS__)window.__PREACT_SIGNALS_DEVTOOLS__.enterComponent(t);if(t.type!==k$2){_();let i,n=t.__c;if(n){n.__$f&=-2;i=n.__$u;if(void 0===i)n.__$u=i=function(i){let t;E(function(){t=this;});t.c=()=>{n.__$f|=1;n.setState({});};return t}();}p=n;_(i);}i(t);});y("__e",(i,t,n,e)=>{if("undefined"!=typeof window&&window.__PREACT_SIGNALS_DEVTOOLS__)window.__PREACT_SIGNALS_DEVTOOLS__.exitComponent();_();p=void 0;i(t,n,e);});y("diffed",(i,t)=>{if("function"==typeof t.type&&"undefined"!=typeof window&&window.__PREACT_SIGNALS_DEVTOOLS__)window.__PREACT_SIGNALS_DEVTOOLS__.exitComponent();_();p=void 0;let n;if("string"==typeof t.type&&(n=t.__e)){let i=t.__np,e=t.props;if(i){let t=n.U;if(t)for(let n in t){let e=t[n];if(void 0!==e&&!(n in i)){e.d();t[n]=void 0;}}else {t={};n.U=t;}for(let o in i){let f=t[o],r=i[o];if(void 0===f){f=b(n,o,r,e);t[o]=f;}else f.o(r,e);}}}i(t);});function b(i,t,n,e){const o=t in i&&void 0===i.ownerSVGElement,f=d(n);return {o:(i,t)=>{f.value=i;e=t;},d:E(function(){this.N=F;const n=f.value.value;if(e[t]!==n){e[t]=n;if(o)i[t]=n;else if(n)i.setAttribute(t,n);else i.removeAttribute(t);}})}}y("unmount",(i,t)=>{if("string"==typeof t.type){let i=t.__e;if(i){const t=i.U;if(t){i.U=void 0;for(let i in t){let n=t[i];if(n)n.d();}}}}else {let i=t.__c;if(i){const t=i.__$u;if(t){i.__$u=void 0;t.d();}}}i(t);});y("__h",(i,t,n,e)=>{if(e<3||9===e)t.__$f|=2;i(t,n,e);});x$2.prototype.shouldComponentUpdate=function(i,t){const n=this.__$u,e=n&&void 0!==n.s;for(let i in t)return  true;if(this.__f||"boolean"==typeof this.u&&true===this.u){const i=2&this.__$f;if(!(e||i||4&this.__$f))return  true;if(1&this.__$f)return  true}else {if(!(e||4&this.__$f))return  true;if(3&this.__$f)return  true}for(let t in i)if("__source"!==t&&i[t]!==this.props[t])return  true;for(let t in this.props)if(!(t in i))return  true;return  false};function useSignal(i,t){return d$1(()=>d(i,t))[0]}function useComputed(i,t){const[n,e]=T$1(()=>{const n=d(i);return [n,w$1(()=>n.value(),t)]},[]);p.__$f|=4;n.value=i;return e}const k="undefined"==typeof requestAnimationFrame?setTimeout:function(i){const t=()=>{clearTimeout(n);cancelAnimationFrame(e);i();},n=setTimeout(t,35),e=requestAnimationFrame(t);},q=i=>{queueMicrotask(()=>{queueMicrotask(i);});};function A(){o(()=>{let i;while(i=m.shift())h.call(i);});}function T(){if(1===m.push(this))(l$2.requestAnimationFrame||k)(A);}function x(){o(()=>{let i;while(i=v.shift())h.call(i);});}function F(){if(1===v.push(this))(l$2.requestAnimationFrame||q)(x);}function useSignalEffect(i,t){const n=A$1(i);n.current=i;y$2(()=>E(function(){this.N=T;return n.current()},t),[]);}
-
-function getDefaultExportFromCjs (x) {
-	return x && x.__esModule && Object.prototype.hasOwnProperty.call(x, 'default') ? x['default'] : x;
-}
-
-/**
- * Set a value by a dot path.
- * @param obj The object to evaluate.
- * @param prop The path to be set.
- * @param value The value to set.
- */
-
-var lib;
-var hasRequiredLib;
-
-function requireLib () {
-	if (hasRequiredLib) return lib;
-	hasRequiredLib = 1;
-	function set(obj, prop, value) {
-		prop = typeof prop === 'number' ? propToArray(prop.toString()) : typeof prop === 'string' ? propToArray(prop) : prop;
-
-		const setPropImmutableRec = (obj, prop, value, i) => {
-			let clone, head = prop[i];
-
-			if (prop.length > i) {
-				if (Array.isArray(obj)) {
-					head = getArrayIndex(head, obj);
-					clone = obj.slice();
-				} else {
-					clone = Object.assign({}, obj);
-				}
-				clone[head] = setPropImmutableRec(obj[head] !== undefined ? obj[head] : {}, prop, value, i + 1);
-				return clone;
-			}
-
-			return typeof value === 'function' ? value(obj) : value;
-		};
-
-		return setPropImmutableRec(obj, prop, value, 0);
-	}
-
-	/**
-	 * Get a value by a dot path.
-	 * @param obj The object to evaluate.
-	 * @param prop The path to value that should be returned.
-	 * @param [value] The default value that should be returned when the target doesn't exist.
-	 */
-	function get(obj, prop, value) {
-		prop = typeof prop === 'number' ? propToArray(prop.toString()) : typeof prop === 'string' ? propToArray(prop) : prop;
-
-		for (var i = 0; i < prop.length; i++) {
-			if (obj === null || typeof obj !== 'object') {
-				return value;
-			}
-			let head = prop[i];
-			if (Array.isArray(obj) && head === '$end') {
-				head = obj.length - 1;
-			}
-			obj = obj[head];
-		}
-
-		if (typeof obj === 'undefined') {
-			return value;
-		}
-
-		return obj;
-	}
-
-	/**
-	 * Delete a property by a dot path.
-	 * If target container is an object, the property is deleted.
-	 * If target container is an array, the index is deleted.
-	 * If target container is undefined, nothing is deleted.
-	 * @param obj The object to evaluate.
-	 * @param prop The path to the property or index that should be deleted.
-	 */
-	function _delete(obj, prop) {
-		prop = typeof prop === 'number' ? propToArray(prop.toString()) : typeof prop === 'string' ? propToArray(prop) : prop;
-
-		const deletePropImmutableRec = (obj, prop, i) => {
-			let clone, head = prop[i];
-
-			if (obj === null || typeof obj !== 'object' ||
-				!Array.isArray(obj) && obj[head] === undefined) {
-
-				return obj;
-			}
-
-			if (prop.length - 1 > i) {
-				if (Array.isArray(obj)) {
-					head = getArrayIndex(head, obj);
-					clone = obj.slice();
-				} else {
-					clone = Object.assign({}, obj);
-				}
-
-				clone[head] = deletePropImmutableRec(obj[head], prop, i + 1);
-				return clone;
-			}
-
-			if (Array.isArray(obj)) {
-				head = getArrayIndex(head, obj);
-				clone = [].concat(obj.slice(0, head), obj.slice(head + 1));
-			} else {
-				clone = Object.assign({}, obj);
-				delete clone[head];
-			}
-
-			return clone;
-		};
-
-		return deletePropImmutableRec(obj, prop, 0);
-	}
-
-	/**
-	 * Toggles a value.  The target value is evaluated using Boolean(currentValue).  The result will always be a JSON boolean.
-	 * Be careful with strings as target value, as "true" and "false" will toggle to false, but "0" will toggle to true.
-	 * Here is what Javascript considers false:  0, -0, null, false, NaN, undefined, and the empty string ("")
-	 * @param obj The object to evaluate.
-	 * @param prop The path to the value.
-	 */
-	function toggle(obj, prop) {
-		const curVal = get(obj, prop);
-		return set(obj, prop, !Boolean(curVal));
-	}
-
-	/**
-	 * Merges a value.  The target value must be an object, array, null, or undefined.
-	 * If target is an object, Object.assign({}, target, param) is used.
-	 * If target an array, target.concat(param) is used.
-	 * If target is null or undefined, the value is simply set.
-	 * @param obj The object to evaluate.
-	 * @param prop The path to the value.
-	 * @param val The value to merge into the target value.
-	 */
-	function merge(obj, prop, val) {
-		const curVal = get(obj, prop);
-		if (typeof curVal === 'object') {
-			if (Array.isArray(curVal)) {
-				return set(obj, prop, curVal.concat(val));
-			} else if (curVal === null) {
-				return set(obj, prop, val);
-			}
-			else {
-				let merged = Object.assign({}, curVal, val);
-				return set(obj, prop, merged);
-			}
-		} else if (typeof curVal === 'undefined') {
-			return set(obj, prop, val);
-		}
-		else {
-			return obj;
-		}
-	}
-
-	function getArrayIndex(head, obj) {
-		if (head === '$end') {
-			head = Math.max(obj.length - 1, 0);
-		}
-		if (!/^\+?\d+$/.test(head)) {
-			throw new Error(`Array index '${head}' has to be an integer`);
-		}
-		return parseInt(head);
-	}
-
-	function propToArray(prop) {
-		return prop.split('.').reduce((ret, el, index, list) => {
-			const last = index > 0 && list[index - 1];
-			if (last && /(?:^|[^\\])\\$/.test(last)) {
-				const prev = ret.pop();
-				ret.push(prev.slice(0, -1) + '.' + el);
-			} else {
-				ret.push(el);
-			}
-			return ret;
-		}, []);
-	}
-
-	lib = {
-		set,
-		get,
-		delete: _delete,
-		toggle,
-		merge
-	};
-	return lib;
-}
-
-var libExports = requireLib();
-var dp = /*@__PURE__*/getDefaultExportFromCjs(libExports);
 
 window._wadwiseFuncs = {};
 
@@ -281,13 +91,33 @@ function getObjectId(obj) {
   return _ids.get(obj);
 }
 
-function fieldModel(signal, path) {
-    const value = dp.get(signal.value, path);
+function fieldModel(signal) {
     const onInput = (e) => {
         const v = e.currentTarget.value;
-        signal.value = dp.set(signal.value, path, v);
+        signal.value = v;
     };
-    return {value, onInput}
+    return {value: signal, onInput}
+}
+
+function deleteIdx(arr, idx) {
+    const v = arr.slice();
+    v.splice(idx, 1);
+    return v
+}
+
+function deleteIdxSignal(signal, idx) {
+    signal.value = deleteIdx(signal.value, idx);
+}
+
+function pushSignal(signal, value) {
+    signal.value = [...signal.value, value];
+}
+
+function preventDefault(fn) {
+    return (e) => {
+        e.preventDefault();
+        fn();
+    }
 }
 
 // import * as dbg from 'preact/debug';
@@ -296,4 +126,4 @@ function _keep_dbg() {
     console.log(dbg);
 }
 
-export { x$2 as Component, k$2 as Fragment, c as Signal, _keep_dbg, o as batch, K as cloneElement, w$1 as computed, Q as createContext, _$3 as createElement, b$3 as createRef, E as effect, fieldModel, getObjectId, _$3 as h, hh, hooks, J as hydrate, idify, initPreactData, t$2 as isValidElement, node2component, l$2 as options, registerPreactData, G as render, d as signal, H as toChildArray, h$1 as untracked, useComputed, useSignal, useSignalEffect };
+export { x$2 as Component, k$2 as Fragment, c as Signal, _keep_dbg, o as batch, K as cloneElement, w$1 as computed, Q as createContext, _$3 as createElement, b$3 as createRef, deleteIdx, deleteIdxSignal, E as effect, fieldModel, getObjectId, _$3 as h, hh, hooks, J as hydrate, idify, initPreactData, t$2 as isValidElement, node2component, l$2 as options, preventDefault, pushSignal, registerPreactData, G as render, d as signal, H as toChildArray, h$1 as untracked, useComputed, useSignal, useSignalEffect };
