@@ -189,9 +189,18 @@
         justify-self: start;
      }
 
-     form-aligned > label, form-aligned > multi-root > label {
+     form-aligned > label, form-aligned > .label, form-aligned > multi-root > label {
         grid-column: 1;
      }
+
+     form-aligned > .aligned-full {
+        grid-column: 1/3;
+     }
+
+     form-aligned > .aligned-right {
+        justify-self: end;
+     }
+
 
     .button-success,
     .button-error,
@@ -219,6 +228,10 @@
 
     multi-root {
         display: contents;
+    }
+
+    .no-margin {
+        margin: 0 !important;
     }
    </style>
 </head>

@@ -9,105 +9,127 @@
     .card.ok {
         background: #EFE;
     }
+
+    form-aligned {
+        align-items: center;
+        line-height: 100%;
+    }
+
+    .card {
+       padding: 0.4em;
+    }
 </style>
 
-<script>
-function tran_form() {
-    return {
-        'transactions': {{ transactions | tojson }},
-        'src': '',
-        'balance': {{ balance | tojson }},
-        'error': null,
-        total() {
-            let result = 0;
-            for(const it of this.transactions) {
-                if (!it.state) {
-                    result += it.amount;
-                }
-            }
-            return result;
-        },
-        ignore(idx) {
-            this.transactions[idx].state = 'seen';
-        },
-        include(idx) {
-            this.transactions[idx].state = null;
-        },
-        setSimilar(idx) {
-            const other = this.transactions[idx];
-            for(let i=0; i<this.transactions.length; i++) {
-                const tr = this.transactions[i];
-                if (idx == i) {
-                    continue;
-                }
-                if (tr.key && tr.key == other.key) {
-                    tr.dest = other.dest;
-                    tr.desc = other.desc;
-                }
-            }
-        },
-        handleSubmit(event) {
-            this.error = null;
-            if (this.transactions.some(it => !it.state && !it.dest)) {
-                this.error = 'All transactions should be with destination or marked as seen'
-                event.preventDefault()
-                return
-            }
-            this.$refs.transactions.value = JSON.stringify(this.transactions)
+<form method="POST" data-preact="tranForm" action="{{ url_for('import_transactions_apply') }}" class="pure-form"></form>
+
+<template id="accountSelector">
+    {{ select_group('some', '---', env.account_groups) }}
+</template>
+
+<script type="module">
+    import {hh as h, render, signal, computed, cloneElement, effect,
+            initPreactData, registerPreactData, batch, hooks,
+            node2component, idify, fieldModel, preventDefault,
+            classNames} from '/static/js/preact-all.js';
+
+    const {useState} = hooks;
+
+    function wrapItem(item) {
+        return {
+            ...item,
+            state: signal(item.state),
+            dest: signal(item.dest),
+            desc: signal(item.desc),
         }
     }
-}
+
+    const balance = {{ balance | tojson }}
+    const transactions = signal(idify({{ transactions | tojson }}).map(wrapItem))
+    const form_data = computed(() => JSON.stringify(transactions.value))
+
+    const submit_ok = computed(() => {
+        return !transactions.value.some(it => !it.state.value && !it.dest.value)
+    })
+
+    const total = computed(() => {
+        let result = 0
+        for(const it of transactions.value) {
+            if (!it.state.value) {
+                result += it.amount
+            }
+        }
+        return result
+    })
+
+    function setSimilar(other) {
+        batch(() => {
+            for(const tr of transactions.value) {
+                if (tr === other) {
+                    continue
+                }
+                if (tr.key && tr.key == other.key) {
+                    tr.dest.value = other.dest.value;
+                    tr.desc.value = other.desc.value;
+                }
+            }
+        })
+    }
+
+    function AccountSelector(props) {
+        const [open, setOpen] = useState(false);
+        const handleSelectFocus = () => setOpen(true);
+        return h('select', {...props, onFocus: handleSelectFocus},
+            open || props.value.value ? accountSelector.props.children : h('option', '---')
+        )
+    }
+
+    function Transaction({trn}) {
+        const [state_value, state_title] = trn.state.value ? [null, 'Include'] : ['seen', 'Exclude']
+
+        return h('div',
+            {'class': classNames({card: true, ignored: trn.state.value, ok: !trn.state.value && trn.dest.value})},
+            h('form-aligned',
+                h('label.no-margin', trn.type),
+                h('div.date.aligned-right', trn.date_str),
+
+                h('label.no-margin', trn.name),
+                h('div.aligned-right', h('span', trn.amount.toFixed(2)), '\xA0', h('span.cur', trn.cur)),
+
+                h('span.aligned-full', trn.category),
+                h(AccountSelector, {'class': 'aligned-full', name: 'dest', ...fieldModel(trn.dest)}),
+                h('input.aligned-full', {type: 'text', name: 'desc', ...fieldModel(trn.desc)}),
+                h('div.aligned-full',
+                    h('button.pure-button.button-secondary',
+                      {onClick: preventDefault(() => setSimilar(trn)), disabled: !trn.dest.value}, 'Set similar'),
+                    ' ',
+                    h('button.pure-button.button-secondary',
+                      {onClick:preventDefault(() => trn.state.value = state_value)}, state_title)
+                ),
+            ),
+        )
+    }
+
+    function TransactionList() {
+        return transactions.value.map((trn) => h(Transaction, {trn, key: trn.id}))
+    }
+
+    function tranForm() {
+        return [
+            h('input', {name: "src", value: {{ src | tojson }}, hidden: true}),
+            h('input', {name: "transactions", value: form_data, hidden: true}),
+            h('p',
+              'Account: ', {{ env.account_title(src) | tojson }},
+              h('br'),
+              'Balance: ', `${balance.GBP.toFixed(2)} + ${total.value.toFixed(2)} = ${(balance.GBP + total.value).toFixed(2)}`,
+            ),
+            h('p', h('button.pure-button.pure-button-primary', {type: 'submit', disabled: !submit_ok.value}, 'Import')),
+            h('v-stack', h(TransactionList))
+        ]
+    }
+
+    const accountSelector = node2component(document.querySelector('#accountSelector').content.querySelector('select'))
+    registerPreactData(tranForm)
+    initPreactData()
 </script>
 
-<form method="POST" x-data="tran_form" action="{{ url_for('import_transactions_apply') }}" @submit="handleSubmit" class="pure-form">
-    <input name="src" x-ref="transactions" value="{{ src }}" hidden />
-    <input name="transactions" x-ref="transactions" hidden />
-    <p>
-        Account: {{ env.account_title(src) }}<br>
-        Balance: <span x-text="balance.GBP.toFixed(2)"></span> + <span x-text="total().toFixed(2)"></span> = <span x-text="(balance.GBP + total()).toFixed(2)"></span>
-    </p>
-
-    <template x-if="error"><p x-text="error"></p></template>
-
-    <p>
-        <button type='submit' class="pure-button pure-button-primary">Import</button>
-    </p>
-
-    <v-stack>
-        <template x-for="(it, idx) in transactions" :key="idx">
-        <div :class="{'card': true, 'ignored': it.state, 'ok': !it.state && it.dest}">
-            <table>
-                <tr>
-                    <td x-text="it.type"></td>
-                    <td class="tright">
-                        <span class="date" x-text="it.date_str"></span>
-                    </td>
-                </tr>
-                <tr>
-                    <td x-text="it.name"></td>
-                    <td class="tright"><span x-text="it.amount.toFixed(2)"></span>&nbsp;<span class="cur" x-text="it.cur"></span></td>
-                </tr>
-                <tr><td colspan=2 x-text="it.category"></td></tr>
-                <tr><td colspan=2>
-                    {{ select_group('dest', '---', env.account_groups, **{'x-model': "it.dest"}) }}
-                </td></tr>
-                <tr><td colspan=2>
-                    <input type="text" x-model="it.desc" name="desc" />
-                </td></tr>
-                <tr>
-                    <td><button @click.prevent="setSimilar(idx)" class="pure-button button-secondary">Set similar</button></td>
-                    <td class="tright">
-                        <template x-if="!it.state">
-                            <button @click.prevent="ignore(idx)" class="pure-button button-secondary">Ignore</button> #}
-                        </template>
-                        <template x-if="it.state">
-                            <button @click.prevent="include(idx)" class="pure-button button-secondary">Include</button>
-                        </template>
-                    </td>
-                </tr>
-            </table>
-        </div>
-        </template>
-    </v-stack>
-</form>
 {% endblock %}

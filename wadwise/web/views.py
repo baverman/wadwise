@@ -261,7 +261,6 @@ def import_transactions_apply(src: str, transactions: list[monzo.ImportTransacti
     if seen_keys:
         m.update_seen_transactions(aid, datetime.fromtimestamp(transactions[0]['date']), seen_keys)
     transactions_to_import = [it for it in transactions if not it['state']]
-    print(transactions_to_import)
     monzo.import_data(src, transactions_to_import)
     state.transactions_changed()
     return redirect(url_for('account_view', aid=aid))

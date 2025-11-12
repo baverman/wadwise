@@ -29,6 +29,15 @@
 {% endmacro %}
 
 {% block content %}
+<style>
+    .opaque {
+        position: absolute;
+        width: 0;
+        height: 0;
+        opacity: 0;
+    }
+</style>
+
 <script>
     function today_selector_data() {
         return {
@@ -45,10 +54,26 @@
 </script>
 
 {% if account %}
+<form id="formImportData" method="POST" action="{{ url_for('import_monzo') }}"
+      enctype="multipart/form-data" style="display: none">
+    <input name="src" value="{{ account.aid }}" />
+    <input type="file" name="monzo" accept=".csv" oninput="if (this.value) this.form.submit()" />
+</form>
+
 {% set hlpos = account.type in 'qa' %}
 {% set hlneg = account.type in 'iel' %}
 <div x-data="{opened: false}">
-  <a href="{{ url_for('account_view') }}">Root</a>:{% for p in account.parents %}<a href="{{ url_for('account_view', aid=p) }}">{{ env.amap[p].name }}</a>:{% endfor %}<a href="{{ url_for('account_edit', aid=account.aid) }}">{{ account.name }}</a>
+  <form-aligned>
+      <div class="label">
+          <a href="{{ url_for('account_view') }}">Root</a>:{% for p in account.parents %}<a href="{{ url_for('account_view', aid=p) }}">{{ env.amap[p].name }}</a>:{% endfor %}<a href="{{ url_for('account_edit', aid=account.aid) }}">{{ account.name }}</a>
+      </div>
+
+      <div class="aligned-right">
+          <input id="dateSelector" type="month" x-data="today_selector_data" x-model="today" class="opaque" />
+          <a href="#date" onclick="document.querySelector('#dateSelector').showPicker()">{{ today.strftime('%b %Y') }}</a>
+      </div>
+  </form-aligned>
+
   {% with messages = get_flashed_messages() %}
     {% if messages %}
       {% for message in messages %}
@@ -56,10 +81,6 @@
       {% endfor %}
     {% endif %}
   {% endwith %}
-
-  <div>
-      <input type="month" x-data="today_selector_data" x-model="today" />
-  </div>
 
   {% set cur_list = env.sorted_curs(env.total(account.aid)) %}
   {% if cur_list %}
@@ -124,6 +145,7 @@
     {% if account.aid in env.joint_accounts %}
     | <a href="{{ url_for('transaction_edit', dest=account.aid + '.joint') }}">Joint</a>
     {% endif %}
+    | <a href="#import" onclick="document.querySelector('#formImportData').monzo.click(); event.preventDefault()">Import</a>
 </div>
 
 <v-gap class="gap-l"></v-gap>

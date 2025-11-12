@@ -61,6 +61,7 @@ export function hh(tag, pattrs, ...children) {
 
 const _ids = new WeakMap();
 let _idCounter = 1;
+window._h_render_count = 0;
 
 export function getObjectId(obj) {
   if (!_ids.has(obj)) {
@@ -97,4 +98,3 @@ export function preventDefault(fn) {
         fn()
     }
 }
-
