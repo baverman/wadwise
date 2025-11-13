@@ -7,3 +7,4 @@ sqlbind.py
 model.gnumeric
 select.html
 node_modules
+wadwise/web/static/js

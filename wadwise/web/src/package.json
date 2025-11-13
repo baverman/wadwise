@@ -1,15 +1,21 @@
 {
   "dependencies": {
-    "@preact/signals": "^2.3.2",
-    "@rollup/plugin-commonjs": "^29.0.0",
-    "@rollup/plugin-node-resolve": "^16.0.3",
     "classnames": "^2.5.1",
     "deepsignal": "^1.6.0",
     "dot-prop-immutable": "^2.1.1",
     "preact": "^10.27.2",
-    "rollup": "^4.52.5"
+    "@preact/signals": "^2.3.2"
   },
   "scripts": {
-    "build": "rollup -c"
+    "lint": "eslint",
+    "build": "rm ../static/js/utils-*.js; rollup -c"
+  },
+  "devDependencies": {
+    "rollup": "^4.52.5",
+    "@rollup/plugin-commonjs": "^29.0.0",
+    "@rollup/plugin-node-resolve": "^16.0.3",
+    "@eslint/js": "^9.39.1",
+    "eslint": "^9.39.1",
+    "globals": "^16.5.0"
   }
 }

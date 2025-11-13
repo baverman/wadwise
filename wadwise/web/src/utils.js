@@ -6,9 +6,11 @@ export function registerPreactData(fn) {
     window._wadwiseFuncs[fn.name] = fn
 }
 
-export function initPreactData() {
+export function initPreactData(props) {
+    props = props || {};
     for (const el of document.querySelectorAll('[data-preact]')) {
-        render(h(window._wadwiseFuncs[el.dataset.preact]), el);
+        const name = el.dataset.preact
+        render(h(window._wadwiseFuncs[name], props[name] || null), el);
     }
 }
 
