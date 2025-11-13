@@ -1,0 +1,56 @@
+{% set noalpine=True %}
+{% extends 'base.html' %}
+{% from 'widgets.html' import select_group %}
+
+{% block content %}
+
+{% if account %}
+<form id="formImportData" method="POST" action="{{ url_for('import_monzo') }}"
+      enctype="multipart/form-data" style="display: none">
+    <input name="src" value="{{ account.aid }}" />
+    <input type="file" name="monzo" accept=".csv" oninput="if (this.value) this.form.submit()" />
+</form>
+{% endif %}
+
+<div class="w-100" data-preact="AccountView"></div>
+
+<script type="module">
+    import {initPreactData} from '/static/js/account_view.js'
+    const account = {{ account | tojson }}
+    const cur_list = {}
+    const balance = {}
+    {% if account %}
+        cur_list.total = {{ env.sorted_curs(env.total(account.aid)) | tojson }}
+        balance.current_total = {{ env.current[account.aid].total | tojson }}
+        balance.month_total = {{ env.month[account.aid].total | tojson }}
+        {% if account.is_sheet %}
+            cur_list.full = {{ env.sorted_curs(merge(env.prev[account.aid].total, env.month[account.aid].total2)) | tojson }}
+            balance.month_debit = {{ env.month[account.aid].debit | tojson }}
+            balance.month_credit = {{ env.month[account.aid].credit | tojson }}
+            balance.prev_total = {{ env.prev[account.aid].total | tojson }}
+        {% endif %}
+    {% else %}
+        cur_list.total = {{ env.top_sorted_curs() | tojson }}
+    {% endif %}
+    initPreactData({AccountView: {
+        account,
+        accounts: {{ accounts | tojson }},
+        accounts_totals: {{ env.accounts_totals(accounts) | tojson }},
+        joint_accounts: {{ env.joint_accounts | tojson }},
+        urls: {
+            settings: {{ url_for('settings') | tojson }},
+            account_view: {{ url_for('account_view') | tojson }},
+            account_edit: {{ url_for('account_edit') | tojson }},
+            transaction_edit: {{ url_for('transaction_edit') | tojson }},
+        },
+        amap: {{ env.amap | tojson }},
+        today_str: {{ today_str | tojson}},
+        today_dsp: {{ today.strftime('%b %Y') | tojson }},
+        cur_list,
+        balance,
+        transactions: {{ transactions | tojson }},
+        messages: {{ get_flashed_messages() | tojson }},
+    }})
+</script>
+
+{% endblock %}

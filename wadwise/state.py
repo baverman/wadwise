@@ -112,6 +112,9 @@ class Env:
         else:
             return self.month[aid].total
 
+    def accounts_totals(self, accounts: list[m.Account]) -> dict[str, m.BState]:
+        return {it['aid']: self.total(it['aid']) for it in accounts}
+
     def sorted_total(self, total: m.BState) -> list[tuple[str, float]]:
         return sorted(total.items(), key=Env.cur_sort_key)
 

@@ -7,7 +7,9 @@
    <title>{{ title | default('Wadwise')}}</title>
    <link rel="manifest" href="/static/manifest.json">
    <link rel="stylesheet" href="/static/css/pure.css">
+   {% if noalpine is not defined %}
    <script src="/static/js/alpine.js" defer></script>
+   {% endif %}
    <style>
      @property --stack-gap {
         syntax: "<length>";
@@ -201,6 +203,12 @@
         justify-self: end;
      }
 
+    .opaque {
+        position: absolute;
+        width: 0;
+        height: 0;
+        opacity: 0;
+    }
 
     .button-success,
     .button-error,

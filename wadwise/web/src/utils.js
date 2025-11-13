@@ -7,7 +7,7 @@ export function registerPreactData(fn) {
 }
 
 export function initPreactData(props) {
-    props = props || {};
+    props = props ?? {};
     for (const el of document.querySelectorAll('[data-preact]')) {
         const name = el.dataset.preact
         render(h(window._wadwiseFuncs[name], props[name] || null), el);
@@ -99,4 +99,27 @@ export function preventDefault(fn) {
         e.preventDefault()
         fn()
     }
+}
+
+export function urlqs(base, params) {
+    if (!params) {
+        return base
+    }
+    return base + '?' + (new URLSearchParams(params ?? {})).toString()
+}
+
+export const nbsp = '\xA0'
+
+export function join(sep, arr) {
+    const result = []
+    for(const it of arr) {
+        if (it !== null && it !== undefined && it !== false) {
+            result.push(it)
+            result.push(sep)
+        }
+    }
+    if (result.length) {
+        result.pop()
+    }
+    return result
 }

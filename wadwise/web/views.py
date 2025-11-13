@@ -38,22 +38,24 @@ def split_date(name: str = 'date') -> dict[str, Any]:
 
 
 @app.route('/account')
-@query_string(aid=opt(str))
-def account_view(aid: Optional[str]) -> str:
+@query_string(aid=opt(str), js=opt(bool, True))
+def account_view(aid: Optional[str], js: bool) -> str:
     if aid:
         account = state.account_map()[aid]
     else:
-        account = {}  # type: ignore[typeddict-item]
+        account = None  # type: ignore[typeddict-item]
     accounts = m.get_sub_accounts(aid)
     data = m.account_transactions(aid=aid)
 
-    key = lambda x: x['date'].date()
+    now = datetime.now()
+
+    key = lambda x: x['date'].strftime('%a %d %B') if x['date'].year == now.year else x['date'].strftime('%d %B %Y')
     transactions = []
     for k, g in groupby(data, key):
         transactions.append((k, list(g)))
 
     return render_template(
-        'account/view.html',
+        'account/view-js.html' if js else 'account/view.html',
         accounts=accounts,
         account=account,
         transactions=transactions,
