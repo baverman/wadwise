@@ -4,7 +4,7 @@ import {signal, computed, batch} from '@preact/signals';
 import {hh as h, registerPreactData, deleteIdxSignal, node2component,
         idify, fieldModel, preventDefault, pushSignal, initPreactData} from './utils.js'
 
-function wrapJointItem(item) {
+function wrapItem(item) {
     return {
         ...item,
         parent: signal(item.parent),
@@ -14,17 +14,26 @@ function wrapJointItem(item) {
     }
 }
 
-let joints;
-let jointsStr;
+const joints = signal([])
+const jointsStr = computed(() => JSON.stringify(joints))
+
+const hasErrors = computed(() => {
+    return !joints.value.every((it) => (
+        it.parent.value
+        && it.clear.value
+        && it.joints.value.every((a) => a.value)
+        && it.assets.value.every((a) => a.value)))
+})
+
+// import {effect} from '@preact/signals'
+// effect(() => console.log(hasErrors.value, joints.value))
 
 function init(data) {
-    joints = signal(idify(data).map(wrapJointItem))
-    jointsStr = computed(() => JSON.stringify(joints))
-    // effect(() => console.log(fdata_raw.value))
+    joints.value = idify(data).map(wrapItem)
 }
 
 function add() {
-    pushSignal(joints, wrapJointItem(
+    pushSignal(joints, wrapItem(
         {id: crypto.randomUUID(), parent: '', joints: ['', ''], assets:[''], clear: ''}))
 }
 
@@ -90,7 +99,7 @@ function JointForm() {
                 h('div',
                     h('button.pure-button', {'onClick': preventDefault(add)}, 'Add Joint'),
                     ' ',
-                    h('button.pure-button.pure-button-primary', {'type': 'submit'}, 'Save'),
+                    h('button.pure-button.pure-button-primary', {'type': 'submit', disabled: hasErrors}, 'Save'),
                 )
             )
         )
