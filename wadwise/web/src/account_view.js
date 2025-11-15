@@ -5,6 +5,7 @@ import { useSignal } from '@preact/signals'
 import { hh as h, registerPreactData, preventDefault, initPreactData, urlqs, nbsp, join } from './utils.js'
 
 const dqs = document.querySelector.bind(document)
+const intlFmt = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 })
 
 function AccountHeader({ account, urls, amap, today_str, today_dsp }) {
     function dateChanged(e) {
@@ -33,6 +34,13 @@ function AccountHeader({ account, urls, amap, today_str, today_dsp }) {
     ]
 }
 
+const delim = h('span.delim')
+
+function fmtNumber(value) {
+    const parts = intlFmt.format(value).split(',')
+    return join(delim, parts)
+}
+
 function totalsRows(cur_list, total, children, props) {
     const result = []
     let first = true
@@ -42,7 +50,7 @@ function totalsRows(cur_list, total, children, props) {
                 h(
                     'tr',
                     h('td', first && children),
-                    h('td.tright.amount', total[cur].toFixed(2), nbsp, h('span.cur', cur)),
+                    h('td.tright.amount', fmtNumber(total[cur]), nbsp, h('span.cur', cur)),
                 ),
             )
             first = false
@@ -113,11 +121,13 @@ function AccountLinks({ account, urls, joint_accounts }) {
             [
                 h('a', { href: urlqs(urls.transaction_edit, { dest: account.aid }) }, 'Add'),
                 ' (',
-                h('a', { href: urlqs(urls.transaction_edit, { dest: account.aid, split: 1 }) }, 'split'),
+                join(', ', [
+                    h('a', { href: urlqs(urls.transaction_edit, { dest: account.aid, split: 1 }) }, 'split'),
+                    account.aid in joint_accounts &&
+                        h('a', { href: urlqs(urls.transaction_edit, { dest: account.aid + '.joint' }) }, 'joint'),
+                ]),
                 ')',
             ],
-            account.aid in joint_accounts &&
-                h('a', { href: urlqs(urls.transaction_edit, { dest: account.aid + '.joint' }) }, 'Joint'),
             [
                 h('a', { href: '#import', onClick: (e) => handleImport(e, account.aid) }, 'Import'),
                 ' (',
