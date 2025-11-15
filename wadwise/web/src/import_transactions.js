@@ -2,7 +2,6 @@ import classNames from 'classnames'
 import { useState } from 'preact/hooks'
 import { signal, computed, batch } from '@preact/signals'
 import {
-    hh as h,
     initPreactData,
     idify,
     fieldModel,
@@ -10,6 +9,13 @@ import {
     node2component,
     registerPreactData,
 } from './utils.js'
+import { hh as h, nbsp } from './html.js'
+
+const { select, option, div, span, input } = h
+const button = h.button['pure-button']
+const pbutton = button['pure-button-primary']
+const sbutton = button['button-secondary']
+const vstack = h['v-stack']
 
 function wrapItem(item) {
     return { ...item, state: signal(item.state), dest: signal(item.dest), desc: signal(item.desc) }
@@ -53,40 +59,40 @@ function setSimilar(other) {
 function AccountSelector(props) {
     const [open, setOpen] = useState(false)
     const handleSelectFocus = () => setOpen(true)
-    return h(
-        'select',
+    return select(
         { ...props, onFocus: handleSelectFocus },
-        open || props.value.value ? accountSelector.props.children : h('option', '---'),
+        open || props.value.value ? accountSelector.props.children : option('---'),
     )
 }
 
 function Transaction({ trn }) {
     const [state_value, state_title] = trn.state.value ? [null, 'Include'] : ['seen', 'Exclude']
 
-    return h(
-        'div',
-        { class: classNames({ card: true, ignored: trn.state.value, ok: !trn.state.value && trn.dest.value }) },
-        h(
-            'form-aligned',
-            h('div.label', trn.type),
-            h('div.date.aligned-right', trn.date_str),
+    return div(
+        {
+            class: classNames({
+                card: true,
+                ignored: trn.state.value,
+                ok: !trn.state.value && trn.dest.value,
+            }),
+        },
+        h['form-aligned'](
+            div.label(trn.type),
+            div['aligned-right'](trn.date_str),
 
-            h('div.label', trn.name),
-            h('div.aligned-right', h('span', trn.amount.toFixed(2)), '\xA0', h('span.cur', trn.cur)),
+            div.label(trn.name),
+            div['aligned-right'](span(trn.amount.toFixed(2)), nbsp, span.cur(trn.cur)),
 
-            h('span.aligned-full', trn.category),
+            span['aligned-full'](trn.category),
             h(AccountSelector, { class: 'aligned-full', name: 'dest', ...fieldModel(trn.dest) }),
-            h('input.aligned-full', { type: 'text', name: 'desc', ...fieldModel(trn.desc) }),
-            h(
-                'div.aligned-full',
-                h(
-                    'button.pure-button.button-secondary',
+            input['aligned-full']({ type: 'text', name: 'desc', ...fieldModel(trn.desc) }),
+            div['aligned-full'](
+                sbutton(
                     { onClick: preventDefault(() => setSimilar(trn)), disabled: !trn.dest.value },
                     'Set similar',
                 ),
                 ' ',
-                h(
-                    'button.pure-button.button-secondary',
+                sbutton(
                     { onClick: preventDefault(() => (trn.state.value = state_value)) },
                     state_title,
                 ),
@@ -101,22 +107,23 @@ function TransactionList() {
 
 function ImportForm({ src, name, balance }) {
     return [
-        h('input', { name: 'src', value: src, hidden: true }),
-        h('input', { name: 'transactions', value: transactionsStr, hidden: true }),
-        h(
-            'p',
+        input({ name: 'src', value: src, hidden: true }),
+        input({ name: 'transactions', value: transactionsStr, hidden: true }),
+        h.p(
             'Account: ',
             name,
-            h('br'),
+            h.br(),
             'Balance: ',
             `${balance.GBP.toFixed(2)} + ${total.value.toFixed(2)} = ${(balance.GBP + total.value).toFixed(2)}`,
         ),
-        h('p', h('button.pure-button.pure-button-primary', { type: 'submit', disabled: !submit_ok.value }, 'Import')),
-        h('v-stack', h(TransactionList)),
+        h.p(pbutton({ type: 'submit', disabled: !submit_ok.value }, 'Import')),
+        vstack(h(TransactionList)),
     ]
 }
 
-const accountSelector = node2component(document.querySelector('#accountSelector').content.querySelector('select'))
+const accountSelector = node2component(
+    document.querySelector('#accountSelector').content.querySelector('select'),
+)
 registerPreactData(ImportForm)
 
 export { init, initPreactData }

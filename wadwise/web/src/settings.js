@@ -2,7 +2,6 @@ import { cloneElement } from 'preact'
 import { signal, computed, batch } from '@preact/signals'
 
 import {
-    hh as h,
     registerPreactData,
     deleteIdxSignal,
     node2component,
@@ -12,6 +11,12 @@ import {
     pushSignal,
     initPreactData,
 } from './utils.js'
+import { hh as h } from './html.js'
+
+const { div, label, fieldset, legend, input } = h
+const button = h.button['pure-button']
+const pbutton = button['pure-button-primary']
+const vstack = h['v-stack']
 
 function wrapItem(item) {
     return {
@@ -44,7 +49,16 @@ function init(data) {
 }
 
 function add() {
-    pushSignal(joints, wrapItem({ id: crypto.randomUUID(), parent: '', joints: ['', ''], assets: [''], clear: '' }))
+    pushSignal(
+        joints,
+        wrapItem({
+            id: crypto.randomUUID(),
+            parent: '',
+            joints: ['', ''],
+            assets: [''],
+            clear: '',
+        }),
+    )
 }
 
 function addParty(item) {
@@ -64,37 +78,42 @@ function removeParty(item, pidx) {
 function JointForm() {
     function partyFrag(card, pidx) {
         return [
-            h('div'),
-            h('label', `Party ${pidx + 1}`),
-            h('button.pure-button', { onClick: preventDefault(() => removeParty(card, pidx)) }, 'Remove party'),
-            h('label', 'Joint'),
-            cloneElement(accountSelector, { name: 'joint-other', ...fieldModel(card.joints.value[pidx + 1]) }),
-            h('label', 'Asset'),
-            cloneElement(accountSelector, { name: 'asset-other', ...fieldModel(card.assets.value[pidx]) }),
+            div(),
+            label(`Party ${pidx + 1}`),
+            button({ onClick: preventDefault(() => removeParty(card, pidx)) }, 'Remove party'),
+            label('Joint'),
+            cloneElement(accountSelector, {
+                name: 'joint-other',
+                ...fieldModel(card.joints.value[pidx + 1]),
+            }),
+            label('Asset'),
+            cloneElement(accountSelector, {
+                name: 'asset-other',
+                ...fieldModel(card.assets.value[pidx]),
+            }),
         ]
     }
 
     function jointCard({ card, onDelete }) {
-        return h(
-            'div.card',
+        return div.card(
             { style: { padding: '0.6rem' } },
-            h(
-                'v-stack',
-                h(
-                    'form-aligned',
-                    h('label', 'Main'),
+            vstack(
+                h['form-aligned'](
+                    label('Main'),
                     cloneElement(accountSelector, { name: 'main', ...fieldModel(card.parent) }),
-                    h('label', 'Me'),
-                    cloneElement(accountSelector, { name: 'me', ...fieldModel(card.joints.value[0]) }),
-                    h('label', 'Clear'),
+                    label('Me'),
+                    cloneElement(accountSelector, {
+                        name: 'me',
+                        ...fieldModel(card.joints.value[0]),
+                    }),
+                    label('Clear'),
                     cloneElement(accountSelector, { name: 'clear', ...fieldModel(card.clear) }),
                     card.assets.value.map((_, pidx) => partyFrag(card, pidx)),
                 ),
-                h(
-                    'div',
-                    h('button.pure-button', { onClick: preventDefault(() => addParty(card)) }, 'Add Party'),
+                div(
+                    button({ onClick: preventDefault(() => addParty(card)) }, 'Add Party'),
                     ' ',
-                    h('button.pure-button', { onClick: preventDefault(onDelete) }, 'Remove Joint'),
+                    button({ onClick: preventDefault(onDelete) }, 'Remove Joint'),
                 ),
             ),
         )
@@ -107,18 +126,15 @@ function JointForm() {
     }
 
     return [
-        h(
-            'fieldset',
-            h('legend', 'Joint accounts'),
-            h('input', { name: 'data', hidden: true, value: jointsStr }),
-            h(
-                'v-stack',
+        fieldset(
+            legend('Joint accounts'),
+            input({ name: 'data', hidden: true, value: jointsStr }),
+            vstack(
                 h(JointList, { joints }),
-                h(
-                    'div',
-                    h('button.pure-button', { onClick: preventDefault(add) }, 'Add Joint'),
+                div(
+                    button({ onClick: preventDefault(add) }, 'Add Joint'),
                     ' ',
-                    h('button.pure-button.pure-button-primary', { type: 'submit', disabled: hasErrors }, 'Save'),
+                    pbutton({ type: 'submit', disabled: hasErrors }, 'Save'),
                 ),
             ),
         ),
