@@ -1,8 +1,17 @@
-import {cloneElement} from 'preact';
-import {signal, computed, batch} from '@preact/signals';
+import { cloneElement } from 'preact'
+import { signal, computed, batch } from '@preact/signals'
 
-import {hh as h, registerPreactData, deleteIdxSignal, node2component,
-        idify, fieldModel, preventDefault, pushSignal, initPreactData} from './utils.js'
+import {
+    hh as h,
+    registerPreactData,
+    deleteIdxSignal,
+    node2component,
+    idify,
+    fieldModel,
+    preventDefault,
+    pushSignal,
+    initPreactData,
+} from './utils.js'
 
 function wrapItem(item) {
     return {
@@ -18,11 +27,13 @@ const joints = signal([])
 const jointsStr = computed(() => JSON.stringify(joints))
 
 const hasErrors = computed(() => {
-    return !joints.value.every((it) => (
-        it.parent.value
-        && it.clear.value
-        && it.joints.value.every((a) => a.value)
-        && it.assets.value.every((a) => a.value)))
+    return !joints.value.every(
+        (it) =>
+            it.parent.value &&
+            it.clear.value &&
+            it.joints.value.every((a) => a.value) &&
+            it.assets.value.every((a) => a.value),
+    )
 })
 
 // import {effect} from '@preact/signals'
@@ -33,8 +44,7 @@ function init(data) {
 }
 
 function add() {
-    pushSignal(joints, wrapItem(
-        {id: crypto.randomUUID(), parent: '', joints: ['', ''], assets:[''], clear: ''}))
+    pushSignal(joints, wrapItem({ id: crypto.randomUUID(), parent: '', joints: ['', ''], assets: [''], clear: '' }))
 }
 
 function addParty(item) {
@@ -46,7 +56,7 @@ function addParty(item) {
 
 function removeParty(item, pidx) {
     batch(() => {
-        deleteIdxSignal(item.joints, pidx+1)
+        deleteIdxSignal(item.joints, pidx + 1)
         deleteIdxSignal(item.assets, pidx)
     })
 }
@@ -56,53 +66,62 @@ function JointForm() {
         return [
             h('div'),
             h('label', `Party ${pidx + 1}`),
-            h('button.pure-button', {onClick: preventDefault(() => removeParty(card, pidx))}, 'Remove party'),
+            h('button.pure-button', { onClick: preventDefault(() => removeParty(card, pidx)) }, 'Remove party'),
             h('label', 'Joint'),
-            cloneElement(accountSelector, {name: 'joint-other', ...fieldModel(card.joints.value[pidx+1])}),
+            cloneElement(accountSelector, { name: 'joint-other', ...fieldModel(card.joints.value[pidx + 1]) }),
             h('label', 'Asset'),
-            cloneElement(accountSelector, {name: 'asset-other', ...fieldModel(card.assets.value[pidx])}),
+            cloneElement(accountSelector, { name: 'asset-other', ...fieldModel(card.assets.value[pidx]) }),
         ]
     }
 
-    function jointCard({card, onDelete}) {
-        return h('div.card', {style: {padding: '0.6rem'}},
-            h('v-stack',
-                h('form-aligned',
+    function jointCard({ card, onDelete }) {
+        return h(
+            'div.card',
+            { style: { padding: '0.6rem' } },
+            h(
+                'v-stack',
+                h(
+                    'form-aligned',
                     h('label', 'Main'),
-                    cloneElement(accountSelector, {name: 'main', ...fieldModel(card.parent)}),
+                    cloneElement(accountSelector, { name: 'main', ...fieldModel(card.parent) }),
                     h('label', 'Me'),
-                    cloneElement(accountSelector, {name: 'me', ...fieldModel(card.joints.value[0])}),
+                    cloneElement(accountSelector, { name: 'me', ...fieldModel(card.joints.value[0]) }),
                     h('label', 'Clear'),
-                    cloneElement(accountSelector, {name: 'clear', ...fieldModel(card.clear)}),
+                    cloneElement(accountSelector, { name: 'clear', ...fieldModel(card.clear) }),
                     card.assets.value.map((_, pidx) => partyFrag(card, pidx)),
                 ),
-                h('div',
-                    h('button.pure-button', {onClick: preventDefault(() => addParty(card))}, 'Add Party'),
+                h(
+                    'div',
+                    h('button.pure-button', { onClick: preventDefault(() => addParty(card)) }, 'Add Party'),
                     ' ',
-                    h('button.pure-button', {onClick: preventDefault(onDelete)}, 'Remove Joint'),
-                )
-            )
+                    h('button.pure-button', { onClick: preventDefault(onDelete) }, 'Remove Joint'),
+                ),
+            ),
         )
     }
 
-    function JointList({joints}) {
-        return joints.value.map((card, idx) => h(jointCard, {
-            key: card.id, card, onDelete: () => deleteIdxSignal(joints, idx)}))
+    function JointList({ joints }) {
+        return joints.value.map((card, idx) =>
+            h(jointCard, { key: card.id, card, onDelete: () => deleteIdxSignal(joints, idx) }),
+        )
     }
 
     return [
-        h('fieldset',
+        h(
+            'fieldset',
             h('legend', 'Joint accounts'),
-            h('input', {name: 'data', hidden: true, value: jointsStr}),
-            h('v-stack',
-                h(JointList, {joints}),
-                h('div',
-                    h('button.pure-button', {'onClick': preventDefault(add)}, 'Add Joint'),
+            h('input', { name: 'data', hidden: true, value: jointsStr }),
+            h(
+                'v-stack',
+                h(JointList, { joints }),
+                h(
+                    'div',
+                    h('button.pure-button', { onClick: preventDefault(add) }, 'Add Joint'),
                     ' ',
-                    h('button.pure-button.pure-button-primary', {'type': 'submit', disabled: hasErrors}, 'Save'),
-                )
-            )
-        )
+                    h('button.pure-button.pure-button-primary', { type: 'submit', disabled: hasErrors }, 'Save'),
+                ),
+            ),
+        ),
     ]
 }
 
@@ -110,4 +129,4 @@ registerPreactData(JointForm)
 
 const accountSelector = node2component(document.querySelector('#accountSelector select'))
 
-export {initPreactData, init}
+export { initPreactData, init }
