@@ -2,7 +2,7 @@ import classNames from 'classnames'
 import { useEffect } from 'preact/hooks'
 import { useSignal } from '@preact/signals'
 
-import { hh as h, registerPreactData, preventDefault, initPreactData, urlqs, nbsp, join } from './utils.js'
+import { hh as h, registerPreactData, preventDefault, initPreactData, urlqs, nbsp, join, wrap } from './utils.js'
 
 const dqs = document.querySelector.bind(document)
 const intlFmt = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 })
@@ -120,19 +120,21 @@ function AccountLinks({ account, urls, joint_accounts }) {
         join(' | ', [
             [
                 h('a', { href: urlqs(urls.transaction_edit, { dest: account.aid }) }, 'Add'),
-                ' (',
-                join(', ', [
-                    h('a', { href: urlqs(urls.transaction_edit, { dest: account.aid, split: 1 }) }, 'split'),
-                    account.aid in joint_accounts &&
-                        h('a', { href: urlqs(urls.transaction_edit, { dest: account.aid + '.joint' }) }, 'joint'),
-                ]),
-                ')',
+                wrap(
+                    ' (^)',
+                    join(', ', [
+                        h('a', { href: urlqs(urls.transaction_edit, { dest: account.aid, split: 1 }) }, 'split'),
+                        account.aid in joint_accounts &&
+                            h('a', { href: urlqs(urls.transaction_edit, { dest: account.aid + '.joint' }) }, 'joint'),
+                    ]),
+                ),
             ],
             [
                 h('a', { href: '#import', onClick: (e) => handleImport(e, account.aid) }, 'Import'),
-                ' (',
-                h('a', { href: '#import', onClick: (e) => handleImport(e, account.aid + '.joint') }, 'joint'),
-                ')',
+                wrap(' (^)', [
+                    account.aid in joint_accounts &&
+                        h('a', { href: '#import', onClick: (e) => handleImport(e, account.aid + '.joint') }, 'joint'),
+                ]),
             ],
         ]),
     )

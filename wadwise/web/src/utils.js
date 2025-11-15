@@ -124,3 +124,12 @@ export function join(sep, arr) {
     }
     return result
 }
+
+export function wrap(wtpl, arr) {
+    const [left, right] = wtpl.split('^')
+    const filtered = arr.filter((v) => v !== null && v !== undefined && v !== false)
+    if (filtered?.length) {
+        return [left, ...filtered, right]
+    }
+    return null
+}
