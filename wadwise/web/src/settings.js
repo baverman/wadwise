@@ -141,8 +141,35 @@ function JointForm() {
     ]
 }
 
-registerPreactData(JointForm)
+function FavsForm({ favAccs }) {
+    const favs = signal(favAccs.map(signal))
+
+    function FavList() {
+        return favs.value.map((it, idx) =>
+            div(
+                cloneElement(accountSelector, { name: 'acc', ...fieldModel(it) }),
+                ' ',
+                button({ onClick: preventDefault(() => deleteIdxSignal(favs, idx)) }, '\u2716'),
+            ),
+        )
+    }
+
+    return fieldset(
+        legend('Favorites'),
+        vstack(
+            h(FavList),
+            div(
+                button({ onClick: preventDefault(() => pushSignal(favs, signal(''))) }, 'Add'),
+                ' ',
+                pbutton({ type: 'submit' }, 'Save'),
+            ),
+        ),
+    )
+}
 
 const accountSelector = node2component(document.querySelector('#accountSelector select'))
+
+registerPreactData(JointForm)
+registerPreactData(FavsForm)
 
 export { initPreactData, init }
