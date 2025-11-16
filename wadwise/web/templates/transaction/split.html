@@ -43,7 +43,7 @@ function split_form() {
     <p>
         {{ select_group('acc', '', env.account_groups, **{'x-model': "op[0]"}) }}
         <input type="text" placeholder="amount" inputmode="decimal" name="amount"
-               @input="neg_input($event.target)"
+               @input="neg_input($event)"
                x-model.number="op[1]" size="8em" autocomplete="off">
         {{ select_cur('cur', '', cur_list, **{'x-model': "op[2]"}) }}
         <button @click.prevent="fix_amount(idx)" class="pure-button">Fix</button>

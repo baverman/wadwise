@@ -250,7 +250,8 @@
   </div>
 
   <script>
-    function neg_input(target) {
+    function neg_input(event) {
+        const target = event.target
         if (target.value[0] == '.' && target.value[1] == '.') {
             target.value = '-' + target.value.substring(2);
         }
