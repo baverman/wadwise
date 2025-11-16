@@ -205,24 +205,22 @@ function TransactionList({ account, transactions, amap, urls }) {
         )
     }
 
-    const head = transactions.slice(0, 10)
-    const tail = transactions.slice(10)
-    const showTail = useSignal(false)
+    const loadSize = 10
+    const head = useSignal(transactions.slice(0, loadSize))
+    const tail = useSignal([])
 
     useEffect(() => {
         requestIdleCallback(() => {
-            showTail.value = true
+            tail.value = transactions.slice(loadSize)
         })
     }, [])
 
     return h['v-stack.gap-xl'](
-        head.map(([gdt, tlist]) =>
-            div(div['transaction-date'](gdt), h['v-stack'](tlist.map(Transaction))),
-        ),
-        showTail.value &&
-            tail.map(([gdt, tlist]) =>
+        [head, tail].map((chunk) =>
+            chunk.value.map(([gdt, tlist]) =>
                 div(div['transaction-date'](gdt), h['v-stack'](tlist.map(Transaction))),
             ),
+        ),
     )
 }
 
