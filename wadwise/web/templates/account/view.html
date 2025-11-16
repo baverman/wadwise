@@ -1,57 +1,7 @@
-{% extends "base.html" %}
-
-{% macro cur_table_header(cur_list) %}
-{% if cur_list | length <= 3 %}
-    <tr><th></th>{% for cur in cur_list %}<th class="tright cur"><span class="cur">{{ cur }}</span></th>{% endfor %}</tr>
-{% endif %}
-{% endmacro %}
-
-{% macro cur_table_row(cur_list, total, rowattrs={}) %}
-{% if cur_list | length <= 3 %}
-    <tr {{ rowattrs | xmlattr }}>
-        <td>{{ caller() }}</td>
-        {% for cur in cur_list %}
-            <td class="tright amount"><nobr>{{ fmt_num(total[cur]) | safe }}</nobr></td>
-        {% endfor %}
-    </tr>
-{% else %}
-    {% for cur in env.sorted_curs(total) %}
-        <tr {{ rowattrs | xmlattr }}>
-            <td>{{ caller() if loop.index == 1 else '' }}</td>
-            <td class="tright amount"><nobr>{{ fmt_num(total[cur]) | safe }}</nobr>&nbsp;<span class="cur">{{ cur }}</span></td>
-        </tr>
-    {% else %}
-        <tr {{ rowattrs | xmlattr }}>
-            <td>{{ caller() }}</td>
-        </tr>
-    {% endfor %}
-{% endif %}
-{% endmacro %}
+{% extends 'base.html' %}
+{% from 'widgets.html' import select_group %}
 
 {% block content %}
-<style>
-    .opaque {
-        position: absolute;
-        width: 0;
-        height: 0;
-        opacity: 0;
-    }
-</style>
-
-<script>
-    function today_selector_data() {
-        return {
-            today: {{ today_str | tojson }},
-            init() {
-                this.$watch('today', value => {
-                    let params = new URLSearchParams(window.location.search)
-                    params.set('today', value)
-                    this.$nextTick(() => window.location.search = params)
-                })
-            }
-        }
-    }
-</script>
 
 {% if account %}
 <form id="formImportData" method="POST" action="{{ url_for('import_monzo') }}"
@@ -59,141 +9,47 @@
     <input name="src" value="{{ account.aid }}" />
     <input type="file" name="monzo" accept=".csv" oninput="if (this.value) this.form.submit()" />
 </form>
-
-{% set hlpos = account.type in 'qa' %}
-{% set hlneg = account.type in 'iel' %}
-<div x-data="{opened: false}">
-  <form-aligned>
-      <div class="label">
-          <a href="{{ url_for('account_view') }}">Root</a>:{% for p in account.parents %}<a href="{{ url_for('account_view', aid=p) }}">{{ env.amap[p].name }}</a>:{% endfor %}<a href="{{ url_for('account_edit', aid=account.aid) }}">{{ account.name }}</a>
-      </div>
-
-      <div class="aligned-right">
-          <input id="dateSelector" type="month" x-data="today_selector_data" x-model="today" class="opaque" />
-          <a href="#date" onclick="document.querySelector('#dateSelector').showPicker()">{{ today.strftime('%b %Y') }}</a>
-      </div>
-  </form-aligned>
-
-  {% with messages = get_flashed_messages() %}
-    {% if messages %}
-      {% for message in messages %}
-      <div class="flash">{{ message }}</div>
-      {% endfor %}
-    {% endif %}
-  {% endwith %}
-
-  {% set cur_list = env.sorted_curs(env.total(account.aid)) %}
-  {% if cur_list %}
-  <table class="w-100">
-    {{ cur_table_header(cur_list) }}
-    {% if account.is_sheet %}
-      {% if env.current[account.aid].total %}
-          {% call cur_table_row(cur_list, env.current[account.aid].total, rowattrs={'@click.prevent': 'opened = !opened'}) %}<span x-text="'Balance' + (opened ? '' : ' [+]')"></span>{% endcall %}
-      {% endif %}
-    {% else %}
-      {% if env.month[account.aid].total %}
-          {% call cur_table_row(cur_list, env.month[account.aid].total) %}This month{% endcall %}
-      {% endif %}
-    {% endif %}
-  </table>
-  {% endif %}
-
-  {% if account.is_sheet %}
-      {% set full_cur_list = env.sorted_curs(merge(env.prev[account.aid].total, env.month[account.aid].total2)) %}
-      {% if full_cur_list %}
-      <table x-cloak x-show="opened" class="w-100">
-          {% if  full_cur_list != cur_list %}
-              {{ cur_table_header(full_cur_list) }}
-          {% endif %}
-          {% if env.prev[account.aid].total %}
-              {% call cur_table_row(full_cur_list, env.prev[account.aid].total) %}Month start{% endcall %}
-          {% endif %}
-          {% call cur_table_row(full_cur_list, env.month[account.aid].debit) %}In{% endcall %}
-          {% call cur_table_row(full_cur_list, env.month[account.aid].credit) %}Out{% endcall %}
-      </table>
-      {% endif %}
-  {% endif %}
-</div>
-{% else %}
-  {% set cur_list = env.top_sorted_curs() %}
 {% endif %}
 
-{% if not account %}
-<a href="{{ url_for('settings')}}">Settings</a>
-{% endif %}
+<div class="w-100" data-preact="AccountView"></div>
 
-{% if accounts %}
-<hr>
-<table style="width:100%">
-    {{ cur_table_header(cur_list) }}
-    {% for it in accounts %}
-        {% if cur_list | length > 3 and loop.index0 %}
-            <tr><td><v-gap class="gap-s"></v-gap></td></tr>
+<script type="module">
+    import {initPreactData} from '/static/js/account_view.js'
+    const account = {{ account | tojson }}
+    const cur_list = {}
+    const balance = {}
+    {% if account %}
+        cur_list.total = {{ env.sorted_curs(env.total(account.aid)) | tojson }}
+        balance.current_total = {{ env.current[account.aid].total | tojson }}
+        balance.month_total = {{ env.month[account.aid].total | tojson }}
+        {% if account.is_sheet %}
+            cur_list.full = {{ env.sorted_curs(merge(env.prev[account.aid].total, env.month[account.aid].total2)) | tojson }}
+            balance.month_debit = {{ env.month[account.aid].debit | tojson }}
+            balance.month_credit = {{ env.month[account.aid].credit | tojson }}
+            balance.prev_total = {{ env.prev[account.aid].total | tojson }}
         {% endif %}
-        {% call cur_table_row(cur_list, env.total(it.aid)) %}
-            <a href="{{ url_for('account_view', aid=it.aid, today=today_str) }}">{{ it.name }}</a>
-        {% endcall %}
-    {% endfor %}
-</table>
-{% endif %}
-
-{% if account  %}
-<hr>
-<div>
-    <a href="{{ url_for('transaction_edit', dest=account.aid) }}">Add transaction</a>
-    | <a href="{{ url_for('transaction_edit', dest=account.aid, split=1) }}">Add split</a>
-    {% if account.aid in env.joint_accounts %}
-    | <a href="{{ url_for('transaction_edit', dest=account.aid + '.joint') }}">Joint</a>
+    {% else %}
+        cur_list.total = {{ env.top_sorted_curs() | tojson }}
     {% endif %}
-    | <a href="#import" onclick="document.querySelector('#formImportData').monzo.click(); event.preventDefault()">Import</a>
-</div>
-
-<v-gap class="gap-l"></v-gap>
-
-<v-stack class="gap-xl" id="transaction-list">
-{% for gdt, tlist in transactions %}
-    <div>
-        <div class="transaction-date">{{ gdt }}</div>
-        <v-stack>
-            {% for it in tlist %}
-            <div class="card transaction-item">
-                <table id="t-{{ it.tid }}" data-href="{{ url_for('transaction_edit', tid=it.tid, dest=account.aid) }}">
-                    {% if it.desc %}
-                        <tr {{ {'class': [None, 'transaction-header'][it.split]} | xmlattr}} >
-                            <td colspan="2">{{ it.desc }}</td>
-                        </tr>
-                    {% endif %}
-                    {% if it.split %}
-                        {% for op_acc, op_amnt, op_cur in it.ops %}
-                        <tr>
-                            <td>{{ env.amap[op_acc].full_name }}</td>
-                            <td class="tright"><span class="{{ "good-amount" if (op_acc == account.aid) and ((hlpos and op_amnt > 0) or (hlneg and op_amnt < 0)) else '' }}">{{ '%.2f' % op_amnt }}</span>&nbsp;<span class="cur">{{ op_cur }}</span></td>
-                        </tr>
-                        {% endfor %}
-                    {% else %}
-                        <tr>
-                            <td>{{ env.amap[it.src].full_name }}</td>
-                            <td class="tright"><span class="{{ "good-amount" if (hlpos and it.amount > 0) or (hlneg and it.amount < 0) else '' }}">{{ '%.2f' % it.amount }}</span>&nbsp;<span class="cur">{{ it.cur }}</span></td>
-                        </tr>
-                    {% endif %}
-                </table>
-            </div>
-            {% endfor %}
-        </v-stack>
-    </div>
-{% endfor %}
-</v-stack>
-{% endif %}
-
-<script>
-const container = document.querySelector('#transaction-list');
-
-container.addEventListener('click', event => {
-  const target = event.target.closest('[data-href]');
-  if (target) {
-    window.location.href = target.dataset.href;
-  }
-});
+    initPreactData({AccountView: {
+        account,
+        accounts: {{ accounts | tojson }},
+        accounts_totals: {{ env.accounts_totals(accounts) | tojson }},
+        joint_accounts: {{ env.joint_accounts | tojson }},
+        urls: {
+            settings: {{ url_for('settings') | tojson }},
+            account_view: {{ url_for('account_view') | tojson }},
+            account_edit: {{ url_for('account_edit') | tojson }},
+            transaction_edit: {{ url_for('transaction_edit') | tojson }},
+        },
+        amap: {{ env.amap | tojson }},
+        today_str: {{ today_str | tojson}},
+        today_dsp: {{ today.strftime('%b %Y') | tojson }},
+        cur_list,
+        balance,
+        transactions: {{ transactions | tojson }},
+        messages: {{ get_flashed_messages() | tojson }},
+    }})
 </script>
 
 {% endblock %}

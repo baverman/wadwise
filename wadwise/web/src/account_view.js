@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import { useEffect } from 'preact/hooks'
 import { useSignal } from '@preact/signals'
 
@@ -186,7 +185,7 @@ function TransactionList({ account, transactions, amap, urls }) {
                 tbody(
                     it.desc &&
                         tr(
-                            { class: classNames({ 'transaction-header': it.split }) },
+                            { class: { 'transaction-header': it.split } },
                             td({ colspan: 2 }, it.desc),
                         ),
                     it.split

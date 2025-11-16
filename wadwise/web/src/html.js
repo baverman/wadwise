@@ -1,50 +1,77 @@
 import { h } from 'preact'
+import classNames from 'classnames'
 
-export function _hh(tag, pattrs, ...children) {
-    // console.log(tag, pattrs, children)
-    var attrs = null
-    var child = null
-    if (
-        pattrs &&
-        typeof pattrs == 'object' &&
-        !Array.isArray(pattrs) &&
-        pattrs.props == undefined
-    ) {
-        attrs = pattrs
-    } else {
-        child = pattrs
+function splitArgs(args) {
+    const first = args[0]
+    if (first && typeof first == 'object' && !Array.isArray(first) && first.props == undefined) {
+        return [first, args.slice(1)]
     }
-    if (typeof tag == 'string' && tag.includes('.')) {
-        const parts = tag.split('.')
-        tag = parts[0]
-        attrs = attrs || {}
-        attrs['class'] = parts.slice(1).join(' ')
-    }
-    return h(tag, attrs, child, ...children)
+    return [null, args]
 }
 
-const tagHandler = {
-    get(target, tag) {
-        const key = 'tag-' + tag
-        if (key in target) {
-            return target[key]
+function setAttrs(attrs) {
+    const pctx = this._wadwise_ctx
+    const ctx = { ...pctx, cache: {}, attrs: { ...(pctx.attrs ?? {}), ...attrs } }
+    return createProxy(ctx, classHandler)
+}
+
+function createProxy(ctx, handler) {
+    // console.log('@@ proxy', ctx)
+    const target = (...args) => {
+        let [attrs, children] = splitArgs(args)
+        let needNew = true
+        if (ctx.attrs) {
+            attrs = { ...ctx.attrs, ...(attrs ?? {}) }
+            needNew = false
         }
-        const v = (target[key] = new Proxy((...args) => _hh(tag, ...args), classHandler))
-        v._wadwise_tag = tag
-        return v
+
+        if (ctx.classList || attrs?.['class']) {
+            const clsStr = classNames(ctx.classList, attrs?.['class'])
+            if (needNew || !attrs) {
+                attrs = { ...(attrs ?? {}), class: clsStr }
+            } else {
+                attrs['class'] = clsStr
+            }
+            needNew = false
+        }
+        return h(ctx.tag, attrs, ...children)
+    }
+    target._wadwise_ctx = ctx
+    ctx.cache.$ = setAttrs.bind(target)
+    return new Proxy(target, handler)
+}
+
+function _hh(tag, ...args) {
+    const [attrs, children] = splitArgs(args)
+    return h(tag, attrs, ...children)
+}
+
+_hh._wadwise_ctx = { cache: {} }
+
+const tagHandler = {
+    get(target, selector) {
+        const [tag, ...clsList] = selector.split('.')
+        const cache = target._wadwise_ctx.cache
+        if (selector in cache) {
+            return cache[selector]
+        }
+        return (cache[selector] = createProxy({ tag, cache: {}, clsList }, classHandler))
     },
 }
 
 const classHandler = {
     get(target, cls) {
-        const key = 'cls-' + cls
-        if (key in target) {
-            return target[key]
+        const pctx = target._wadwise_ctx
+        const cache = pctx.cache
+        if (cls in cache) {
+            return cache[cls]
         }
-        const newtag = target._wadwise_tag + '.' + cls
-        const v = (target[key] = new Proxy((...args) => _hh(newtag, ...args), classHandler))
-        v._wadwise_tag = newtag
-        return v
+        const ctx = {
+            ...pctx,
+            cache: {},
+            classList: [...(pctx.classList ?? []), ...cls.split('.')],
+        }
+        return (cache[cls] = createProxy(ctx, classHandler))
     },
 }
 

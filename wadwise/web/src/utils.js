@@ -94,12 +94,17 @@ export function urlqs(base, params) {
     return base + '?' + new URLSearchParams(params ?? {}).toString()
 }
 
-export function join(sep, arr) {
+export function join(sep, ...args) {
     const result = []
-    for (const it of arr) {
-        if (it !== null && it !== undefined && it !== false) {
-            result.push(it)
-            result.push(sep)
+    for (let arr of args) {
+        if (!Array.isArray(arr)) {
+            arr = [arr]
+        }
+        for (const it of arr) {
+            if (it !== null && it !== undefined && it !== false) {
+                result.push(it)
+                result.push(sep)
+            }
         }
     }
     if (result.length) {
@@ -115,4 +120,11 @@ export function wrap(wtpl, arr) {
         return [left, ...filtered, right]
     }
     return null
+}
+
+export function negInput(e) {
+    const target = e.target
+    if (target.value[0] == '.' && target.value[1] == '.') {
+        target.value = '-' + target.value.substring(2)
+    }
 }

@@ -1,64 +1,30 @@
 {% extends 'base.html' %}
-{% from 'widgets.html' import select_group, select_cur %}
+{% from 'widgets.html' import select_group %}
 
 {% block content %}
-<script>
-function target_form() {
-    return {
-        'is_target': false,
-        'current_balance': 0,
-        'target_balance': 0,
-        'cur': '',
-        async enable(root) {
-            this.is_target = true;
-            this.cur = root.cur.value;
-            const params = new URLSearchParams({
-              date: root.date.value,
-              aid: root.src.value,
-            });
-            const resp = await fetch('/api/balance?'+params.toString());
-            this.current_balance = (await resp.json()).result[this.cur] || 0;
-        },
-    }
-}
-</script>
 
+{% if not split %}
 <div>
     <a href="{{ url_for('transaction_edit', tid=form.tid, dest=form.dest, split=1) }}">Split</a>
 </div>
+{% endif %}
 
-<form x-data="target_form" method="POST" class="pure-form">
-    <p>From:<br>{{ select_group('src', form.src, env.account_groups, tabindex='3') }}<p>
-    <p>To: {{ env.account_title(form.dest) }}</p>
-    <template x-if="!is_target">
-        <p>
-            <input type="text" placeholder="amount" inputmode="decimal" name="amount"
-                  oninput="neg_input(arguments[0])"
-                  autofocus tabindex=1 value="{{ form.amount }}" size="8em" autocomplete="off">
-            {{ select_cur('cur', form.cur, cur_list) }}
-            <button @click.prevent="enable($root)" class="pure-button">Target</button>
-        </p>
-    </template>
-    <template x-if="is_target">
-        <p>
-            <span x-text="current_balance.toFixed(2)"></span>
-            - <input type="text" size="8em" name="amount" :value="(current_balance - target_balance).toFixed(2)" readonly>
-            = <input type="text" name="target_balance" inputmode="decimal"
-                  oninput="neg_input(arguments[0])"
-                  size="8em" autocomplete="off" x-model="target_balance">
-            <input :value="cur" readonly name="cur" size="4em">
-        </p>
-    </template>
-    <p><textarea placeholder="description" name="desc" tabindex=2>{{ form.desc or ''}}</textarea></p>
-    <p><input type="date" tabindex=4 name="date" value="{{ form.date.strftime('%Y-%m-%d') }}">
-       <input type="hidden" name="date_time" value="{{ form.date.strftime('%H:%M:%S') }}"></p>
-    <p>
-        <button type="submit" class="pure-button pure-button-primary">Save</button>
-        {% if form.tid %}
-            <button name="action" value="delete" type="submit" class="pure-button button-error">Delete</button>
-            <button name="action" value="copy-now" type="submit" class="pure-button button-secondary">Copy Now</button>
-            <button name="action" value="copy" type="submit" class="pure-button button-secondary">Copy</button>
-        {% endif %}
-    </p>
-</form>
+<template id="accountSelector">
+    {{ select_group('some', '_', env.account_groups) }}
+</template>
+
+<form data-preact="AccountEdit" method="POST" class="pure-form"></form>
+
+<script type="module">
+    import {initPreactData} from '/static/js/account_edit.js'
+    initPreactData({AccountEdit: {
+        form: {{ form | tojson }},
+        accountTitle: {{ env.account_title(form.dest) | tojson }},
+        curList: {{ cur_list | tojson }},
+        dateStr: {{ form.date.strftime('%Y-%m-%d') | tojson }},
+        timeStr: {{ form.date.strftime('%H:%M:%S') | tojson }},
+        split: {{ split | tojson }},
+    }})
+</script>
+
 {% endblock %}

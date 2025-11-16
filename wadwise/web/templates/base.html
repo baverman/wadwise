@@ -7,9 +7,6 @@
    <title>{{ title | default('Wadwise')}}</title>
    <link rel="manifest" href="/static/manifest.json">
    <link rel="stylesheet" href="/static/css/pure.css">
-   {% if noalpine is not defined %}
-   <script src="/static/js/alpine.js" defer></script>
-   {% endif %}
    <style>
      @property --stack-gap {
         syntax: "<length>";
@@ -248,14 +245,5 @@
     {% block content %}
     {% endblock %}
   </div>
-
-  <script>
-    function neg_input(event) {
-        const target = event.target
-        if (target.value[0] == '.' && target.value[1] == '.') {
-            target.value = '-' + target.value.substring(2);
-        }
-    }
-  </script>
 </body>
 </html>

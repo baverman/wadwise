@@ -1,4 +1,3 @@
-import classNames from 'classnames'
 import { useState } from 'preact/hooks'
 import { signal, computed, batch } from '@preact/signals'
 import {
@@ -68,14 +67,8 @@ function AccountSelector(props) {
 function Transaction({ trn }) {
     const [state_value, state_title] = trn.state.value ? [null, 'Include'] : ['seen', 'Exclude']
 
-    return div(
-        {
-            class: classNames({
-                card: true,
-                ignored: trn.state.value,
-                ok: !trn.state.value && trn.dest.value,
-            }),
-        },
+    return div.card(
+        { class: { ignored: trn.state.value, ok: !trn.state.value && trn.dest.value } },
         h['form-aligned'](
             div.label(trn.type),
             div['aligned-right'](trn.date_str),

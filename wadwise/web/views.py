@@ -38,8 +38,8 @@ def split_date(name: str = 'date') -> dict[str, Any]:
 
 
 @app.route('/account')
-@query_string(aid=opt(str), js=opt(bool, True))
-def account_view(aid: Optional[str], js: bool) -> str:
+@query_string(aid=opt(str))
+def account_view(aid: Optional[str]) -> str:
     if aid:
         account = state.account_map()[aid]
     else:
@@ -55,7 +55,7 @@ def account_view(aid: Optional[str], js: bool) -> str:
         transactions.append((k, list(g)))
 
     return render_template(
-        'account/view-js.html' if js else 'account/view.html',
+        'account/view.html',
         accounts=accounts,
         account=account,
         transactions=transactions,
@@ -116,10 +116,7 @@ def transaction_edit(dest: str, tid: Optional[str], split: bool) -> str:
         form = {'cur': cur, 'ops': ((None, 0, cur), (dest, 0, cur)), 'dest': dest, 'date': datetime.now()}
 
     cur_list = state.get_cur_list()
-    if split or form.get('split'):
-        return render_template('transaction/split.html', form=form, cur_list=cur_list)
-    else:
-        return render_template('transaction/edit.html', form=form, cur_list=cur_list)
+    return render_template('transaction/edit.html', form=form, cur_list=cur_list, split=split or form.get('split'))
 
 
 transaction_actions_t = opt(str) | enum('delete', 'copy', 'copy-now')
