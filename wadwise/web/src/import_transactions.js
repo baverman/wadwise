@@ -1,20 +1,10 @@
 import { useState } from 'preact/hooks'
 import { signal, computed, batch } from '@preact/signals'
-import {
-    initPreactData,
-    idify,
-    fieldModel,
-    preventDefault,
-    node2component,
-    registerPreactData,
-} from './utils.js'
-import { hh as h, nbsp } from './html.js'
+import { initPreactData, idify, fieldModel, node2component, registerPreactData } from './utils.js'
+import { hh as h, nbsp, wrapComponent } from './html.js'
+import { vstack, button, submit, input } from './components.js'
 
-const { select, option, div, span, input } = h
-const button = h.button['pure-button']
-const pbutton = button['pure-button-primary']
-const sbutton = button['button-secondary']
-const vstack = h['v-stack']
+const { select, option, div, span, p } = h
 
 function wrapItem(item) {
     return { ...item, state: signal(item.state), dest: signal(item.dest), desc: signal(item.desc) }
@@ -55,14 +45,14 @@ function setSimilar(other) {
     })
 }
 
-function AccountSelector(props) {
+const AccountSelector = wrapComponent((props) => {
     const [open, setOpen] = useState(false)
     const handleSelectFocus = () => setOpen(true)
     return select(
         { ...props, onFocus: handleSelectFocus },
         open || props.value.value ? accountSelector.props.children : option('---'),
     )
-}
+})
 
 function Transaction({ trn }) {
     const [state_value, state_title] = trn.state.value ? [null, 'Include'] : ['seen', 'Exclude']
@@ -77,18 +67,15 @@ function Transaction({ trn }) {
             div['aligned-right'](span(trn.amount.toFixed(2)), nbsp, span.cur(trn.cur)),
 
             span['aligned-full'](trn.category),
-            h(AccountSelector, { class: 'aligned-full', name: 'dest', ...fieldModel(trn.dest) }),
-            input['aligned-full']({ type: 'text', name: 'desc', ...fieldModel(trn.desc) }),
+            AccountSelector['aligned-full']({ name: 'dest', ...fieldModel(trn.dest) }),
+            input.text['aligned-full']({ name: 'desc', ...fieldModel(trn.desc) }),
             div['aligned-full'](
-                sbutton(
-                    { onClick: preventDefault(() => setSimilar(trn)), disabled: !trn.dest.value },
+                button.secondary(
+                    { onClick: () => setSimilar(trn), disabled: !trn.dest.value },
                     'Set similar',
                 ),
                 ' ',
-                sbutton(
-                    { onClick: preventDefault(() => (trn.state.value = state_value)) },
-                    state_title,
-                ),
+                button.secondary({ onClick: () => (trn.state.value = state_value) }, state_title),
             ),
         ),
     )
@@ -100,16 +87,16 @@ function TransactionList() {
 
 function ImportForm({ src, name, balance }) {
     return [
-        input({ name: 'src', value: src, hidden: true }),
-        input({ name: 'transactions', value: transactionsStr, hidden: true }),
-        h.p(
+        input.hidden({ name: 'src', value: src }),
+        input.hidden({ name: 'transactions', value: transactionsStr }),
+        p(
             'Account: ',
             name,
             h.br(),
             'Balance: ',
             `${balance.GBP.toFixed(2)} + ${total.value.toFixed(2)} = ${(balance.GBP + total.value).toFixed(2)}`,
         ),
-        h.p(pbutton({ type: 'submit', disabled: !submit_ok.value }, 'Import')),
+        p(submit.primary({ disabled: !submit_ok.value }, 'Import')),
         vstack(h(TransactionList)),
     ]
 }

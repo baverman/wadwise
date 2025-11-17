@@ -11,16 +11,9 @@ import {
     deleteIdxSignal,
 } from './utils.js'
 import { hh as h, nbsp } from './html.js'
+import { button, submit, input } from './components.js'
 
-const { select, p, br, input, option, textarea, span } = h
-
-const button = h.button['pure-button'].$({ type: 'button' })
-const sbutton = button.$({ type: 'submit' })
-const submit = {
-    primary: sbutton['pure-button-primary'],
-    secondary: sbutton['button-secondary'],
-    danger: sbutton['button-error'],
-}
+const { select, p, br, option, textarea, span, nobr } = h
 
 function CurSelect(props) {
     const { curList, ...rest } = props
@@ -72,8 +65,8 @@ function SrcDest({ form, accountTitle, curList }) {
                 button({ onClick: fetchBalance }, 'Target'),
             ],
             current.value !== null && [
-                input({ type: 'hidden', name: 'amount', value: diff.value.toFixed(2) }),
-                input({ type: 'hidden', name: 'cur', value: cur }),
+                input.hidden({ name: 'amount', value: diff.value.toFixed(2) }),
+                input.hidden({ name: 'cur', value: cur }),
                 span(current.value.toFixed(2)),
                 diff.value > 0 ? ' - ' : ' + ',
                 span(Math.abs(diff.value).toFixed(2)),
@@ -113,25 +106,25 @@ function Split({ form, curList }) {
             p(
                 AccSelect({ name: 'acc', ...fieldModel(op[0]) }),
                 ' ',
-                input({
-                    type: 'text',
-                    placeholder: 'amount',
-                    inputmode: 'decimal',
-                    name: 'amount',
-                    size: '6em',
-                    autocomplete: 'off',
-                    value: op[1],
-                    onInput: (e) => {
-                        negInput(e)
-                        op[1].value = e.currentTarget.value
-                    },
-                }),
-                nbsp,
-                join(nbsp, [
-                    h(CurSelect, { curList, name: 'cur', ...fieldModel(op[2]) }),
-                    sameCur.value && button({ onClick: () => fixAmount(op) }, 'Fix'),
-                    button({ onClick: () => deleteIdxSignal(ops, idx) }, '\u2716'),
-                ]),
+                nobr(
+                    join(' ', [
+                        input.text({
+                            placeholder: 'amount',
+                            inputmode: 'decimal',
+                            name: 'amount',
+                            size: '6em',
+                            autocomplete: 'off',
+                            value: op[1],
+                            onInput: (e) => {
+                                negInput(e)
+                                op[1].value = e.currentTarget.value
+                            },
+                        }),
+                        h(CurSelect, { curList, name: 'cur', ...fieldModel(op[2]) }),
+                        sameCur.value && button({ onClick: () => fixAmount(op) }, 'Fix'),
+                        button({ onClick: () => deleteIdxSignal(ops, idx) }, '\u2716'),
+                    ]),
+                ),
             ),
         ),
         p(
@@ -147,8 +140,8 @@ function AccountEdit(config) {
         h(split ? Split : SrcDest, config),
         p(textarea({ placeholder: 'description', name: 'desc', value: form.desc })),
         p(
-            input({ type: 'date', name: 'date', value: dateStr }),
-            input({ type: 'hidden', name: 'date_time', value: timeStr }),
+            input.date({ name: 'date', value: dateStr }),
+            input.hidden({ name: 'date_time', value: timeStr }),
         ),
         p(
             join(

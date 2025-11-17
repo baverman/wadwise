@@ -3,8 +3,9 @@ import { useSignal } from '@preact/signals'
 
 import { registerPreactData, preventDefault, initPreactData, urlqs, join, wrap } from './utils.js'
 import { hh as h, nbsp } from './html.js'
+import { input } from './components.js'
 
-const { div, input, span, table, tbody, tr, td } = h
+const { div, span, table, tbody, tr, td } = h
 
 const dqs = document.querySelector.bind(document)
 const intlFmt = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 })
@@ -28,12 +29,7 @@ function AccountHeader({ account, urls, amap, today_str, today_dsp }) {
                 ]),
             ),
             div['aligned-right'](
-                input.opaque({
-                    id: 'dateSelector',
-                    type: 'month',
-                    value: today_str,
-                    onInput: dateChanged,
-                }),
+                input.month.opaque({ id: 'dateSelector', value: today_str, onInput: dateChanged }),
                 h.a(
                     {
                         href: '#date',

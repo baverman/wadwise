@@ -7,16 +7,13 @@ import {
     node2component,
     idify,
     fieldModel,
-    preventDefault,
     pushSignal,
     initPreactData,
 } from './utils.js'
 import { hh as h } from './html.js'
+import { button, submit, vstack, input } from './components.js'
 
-const { div, label, fieldset, legend, input } = h
-const button = h.button['pure-button']
-const pbutton = button['pure-button-primary']
-const vstack = h['v-stack']
+const { div, label, fieldset, legend } = h
 
 function wrapItem(item) {
     return {
@@ -80,7 +77,7 @@ function JointForm() {
         return [
             div(),
             label(`Party ${pidx + 1}`),
-            button({ onClick: preventDefault(() => removeParty(card, pidx)) }, 'Remove party'),
+            button({ onClick: () => removeParty(card, pidx) }, 'Remove party'),
             label('Joint'),
             cloneElement(accountSelector, {
                 name: 'joint-other',
@@ -111,9 +108,9 @@ function JointForm() {
                     card.assets.value.map((_, pidx) => partyFrag(card, pidx)),
                 ),
                 div(
-                    button({ onClick: preventDefault(() => addParty(card)) }, 'Add Party'),
+                    button({ onClick: () => addParty(card) }, 'Add Party'),
                     ' ',
-                    button({ onClick: preventDefault(onDelete) }, 'Remove Joint'),
+                    button({ onClick: onDelete }, 'Remove Joint'),
                 ),
             ),
         )
@@ -128,13 +125,13 @@ function JointForm() {
     return [
         fieldset(
             legend('Joint accounts'),
-            input({ name: 'data', hidden: true, value: jointsStr }),
+            input.hidden({ name: 'data', value: jointsStr }),
             vstack(
                 h(JointList, { joints }),
                 div(
-                    button({ onClick: preventDefault(add) }, 'Add Joint'),
+                    button({ onClick: add }, 'Add Joint'),
                     ' ',
-                    pbutton({ type: 'submit', disabled: hasErrors }, 'Save'),
+                    submit.primary({ disabled: hasErrors }, 'Save'),
                 ),
             ),
         ),
@@ -149,7 +146,7 @@ function FavsForm({ favAccs }) {
             div(
                 cloneElement(accountSelector, { name: 'acc', ...fieldModel(it) }),
                 ' ',
-                button({ onClick: preventDefault(() => deleteIdxSignal(favs, idx)) }, '\u2716'),
+                button({ onClick: () => deleteIdxSignal(favs, idx) }, '\u2716'),
             ),
         )
     }
@@ -159,9 +156,9 @@ function FavsForm({ favAccs }) {
         vstack(
             h(FavList),
             div(
-                button({ onClick: preventDefault(() => pushSignal(favs, signal(''))) }, 'Add'),
+                button({ onClick: () => pushSignal(favs, signal('')) }, 'Add'),
                 ' ',
-                pbutton({ type: 'submit' }, 'Save'),
+                submit.primary('Save'),
             ),
         ),
     )
