@@ -2,7 +2,6 @@ import { useSignal, batch, useComputed, signal } from '@preact/signals'
 import {
     registerPreactData,
     initPreactData,
-    node2component,
     negInput,
     join,
     urlqs,
@@ -11,7 +10,7 @@ import {
     deleteIdxSignal,
 } from './utils.js'
 import { hh as h, nbsp } from './html.js'
-import { button, submit, input } from './components.js'
+import { button, submit, input, AccountSelector } from './components.js'
 
 const { select, p, br, option, textarea, span, nobr } = h
 
@@ -54,7 +53,7 @@ function SrcDest({ form, accountTitle, curList }) {
     }
 
     return [
-        p('From:', br(), AccSelect({ name: 'src', value: form.src })),
+        p('From:', br(), AccountSelector({ name: 'src', value: form.src })),
         p('To: ', accountTitle),
         p(
             current.value === null && [
@@ -104,7 +103,7 @@ function Split({ form, curList }) {
     return [
         ops.value.map((op, idx) =>
             p(
-                AccSelect({ name: 'acc', ...fieldModel(op[0]) }),
+                AccountSelector({ name: 'acc', ...fieldModel(op[0]) }),
                 ' ',
                 nobr(
                     join(' ', [
@@ -155,14 +154,6 @@ function AccountEdit(config) {
             ),
         ),
     ]
-}
-
-const accountSelector = node2component(
-    document.querySelector('#accountSelector').content.querySelector('select'),
-)
-
-function AccSelect(props) {
-    return select(props, accountSelector.props.children)
 }
 
 registerPreactData(AccountEdit)

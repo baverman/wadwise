@@ -1,17 +1,15 @@
-import { cloneElement } from 'preact'
 import { signal, computed, batch } from '@preact/signals'
 
 import {
     registerPreactData,
     deleteIdxSignal,
-    node2component,
     idify,
     fieldModel,
     pushSignal,
     initPreactData,
 } from './utils.js'
 import { hh as h } from './html.js'
-import { button, submit, vstack, input } from './components.js'
+import { button, submit, vstack, input, AccountSelector } from './components.js'
 
 const { div, label, fieldset, legend } = h
 
@@ -79,15 +77,9 @@ function JointForm() {
             label(`Party ${pidx + 1}`),
             button({ onClick: () => removeParty(card, pidx) }, 'Remove party'),
             label('Joint'),
-            cloneElement(accountSelector, {
-                name: 'joint-other',
-                ...fieldModel(card.joints.value[pidx + 1]),
-            }),
+            AccountSelector({ name: 'joint-other', ...fieldModel(card.joints.value[pidx + 1]) }),
             label('Asset'),
-            cloneElement(accountSelector, {
-                name: 'asset-other',
-                ...fieldModel(card.assets.value[pidx]),
-            }),
+            AccountSelector({ name: 'asset-other', ...fieldModel(card.assets.value[pidx]) }),
         ]
     }
 
@@ -97,14 +89,11 @@ function JointForm() {
             vstack(
                 h['form-aligned'](
                     label('Main'),
-                    cloneElement(accountSelector, { name: 'main', ...fieldModel(card.parent) }),
+                    AccountSelector({ name: 'main', ...fieldModel(card.parent) }),
                     label('Me'),
-                    cloneElement(accountSelector, {
-                        name: 'me',
-                        ...fieldModel(card.joints.value[0]),
-                    }),
+                    AccountSelector({ name: 'me', ...fieldModel(card.joints.value[0]) }),
                     label('Clear'),
-                    cloneElement(accountSelector, { name: 'clear', ...fieldModel(card.clear) }),
+                    AccountSelector({ name: 'clear', ...fieldModel(card.clear) }),
                     card.assets.value.map((_, pidx) => partyFrag(card, pidx)),
                 ),
                 div(
@@ -144,7 +133,7 @@ function FavsForm({ favAccs }) {
     function FavList() {
         return favs.value.map((it, idx) =>
             div(
-                cloneElement(accountSelector, { name: 'acc', ...fieldModel(it) }),
+                AccountSelector({ name: 'acc', ...fieldModel(it) }),
                 ' ',
                 button({ onClick: () => deleteIdxSignal(favs, idx) }, '\u2716'),
             ),
@@ -163,8 +152,6 @@ function FavsForm({ favAccs }) {
         ),
     )
 }
-
-const accountSelector = node2component(document.querySelector('#accountSelector select'))
 
 registerPreactData(JointForm)
 registerPreactData(FavsForm)

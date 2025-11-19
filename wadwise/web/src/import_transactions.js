@@ -1,10 +1,9 @@
-import { useState } from 'preact/hooks'
 import { signal, computed, batch } from '@preact/signals'
-import { initPreactData, idify, fieldModel, node2component, registerPreactData } from './utils.js'
-import { hh as h, nbsp, wrapComponent } from './html.js'
-import { vstack, button, submit, input } from './components.js'
+import { initPreactData, idify, fieldModel, registerPreactData } from './utils.js'
+import { hh as h, nbsp } from './html.js'
+import { vstack, button, submit, input, AccountSelector } from './components.js'
 
-const { select, option, div, span, p } = h
+const { div, span, p } = h
 
 function wrapItem(item) {
     return { ...item, state: signal(item.state), dest: signal(item.dest), desc: signal(item.desc) }
@@ -45,15 +44,6 @@ function setSimilar(other) {
     })
 }
 
-const AccountSelector = wrapComponent((props) => {
-    const [open, setOpen] = useState(false)
-    const handleSelectFocus = () => setOpen(true)
-    return select(
-        { ...props, onFocus: handleSelectFocus },
-        open || props.value.value ? accountSelector.props.children : option('---'),
-    )
-})
-
 function Transaction({ trn }) {
     const [state_value, state_title] = trn.state.value ? [null, 'Include'] : ['seen', 'Exclude']
 
@@ -67,7 +57,7 @@ function Transaction({ trn }) {
             div['aligned-right'](span(trn.amount.toFixed(2)), nbsp, span.cur(trn.cur)),
 
             span['aligned-full'](trn.category),
-            AccountSelector['aligned-full']({ name: 'dest', ...fieldModel(trn.dest) }),
+            AccountSelector['aligned-full']({ lazy: true, name: 'dest', ...fieldModel(trn.dest) }),
             input.text['aligned-full']({ name: 'desc', ...fieldModel(trn.desc) }),
             div['aligned-full'](
                 button.secondary(
@@ -101,9 +91,6 @@ function ImportForm({ src, name, balance }) {
     ]
 }
 
-const accountSelector = node2component(
-    document.querySelector('#accountSelector').content.querySelector('select'),
-)
 registerPreactData(ImportForm)
 
 export { init, initPreactData }

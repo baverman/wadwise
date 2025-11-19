@@ -1,4 +1,6 @@
-import { hh } from './html.js'
+import { useSignal } from '@preact/signals'
+import { hh, wrapComponent } from './html.js'
+import { node2component } from './utils.js'
 
 function buttonSet(el) {
     return {
@@ -21,3 +23,26 @@ export const input = hh['input'].$((el) => ({
     month: el['[type=month]'],
     file: el['[type=file]'],
 }))
+
+let accountSelectorOptions = [hh.option('Error')]
+
+;(function () {
+    const tpl = document.querySelector('#accountSelector')
+    if (tpl) {
+        accountSelectorOptions = node2component(tpl.content.querySelector('select')).props.children
+    }
+})()
+
+function _AccountSelector({ lazy, ...props }) {
+    const open = useSignal(false)
+    if (lazy) {
+        return hh.select(
+            { ...props, onFocus: () => (open.value = true) },
+            open.value || props.value.value ? accountSelectorOptions : hh.option('---'),
+        )
+    } else {
+        return hh.select(props, accountSelectorOptions)
+    }
+}
+
+export const AccountSelector = wrapComponent(_AccountSelector)

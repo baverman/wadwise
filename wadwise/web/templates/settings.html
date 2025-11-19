@@ -13,7 +13,7 @@
 
     <form method="POST" action="./joint-accounts" data-preact="JointForm" class="pure-form"></form>
 
-    <form method="POST" action="./cur-list" class="pure-form">
+    <form method="POST" action="./cur-list" class="pure-form wait-preact">
         <fieldset>
             <legend>Currencies</legend>
             <v-stack>
@@ -26,7 +26,7 @@
         </fieldset>
     </form>
 
-    <form method="POST" action="./backup" class="pure-form">
+    <form method="POST" action="./backup" class="pure-form wait-preact">
         <fieldset>
             <legend>Backup</legend>
             <button type="submit" class="pure-button pure-button-primary">Share database</button>
@@ -34,9 +34,9 @@
     </form>
 </v-stack>
 
-<div id="accountSelector" style="display: none">
+<template id="accountSelector">
     {{ select_group('some', '---', env.account_groups) }}
-</div>
+</template>
 
 <script type="module">
     import {initPreactData, init} from '/static/js/settings.js'

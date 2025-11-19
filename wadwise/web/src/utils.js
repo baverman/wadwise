@@ -12,6 +12,12 @@ export function initPreactData(props) {
         const name = el.dataset.preact
         render(h(window._wadwiseFuncs[name], props[name] || null), el)
     }
+
+    requestAnimationFrame(() => {
+        document
+            .querySelectorAll('.wait-preact')
+            .forEach((el) => el.classList.remove('wait-preact'))
+    })
 }
 
 export function idify(data) {
