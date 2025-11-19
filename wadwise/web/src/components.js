@@ -1,6 +1,6 @@
-import { useSignal } from '@preact/signals'
+import { useSignal, batch, useSignalEffect } from '@preact/signals'
 import { hh, wrapComponent } from './html.js'
-import { node2component } from './utils.js'
+import { node2component, negInput } from './utils.js'
 
 function buttonSet(el) {
     return {
@@ -9,20 +9,6 @@ function buttonSet(el) {
         danger: el['button-error'],
     }
 }
-
-const btn = hh.button['pure-button']
-
-export const button = btn['[type=button]'].$(buttonSet)
-export const submit = btn['[type=submit]'].$(buttonSet)
-export const vstack = hh['v-stack']
-export const vgap = hh['v-gap']
-export const input = hh['input'].$((el) => ({
-    text: el['[type=text]'],
-    hidden: el['[type=hidden]'],
-    date: el['[type=date]'],
-    month: el['[type=month]'],
-    file: el['[type=file]'],
-}))
 
 let accountSelectorOptions = [hh.option('Error')]
 
@@ -45,4 +31,48 @@ function _AccountSelector({ lazy, ...props }) {
     }
 }
 
+function NumericInput({ value, ...props }) {
+    const state = useSignal(value.peek())
+    const isExternal = useSignal(true)
+
+    useSignalEffect(() => {
+        const v = value.value
+        if (isExternal.peek()) {
+            state.value = String(v)
+        }
+    })
+
+    function handle(e) {
+        negInput(e)
+        batch(() => {
+            isExternal.value = false
+            const numValue = parseFloat((state.value = e.currentTarget.value))
+            value.value = numValue || 0
+        })
+        setTimeout(() => (isExternal.value = true), 0)
+    }
+
+    return input.text({
+        inputmode: 'decimal',
+        autocomplete: 'off',
+        ...props,
+        value: state,
+        onInput: handle,
+    })
+}
+
+const btn = hh.button['pure-button']
+
 export const AccountSelector = wrapComponent(_AccountSelector)
+export const button = btn['[type=button]'].$(buttonSet)
+export const submit = btn['[type=submit]'].$(buttonSet)
+export const vstack = hh['v-stack']
+export const vgap = hh['v-gap']
+export const input = hh['input'].$((el) => ({
+    text: el['[type=text]'],
+    hidden: el['[type=hidden]'],
+    date: el['[type=date]'],
+    month: el['[type=month]'],
+    file: el['[type=file]'],
+    number: wrapComponent(NumericInput),
+}))

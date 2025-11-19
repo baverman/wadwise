@@ -1,8 +1,7 @@
-import { useSignal, batch, useComputed, signal } from '@preact/signals'
+import { useSignal, batch, useComputed, signal, useSignalEffect } from '@preact/signals'
 import {
     registerPreactData,
     initPreactData,
-    negInput,
     join,
     urlqs,
     fieldModel,
@@ -22,11 +21,17 @@ function CurSelect(props) {
     )
 }
 
-function SrcDest({ form, accountTitle, curList }) {
+function SrcDest({ form, accountTitle, curList, isError }) {
+    const src = useSignal(form.src)
+    const amount = useSignal(form.amount)
     const current = useSignal(null)
     const target = useSignal(0)
     const diff = useComputed(() => current.value - target.value)
     const cur = useSignal(null)
+
+    useSignalEffect(() => {
+        isError.value = src.value == form.dest
+    })
 
     async function fetchBalance(e) {
         const form = e.target.closest('form')
@@ -42,24 +47,16 @@ function SrcDest({ form, accountTitle, curList }) {
         })
     }
 
-    const amountOpts = {
-        type: 'text',
-        placeholder: 'amount',
-        inputmode: 'decimal',
-        autofocus: true,
-        tabindex: 1,
-        size: '8em',
-        autocomplete: 'off',
-    }
+    const amountOpts = { placeholder: 'amount', autofocus: true, tabindex: 1, size: '8em' }
 
     return [
-        p('From:', br(), AccountSelector({ name: 'src', value: form.src })),
+        p('From:', br(), AccountSelector({ name: 'src', ...fieldModel(src) })),
         p('To: ', accountTitle),
         p(
             current.value === null && [
-                input({ ...amountOpts, name: 'amount', onInput: negInput, value: form.amount }),
+                input.number({ ...amountOpts, name: 'amount', value: amount }),
                 ' ',
-                h(CurSelect, { curList, name: 'cur', value: form.cur }),
+                h(CurSelect, { curList, name: 'cur', defaultValue: form.cur }),
                 ' ',
                 button({ onClick: fetchBalance }, 'Target'),
             ],
@@ -70,14 +67,7 @@ function SrcDest({ form, accountTitle, curList }) {
                 diff.value > 0 ? ' - ' : ' + ',
                 span(Math.abs(diff.value).toFixed(2)),
                 ' = ',
-                input({
-                    ...amountOpts,
-                    value: target,
-                    onInput: (e) => {
-                        negInput(e)
-                        target.value = e.currentTarget.value
-                    },
-                }),
+                input.number({ ...amountOpts, value: target }),
                 nbsp,
                 span.cur(cur),
             ],
@@ -88,16 +78,14 @@ function SrcDest({ form, accountTitle, curList }) {
 function Split({ form, curList }) {
     const ops = useSignal(form.ops.map((it) => it.map(signal)))
     const sameCur = useComputed(() => new Set(ops.value.map((it) => it[2].value)).size < 2)
-    const total = useComputed(() =>
-        ops.value.reduce((acc, val) => acc + parseFloat(val[1].value || 0), 0),
-    )
+    const total = useComputed(() => ops.value.reduce((acc, val) => acc + val[1].value, 0))
 
     function add() {
         pushSignal(ops, ['', 0, curList[0]].map(signal))
     }
 
     function fixAmount(op) {
-        op[1].value = (parseFloat(op[1].value || 0) - total.value).toFixed(2)
+        op[1].value = op[1].value - total.value
     }
 
     return [
@@ -107,17 +95,11 @@ function Split({ form, curList }) {
                 ' ',
                 nobr(
                     join(' ', [
-                        input.text({
+                        input.number({
                             placeholder: 'amount',
-                            inputmode: 'decimal',
                             name: 'amount',
                             size: '6em',
-                            autocomplete: 'off',
                             value: op[1],
-                            onInput: (e) => {
-                                negInput(e)
-                                op[1].value = e.currentTarget.value
-                            },
                         }),
                         h(CurSelect, { curList, name: 'cur', ...fieldModel(op[2]) }),
                         sameCur.value && button({ onClick: () => fixAmount(op) }, 'Fix'),
@@ -135,21 +117,23 @@ function Split({ form, curList }) {
 
 function AccountEdit(config) {
     const { form, dateStr, timeStr, split } = config
+    const isError = useSignal(null)
+    const btnOpts = { disabled: isError.value }
     return [
-        h(split ? Split : SrcDest, config),
-        p(textarea({ placeholder: 'description', name: 'desc', value: form.desc })),
+        h(split ? Split : SrcDest, { ...config, isError }),
+        p(textarea({ placeholder: 'description', name: 'desc', defaultValue: form.desc })),
         p(
-            input.date({ name: 'date', value: dateStr }),
-            input.hidden({ name: 'date_time', value: timeStr }),
+            input.date({ name: 'date', defaultValue: dateStr }),
+            input.hidden({ name: 'date_time', defaultValue: timeStr }),
         ),
         p(
             join(
                 ' ',
-                submit.primary('Save'),
+                submit.primary({ ...btnOpts }, 'Save'),
                 form.tid && [
-                    submit.danger({ name: 'action', value: 'delete' }, 'Delete'),
-                    submit.secondary({ name: 'action', value: 'copy-now' }, 'Copy Now'),
-                    submit.secondary({ name: 'action', value: 'copy' }, 'Copy'),
+                    submit.danger({ ...btnOpts, name: 'action', value: 'delete' }, 'Delete'),
+                    submit.secondary({ ...btnOpts, name: 'action', value: 'copy-now' }, 'Copy Now'),
+                    submit.secondary({ ...btnOpts, name: 'action', value: 'copy' }, 'Copy'),
                 ],
             ),
         ),
