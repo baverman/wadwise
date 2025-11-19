@@ -29,7 +29,7 @@ function AccountHeader({ account, urls, amap, today_str, today_dsp }) {
                 ]),
             ),
             div['aligned-right'](
-                input.month.opaque({ id: 'dateSelector', value: today_str, onInput: dateChanged }),
+                input.month['#dateSelector.opaque']({ value: today_str, onInput: dateChanged }),
                 h.a(
                     {
                         href: '#date',

@@ -5,12 +5,18 @@ function parseSelector(selector) {
     const [head, ...tail] = selector.trim().split('[')
     let tags = []
     let attrs = null
+
     if (head) {
         tags = head.split('.')
+        const idIdx = tags.findIndex((it) => it[0] == '#')
+        if (~idIdx) {
+            attrs = { id: tags[idIdx].slice(1) }
+            tags.splice(idIdx, 1)
+        }
     }
 
     if (tail.length) {
-        attrs = {}
+        attrs = attrs ?? {}
         for (const it of tail) {
             const [name, value] = it.slice(0, -1).split('=', 2)
             attrs[name] = value === undefined ? true : value
