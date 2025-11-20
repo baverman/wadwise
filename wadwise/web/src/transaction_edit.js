@@ -1,4 +1,5 @@
 import { useSignal, batch, useComputed, signal, useSignalEffect } from '@preact/signals'
+import {useMemo} from 'preact/hooks'
 import {
     registerPreactData,
     initPreactData,
@@ -76,7 +77,7 @@ function SrcDest({ form, accountTitle, curList, isError }) {
 }
 
 function Split({ form, curList, isError }) {
-    const ops = useSignal(form.ops.map((it) => it.map(signal)))
+    const ops = useSignal(useMemo(() => form.ops.map((it) => it.map(signal)), [form.ops]))
     const sameCur = useComputed(() => new Set(ops.value.map((it) => it[2].value)).size < 2)
     const total = useComputed(() => ops.value.reduce((acc, val) => acc + val[1].value, 0))
 
