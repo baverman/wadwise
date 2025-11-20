@@ -75,10 +75,14 @@ function SrcDest({ form, accountTitle, curList, isError }) {
     ]
 }
 
-function Split({ form, curList }) {
+function Split({ form, curList, isError }) {
     const ops = useSignal(form.ops.map((it) => it.map(signal)))
     const sameCur = useComputed(() => new Set(ops.value.map((it) => it[2].value)).size < 2)
     const total = useComputed(() => ops.value.reduce((acc, val) => acc + val[1].value, 0))
+
+    useSignalEffect(() => (
+        isError.value = (new Set(ops.value.map((it) => it[0].value))).size < 2
+    ))
 
     function add() {
         pushSignal(ops, ['', 0, curList[0]].map(signal))

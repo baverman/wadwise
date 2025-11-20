@@ -33,23 +33,22 @@ function _AccountSelector({ lazy, ...props }) {
 
 function NumericInput({ value, ...props }) {
     const state = useSignal(value.peek())
-    const isExternal = useSignal(true)
+    const edit = useSignal(false)
 
     useSignalEffect(() => {
-        const v = value.value
-        if (isExternal.peek()) {
-            state.value = String(v)
+        const v = String(value.value)
+        if (!edit.value && state.peek() != v) {
+            state.value = v
         }
     })
 
     function handle(e) {
         negInput(e)
         batch(() => {
-            isExternal.value = false
+            edit.value = true
             const numValue = parseFloat((state.value = e.currentTarget.value))
             value.value = numValue || 0
         })
-        setTimeout(() => (isExternal.value = true), 0)
     }
 
     return input.text({
@@ -58,6 +57,7 @@ function NumericInput({ value, ...props }) {
         ...props,
         value: state,
         onInput: handle,
+        onBlur: () => edit.value = false
     })
 }
 

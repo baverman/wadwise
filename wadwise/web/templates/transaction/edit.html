@@ -13,7 +13,7 @@
     {{ select_group('some', '_', env.account_groups) }}
 </template>
 
-<form data-preact="AccountEdit" method="POST" class="pure-form"></form>
+<form data-preact="AccountEdit" method="POST" class="pure-form"{% if split %} action="{{ url_for('transaction_split_save', tid=form.tid, dest=form.dest) }}"{% endif %}></form>
 
 <script type="module">
     import {initPreactData} from '/static/js/transaction_edit.js'
