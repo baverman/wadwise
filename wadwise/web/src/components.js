@@ -57,7 +57,7 @@ function NumericInput({ value, ...props }) {
         ...props,
         value: state,
         onInput: handle,
-        onBlur: () => edit.value = false
+        onBlur: () => (edit.value = false),
     })
 }
 

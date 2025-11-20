@@ -11,7 +11,7 @@ import {
 import { hh as h } from './html.js'
 import { button, submit, vstack, input, AccountSelector } from './components.js'
 
-const { div, label, fieldset, legend } = h
+const { div, fieldset, legend } = h
 
 function wrapItem(item) {
     return {
@@ -74,11 +74,11 @@ function JointForm() {
     function partyFrag(card, pidx) {
         return [
             div(),
-            label(`Party ${pidx + 1}`),
+            div.label(`Party ${pidx + 1}`),
             button({ onClick: () => removeParty(card, pidx) }, 'Remove party'),
-            label('Joint'),
+            div.label('Joint'),
             AccountSelector({ name: 'joint-other', ...fieldModel(card.joints.value[pidx + 1]) }),
-            label('Asset'),
+            div.label('Asset'),
             AccountSelector({ name: 'asset-other', ...fieldModel(card.assets.value[pidx]) }),
         ]
     }
@@ -88,11 +88,11 @@ function JointForm() {
             { style: { padding: '0.6rem' } },
             vstack(
                 h['form-aligned'](
-                    label('Main'),
+                    div.label('Main'),
                     AccountSelector({ name: 'main', ...fieldModel(card.parent) }),
-                    label('Me'),
+                    div.label('Me'),
                     AccountSelector({ name: 'me', ...fieldModel(card.joints.value[0]) }),
-                    label('Clear'),
+                    div.label('Clear'),
                     AccountSelector({ name: 'clear', ...fieldModel(card.clear) }),
                     card.assets.value.map((_, pidx) => partyFrag(card, pidx)),
                 ),

@@ -1,5 +1,5 @@
 import { useSignal, batch, useComputed, signal, useSignalEffect } from '@preact/signals'
-import {useMemo} from 'preact/hooks'
+import { useMemo } from 'preact/hooks'
 import {
     registerPreactData,
     initPreactData,
@@ -81,9 +81,7 @@ function Split({ form, curList, isError }) {
     const sameCur = useComputed(() => new Set(ops.value.map((it) => it[2].value)).size < 2)
     const total = useComputed(() => ops.value.reduce((acc, val) => acc + val[1].value, 0))
 
-    useSignalEffect(() => (
-        isError.value = (new Set(ops.value.map((it) => it[0].value))).size < 2
-    ))
+    useSignalEffect(() => (isError.value = new Set(ops.value.map((it) => it[0].value)).size < 2))
 
     function add() {
         pushSignal(ops, ['', 0, curList[0]].map(signal))

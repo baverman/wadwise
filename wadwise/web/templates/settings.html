@@ -2,6 +2,12 @@
 {% from 'widgets.html' import select_group %}
 
 {% block content %}
+<style>
+    form-aligned {
+        align-items: center;
+    }
+</style>
+
 <div>
     <a href="{{ url_for('account_view') }}">Back</a>
     | <a href="{{ url_for('account_edit') }}">Add subaccount</a>
