@@ -4,7 +4,7 @@ import subprocess
 from datetime import date as ddate
 from datetime import datetime, timedelta
 from itertools import groupby
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, Union, cast
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, Union, cast, TypedDict
 
 from covador import Date, DateTime, enum, item, opt
 from covador.flask import form, query_string
@@ -121,14 +121,24 @@ def transaction_edit(dest: str, tid: Optional[str], split: bool) -> str:
 
 transaction_actions_t = opt(str) | enum('delete', 'copy', 'copy-now')
 
+class TransactionSave(TypedDict):
+    simple: tuple[str, str, float, str]
+    ops: list[tuple[str, str, str]]
+
 
 @app.route('/transaction/edit', methods=['POST'])
 @query_string(dest=str, tid=opt(str))
-@form(src=str, amount=float, desc=opt(str), cur=str, action=transaction_actions_t, _=combine_date(), **split_date())
+@form(ops=json.loads, desc=opt(str), action=transaction_actions_t, _=combine_date(), **split_date())
 def transaction_save(
-    tid: Optional[str], src: str, dest: str, amount: float, cur: str, action: str, desc: Optional[str], date: datetime
+    tid: Optional[str], dest: str, action: str, desc: Optional[str], date: datetime,
+    ops: TransactionSave
 ) -> Response:
-    ops = m.dop2(src, dest, amount, cur)
+    if 'simple' in ops:
+        ops = m.dop2(*ops['simple'])
+    elif 'ops' in ops:
+        ops = [m.op(*it) for it in ops['ops']]
+    else:
+        abort(400)
     return transaction_save_helper(action, tid, ops, m.decode_account_id(dest)[0], date, desc)
 
 
@@ -153,34 +163,9 @@ def transaction_save_helper(
     for op in ops:
         aid = op['aid']
         if aid != dest and amap[aid]['is_sheet']:
-            flash(f"""{amap[aid]['full_name']}: {cbal[aid].total.get(op['cur'], 0)} {op['cur']}""")
+            flash(f"""{amap[aid]['full_name']}: {cbal[aid].total.get(op['cur'], 0):.2f} {op['cur']}""")
 
     return redirect(url_for('account_view', aid=dest, _anchor=tid and f't-{tid}'))
-
-
-@app.route('/transaction/split-edit', methods=['POST'])
-@query_string(dest=str, tid=opt(str))
-@form(
-    desc=opt(str),
-    acc=item(str, multi=True),
-    amount=item(float, multi=True),
-    cur=item(str, multi=True),
-    action=transaction_actions_t,
-    _=combine_date(),
-    **split_date(),
-)
-def transaction_split_save(
-    tid: Optional[str],
-    dest: str,
-    acc: list[str],
-    amount: list[float],
-    cur: list[str],
-    action: str,
-    date: datetime,
-    desc: Optional[str],
-) -> Response:
-    ops = [m.op(*it) for it in zip(acc, amount, cur)]
-    return transaction_save_helper(action, tid, ops, dest, date, desc)
 
 
 @app.route('/')

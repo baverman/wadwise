@@ -22,13 +22,26 @@ function CurSelect(props) {
     )
 }
 
+// function op2(src, dest, amount, cur) {
+//     return [
+//         [src, -amount, cur],
+//         [dest, amount, cur]
+//     ]
+// }
+
 function SrcDest({ form, accountTitle, curList, isError }) {
     const src = useSignal(form.src)
     const amount = useSignal(form.amount)
     const current = useSignal(null)
     const target = useSignal(0)
     const diff = useComputed(() => current.value - target.value)
-    const cur = useSignal(null)
+    const cur = useSignal(form.cur)
+    const default_ops = useComputed(() =>
+        JSON.stringify({ simple: [src.value, form.dest, amount.value, cur.value] }),
+    )
+    const target_ops = useComputed(() =>
+        JSON.stringify({ simple: [src.value, form.dest, diff.value, cur.value] }),
+    )
 
     useSignalEffect(() => {
         isError.value = src.value == form.dest
@@ -36,14 +49,12 @@ function SrcDest({ form, accountTitle, curList, isError }) {
 
     async function fetchBalance(e) {
         const form = e.target.closest('form')
-        const icur = form.cur.value
         const resp = await fetch(
             urlqs('/api/balance', { date: form.date.value, aid: form.src.value }),
         )
-        const balance = (await resp.json()).result[icur] || 0
+        const balance = (await resp.json()).result[cur.value] || 0
 
         batch(() => {
-            cur.value = icur
             current.value = balance
         })
     }
@@ -55,15 +66,14 @@ function SrcDest({ form, accountTitle, curList, isError }) {
         p('To: ', accountTitle),
         p(
             current.value === null && [
-                input.number({ ...amountOpts, name: 'amount', value: amount }),
+                input.number({ ...amountOpts, value: amount }),
                 ' ',
-                h(CurSelect, { curList, name: 'cur', defaultValue: form.cur }),
+                h(CurSelect, { curList, ...fieldModel(cur) }),
                 ' ',
                 button({ onClick: fetchBalance }, 'Target'),
+                input.hidden({ name: 'ops', value: default_ops }),
             ],
             current.value !== null && [
-                input.hidden({ name: 'amount', value: diff.value.toFixed(2) }),
-                input.hidden({ name: 'cur', value: cur }),
                 span(current.value.toFixed(2)),
                 diff.value > 0 ? ' - ' : ' + ',
                 span(Math.abs(diff.value).toFixed(2)),
@@ -71,6 +81,7 @@ function SrcDest({ form, accountTitle, curList, isError }) {
                 input.number({ ...amountOpts, value: target }),
                 nbsp,
                 span.cur(cur),
+                input.hidden({ name: 'ops', value: target_ops }),
             ],
         ),
     ]
@@ -80,6 +91,7 @@ function Split({ form, curList, isError }) {
     const ops = useSignal(useMemo(() => form.ops.map((it) => it.map(signal)), [form.ops]))
     const sameCur = useComputed(() => new Set(ops.value.map((it) => it[2].value)).size < 2)
     const total = useComputed(() => ops.value.reduce((acc, val) => acc + val[1].value, 0))
+    const raw_ops = useComputed(() => JSON.stringify({ ops: ops }))
 
     useSignalEffect(() => (isError.value = new Set(ops.value.map((it) => it[0].value)).size < 2))
 
@@ -94,17 +106,12 @@ function Split({ form, curList, isError }) {
     return [
         ops.value.map((op, idx) =>
             p(
-                AccountSelector({ name: 'acc', ...fieldModel(op[0]) }),
+                AccountSelector({ ...fieldModel(op[0]) }),
                 ' ',
                 nobr(
                     join(' ', [
-                        input.number({
-                            placeholder: 'amount',
-                            name: 'amount',
-                            size: '6em',
-                            value: op[1],
-                        }),
-                        h(CurSelect, { curList, name: 'cur', ...fieldModel(op[2]) }),
+                        input.number({ placeholder: 'amount', size: '6em', value: op[1] }),
+                        h(CurSelect, { curList, ...fieldModel(op[2]) }),
                         sameCur.value && button({ onClick: () => fixAmount(op) }, 'Fix'),
                         button({ onClick: () => deleteIdxSignal(ops, idx) }, '\u2716'),
                     ]),
@@ -114,6 +121,7 @@ function Split({ form, curList, isError }) {
         p(
             button({ onClick: add }, 'Add'),
             sameCur.value && [nbsp, 'Total: ', nbsp, span(total.value.toFixed(2))],
+            input.hidden({ name: 'ops', value: raw_ops }),
         ),
     ]
 }
