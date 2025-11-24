@@ -124,7 +124,7 @@ transaction_actions_t = opt(str) | enum('delete', 'copy', 'copy-now')
 
 class TransactionSave(TypedDict):
     simple: tuple[str, str, float, str]
-    ops: list[tuple[str, str, str]]
+    ops: list[tuple[str, float, str, bool]]
 
 
 @app.route('/transaction/edit', methods=['POST'])
@@ -133,11 +133,12 @@ class TransactionSave(TypedDict):
 def transaction_save(
     tid: Optional[str], dest: str, action: str, desc: Optional[str], date: datetime, ops: TransactionSave
 ) -> Response:
+    oplist: list[m.Operation] = []
     if 'simple' in ops:
-        oplist = m.dop2(*ops['simple'])
-    elif 'ops' in ops:
-        oplist = [m.op(*it) for it in ops['ops']]
-    else:
+        oplist.extend(m.dop2(*ops['simple']))
+    if 'ops' in ops:
+        oplist.extend(m.op(*it) for it in ops['ops'])
+    if not oplist:
         abort(400)
     return transaction_save_helper(action, tid, oplist, m.decode_account_id(dest)[0], date, desc)
 

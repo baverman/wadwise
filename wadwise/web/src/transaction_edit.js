@@ -22,19 +22,40 @@ function CurSelect(props) {
     )
 }
 
+function op2(src, dest, amount, cur, isMain) {
+    return [
+        [src, -amount, cur, isMain ?? false],
+        [dest, amount, cur, isMain ?? false],
+    ]
+}
+
 function SrcDest({ form, accountTitle, curList, isError, defaultAccount }) {
+    const mode = useSignal('simple')
     const src = useSignal(form.src || defaultAccount)
     const amount = useSignal(form.amount)
     const current = useSignal(null)
     const target = useSignal(0)
     const diff = useComputed(() => current.value - target.value)
     const cur = useSignal(form.cur)
-    const default_ops = useComputed(() =>
-        JSON.stringify({ simple: [src.value, form.dest, amount.value, cur.value] }),
-    )
-    const target_ops = useComputed(() =>
-        JSON.stringify({ simple: [src.value, form.dest, diff.value, cur.value] }),
-    )
+    const isSpecial = useComputed(() => src.value.includes('.') || form.dest.includes('.'))
+
+    const raw_ops = useComputed(() => {
+        let result = null
+        const m = mode.value
+        if (m == 'target') {
+            result = { simple: [src.value, form.dest, diff.value, cur.value] }
+        } else if (m == 'noop') {
+            result = {
+                ops: [
+                    ...op2(form.dest, form.dest, amount.value, cur.value, true),
+                    ...op2(src.value, src.value, amount.value, cur.value, false),
+                ],
+            }
+        } else {
+            result = { simple: [src.value, form.dest, amount.value, cur.value] }
+        }
+        return JSON.stringify(result)
+    })
 
     useSignalEffect(() => {
         isError.value = src.value == form.dest
@@ -49,6 +70,7 @@ function SrcDest({ form, accountTitle, curList, isError, defaultAccount }) {
 
         batch(() => {
             current.value = balance
+            mode.value = 'target'
         })
     }
 
@@ -58,15 +80,20 @@ function SrcDest({ form, accountTitle, curList, isError, defaultAccount }) {
         p('From:', br(), AccountSelector({ name: 'src', ...fieldModel(src) })),
         p('To: ', accountTitle),
         p(
-            current.value === null && [
+            mode.value !== 'target' && [
                 input.number({ ...amountOpts, value: amount }),
                 ' ',
                 h(CurSelect, { curList, ...fieldModel(cur) }),
-                ' ',
-                button({ onClick: fetchBalance }, 'Target'),
-                input.hidden({ name: 'ops', value: default_ops }),
+                mode.value == 'simple' && [
+                    ' ',
+                    button({ onClick: fetchBalance }, 'Target'),
+                    !isSpecial.value && [
+                        ' ',
+                        button({ onClick: () => (mode.value = 'noop') }, 'No op'),
+                    ],
+                ],
             ],
-            current.value !== null && [
+            mode.value === 'target' && [
                 span(current.value.toFixed(2)),
                 diff.value > 0 ? ' - ' : ' + ',
                 span(Math.abs(diff.value).toFixed(2)),
@@ -74,9 +101,10 @@ function SrcDest({ form, accountTitle, curList, isError, defaultAccount }) {
                 input.number({ ...amountOpts, value: target }),
                 nbsp,
                 span.cur(cur),
-                input.hidden({ name: 'ops', value: target_ops }),
             ],
         ),
+        mode.value === 'noop' && p('Empty transaction'),
+        input.hidden({ name: 'ops', value: raw_ops }),
     ]
 }
 
