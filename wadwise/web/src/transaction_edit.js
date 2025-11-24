@@ -32,6 +32,7 @@ function op2(src, dest, amount, cur, isMain) {
 function SrcDest({ form, accountTitle, curList, isError, defaultAccount }) {
     const mode = useSignal('simple')
     const src = useSignal(form.src || defaultAccount)
+    const via = useSignal(defaultAccount)
     const amount = useSignal(form.amount)
     const current = useSignal(null)
     const target = useSignal(0)
@@ -49,6 +50,13 @@ function SrcDest({ form, accountTitle, curList, isError, defaultAccount }) {
                 ops: [
                     ...op2(form.dest, form.dest, amount.value, cur.value, true),
                     ...op2(src.value, src.value, amount.value, cur.value, false),
+                ],
+            }
+        } else if (m == 'via') {
+            result = {
+                ops: [
+                    ...op2(src.value, form.dest, amount.value, cur.value, true),
+                    ...op2(via.value, via.value, amount.value, cur.value, false),
                 ],
             }
         } else {
@@ -79,20 +87,22 @@ function SrcDest({ form, accountTitle, curList, isError, defaultAccount }) {
     return [
         p('From:', br(), AccountSelector({ name: 'src', ...fieldModel(src) })),
         p('To: ', accountTitle),
+        mode.value == 'via' && [p('Via:', br(), AccountSelector({ ...fieldModel(via) }))],
         p(
-            mode.value !== 'target' && [
-                input.number({ ...amountOpts, value: amount }),
-                ' ',
-                h(CurSelect, { curList, ...fieldModel(cur) }),
-                mode.value == 'simple' && [
+            mode.value !== 'target' &&
+                join(
                     ' ',
-                    button({ onClick: fetchBalance }, 'Target'),
-                    !isSpecial.value && [
-                        ' ',
-                        button({ onClick: () => (mode.value = 'noop') }, 'No op'),
+                    [
+                        input.number({ ...amountOpts, value: amount }),
+                        h(CurSelect, { curList, ...fieldModel(cur) }),
                     ],
-                ],
-            ],
+                    mode.value == 'simple' && button({ onClick: fetchBalance }, 'Target'),
+                    mode.value == 'simple' &&
+                        !isSpecial.value && [
+                            button({ onClick: () => (mode.value = 'noop') }, 'No op'),
+                            button({ onClick: () => (mode.value = 'via') }, 'Via'),
+                        ],
+                ),
             mode.value === 'target' && [
                 span(current.value.toFixed(2)),
                 diff.value > 0 ? ' - ' : ' + ',
