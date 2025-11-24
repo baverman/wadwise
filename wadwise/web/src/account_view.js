@@ -185,8 +185,9 @@ function TransactionList({ account, transactions, amap, urls }) {
                             td({ colspan: 2 }, it.desc),
                         ),
                     it.split
-                        ? it.ops.map(([op_acc, op_amnt, op_cur]) =>
+                        ? it.ops.map(([op_acc, op_amnt, op_cur, op_main]) =>
                               tr(
+                                  { class: { 'not-important': !op_main } },
                                   td(amap[op_acc].full_name),
                                   td.tright(fmtAmount(op_acc, op_amnt), nbsp, span.cur(op_cur)),
                               ),

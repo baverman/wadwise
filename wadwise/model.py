@@ -28,6 +28,7 @@ class Operation(TypedDict):
     aid: str
     amount: float
     cur: str
+    is_main: bool
 
 
 class TransactionRaw(TypedDict):
@@ -41,7 +42,7 @@ class Transaction(TypedDict):
     tid: str
     date: datetime
     desc: str
-    ops: list[tuple[str, float, str]]
+    ops: list[tuple[str, float, str, bool]]
     split: Literal[True]
     dest: str
 
@@ -170,7 +171,7 @@ def create_transaction(ops: Iterable[Operation], date: Optional[datetime] = None
     ts = int((date or datetime.now()).timestamp())
     insert('transactions', tid=tid, date=ts, desc=desc)
     for op in ops:
-        insert('ops', tid=tid, aid=op['aid'], amount=round(op['amount'] * 100), cur=op['cur'])
+        insert('ops', tid=tid, aid=op['aid'], amount=round(op['amount'] * 100), cur=op['cur'], is_main=op['is_main'])
     return tid
 
 
@@ -194,7 +195,7 @@ def account_transactions(
     cond = [in_range(E.t.date, start_date and start_date.timestamp(), end_date and end_date.timestamp())]
     query = f"""@\
         SELECT tid, date, desc,
-               json_group_array(json_array(aid, amount/100.0, cur)) as ops
+               json_group_array(json_array(aid, amount/100.0, cur, is_main)) as ops
         FROM (SELECT distinct(tid) FROM ops {WHERE(E.aid.IN(not_none / aids), **eq)})
         INNER JOIN transactions t USING(tid)
         INNER JOIN ops USING(tid)
@@ -209,7 +210,7 @@ def account_transactions(
 
     result: list[TransactionAny] = []
     for it in data:
-        ops: list[tuple[str, float, str]] = [tuple(op) for op in json.loads(it['ops'])]
+        ops: list[tuple[str, float, str, bool]] = [tuple(op) for op in json.loads(it['ops'])]
         curs = set(o[2] for o in ops)
         tr: TransactionAny = {
             'tid': it['tid'],
@@ -221,8 +222,8 @@ def account_transactions(
         }
 
         if not tr['split']:
-            tr['amount'] = sum(a for op_aid, a, _cur in tr['ops'] if aid == op_aid)
-            tr['src'] = next(op_aid for op_aid, _a, _cur in tr['ops'] if op_aid != aid)
+            tr['amount'] = sum(a for op_aid, a, _cur, _is_main in tr['ops'] if aid == op_aid)
+            tr['src'] = next(op_aid for op_aid, _a, _cur, _is_main in tr['ops'] if op_aid != aid)
             tr['cur'] = list(curs)[0]
 
         result.append(tr)
@@ -307,12 +308,12 @@ def account_list() -> AccountMap:
     return amap
 
 
-def op(aid: str, amount: float, currency: str) -> Operation:
-    return {'aid': aid, 'amount': amount, 'cur': currency}
+def op(aid: str, amount: float, currency: str, is_main: bool = True) -> Operation:
+    return {'aid': aid, 'amount': amount, 'cur': currency, 'is_main': is_main}
 
 
-def op2(a1: str, a2: str, amount: float, currency: str) -> tuple[Operation, Operation]:
-    return op(a1, -amount, currency), op(a2, amount, currency)
+def op2(a1: str, a2: str, amount: float, currency: str, is_main: bool = True) -> tuple[Operation, Operation]:
+    return op(a1, -amount, currency, is_main), op(a2, amount, currency, is_main)
 
 
 def dop2(a1: str, a2: str, amount: float, currency: str) -> Collection[Operation]:
@@ -397,19 +398,19 @@ class Joint:
                 return [
                     op(self.partner_joint, amount, cur),
                     op(src, -amount / 2, cur),
-                    op(self.clear, -amount / 2, cur),
+                    op(self.clear, -amount / 2, cur, False),
                 ]
             else:
                 return [
                     *op2(src, self.my_joint, amount, cur),
-                    *op2(self.clear, self.partner_acc, amount / 2, cur),
+                    *op2(self.clear, self.partner_acc, amount / 2, cur, False),
                 ]
         elif src == self.parent_joint:
             return [
                 op(self.my_joint, -amount / 2, cur),
-                op(self.partner_joint, -amount / 2, cur),
+                op(self.partner_joint, -amount / 2, cur, False),
                 op(dest, amount / 2, cur),
-                op(self.clear, amount / 2, cur),
+                op(self.clear, amount / 2, cur, False),
             ]
 
         raise RuntimeError(f'Invalid src/dest account: {src}/{dest}')
@@ -527,6 +528,10 @@ def create_tables() -> None:
         for q in stmts.split(';\n'):
             execute_raw(q)
         set_version(3)
+
+    if get_version() < 4:
+        execute_raw('ALTER TABLE ops ADD COLUMN is_main INTEGER DEFAULT 1')
+        set_version(4)
 
 
 def create_initial_accounts() -> None:

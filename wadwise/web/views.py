@@ -4,9 +4,9 @@ import subprocess
 from datetime import date as ddate
 from datetime import datetime, timedelta
 from itertools import groupby
-from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, Union, cast, TypedDict
+from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, TypedDict, Union, cast
 
-from covador import Date, DateTime, enum, item, opt
+from covador import Date, DateTime, enum, opt
 from covador.flask import form, query_string
 from flask import abort, flash, jsonify, redirect, render_template, request, url_for
 from werkzeug.wrappers import Response
@@ -43,7 +43,7 @@ def account_view(aid: Optional[str]) -> str:
     if aid:
         account = state.account_map()[aid]
     else:
-        account = None  # type: ignore[typeddict-item]
+        account = None
     accounts = m.get_sub_accounts(aid)
     data = m.account_transactions(aid=aid)
 
@@ -121,6 +121,7 @@ def transaction_edit(dest: str, tid: Optional[str], split: bool) -> str:
 
 transaction_actions_t = opt(str) | enum('delete', 'copy', 'copy-now')
 
+
 class TransactionSave(TypedDict):
     simple: tuple[str, str, float, str]
     ops: list[tuple[str, str, str]]
@@ -130,16 +131,15 @@ class TransactionSave(TypedDict):
 @query_string(dest=str, tid=opt(str))
 @form(ops=json.loads, desc=opt(str), action=transaction_actions_t, _=combine_date(), **split_date())
 def transaction_save(
-    tid: Optional[str], dest: str, action: str, desc: Optional[str], date: datetime,
-    ops: TransactionSave
+    tid: Optional[str], dest: str, action: str, desc: Optional[str], date: datetime, ops: TransactionSave
 ) -> Response:
     if 'simple' in ops:
-        ops = m.dop2(*ops['simple'])
+        oplist = m.dop2(*ops['simple'])
     elif 'ops' in ops:
-        ops = [m.op(*it) for it in ops['ops']]
+        oplist = [m.op(*it) for it in ops['ops']]
     else:
         abort(400)
-    return transaction_save_helper(action, tid, ops, m.decode_account_id(dest)[0], date, desc)
+    return transaction_save_helper(action, tid, oplist, m.decode_account_id(dest)[0], date, desc)
 
 
 def transaction_save_helper(
@@ -202,7 +202,7 @@ def import_monzo(src: str) -> str:
     min_dt = data[-1]['date']
 
     def get_amount(tr: m.TransactionAny) -> tuple[float, str]:
-        for aid, amount, cur in tr['ops']:
+        for aid, amount, cur, _ in tr['ops']:
             if aid in src_aids:
                 return (amount, cur)
         raise RuntimeError('Never')

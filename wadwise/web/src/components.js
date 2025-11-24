@@ -36,7 +36,10 @@ function NumericInput({ value, ...props }) {
     const edit = useSignal(false)
 
     useSignalEffect(() => {
-        const v = String(value.value)
+        let v = String(value.value)
+        if (v == 'undefined' || v == 'null') {
+            v = ''
+        }
         if (!edit.value && state.peek() != v) {
             state.value = v
         }

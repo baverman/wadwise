@@ -24,6 +24,7 @@
         dateStr: {{ form.date.strftime('%Y-%m-%d') | tojson }},
         timeStr: {{ form.date.strftime('%H:%M:%S') | tojson }},
         split: {{ split | tojson }},
+        defaultAccount: {{ env.account_groups[0][1][0][0] | tojson }},
     }})
 </script>
 

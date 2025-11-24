@@ -76,7 +76,7 @@ def test_transaction_flow(dbconn):
         'tid': tid,
         'date': datetime.datetime(1970, 1, 1, 1, 0, 10),
         'desc': 'foo',
-        'ops': [(a, -200.0, 'USD'), (e, 200.0, 'USD')],
+        'ops': [(a, -200.0, 'USD', 1), (e, 200.0, 'USD', 1)],
         'split': False,
         'dest': None,
         'amount': 0,

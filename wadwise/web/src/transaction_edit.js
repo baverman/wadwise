@@ -22,15 +22,8 @@ function CurSelect(props) {
     )
 }
 
-// function op2(src, dest, amount, cur) {
-//     return [
-//         [src, -amount, cur],
-//         [dest, amount, cur]
-//     ]
-// }
-
-function SrcDest({ form, accountTitle, curList, isError }) {
-    const src = useSignal(form.src)
+function SrcDest({ form, accountTitle, curList, isError, defaultAccount }) {
+    const src = useSignal(form.src || defaultAccount)
     const amount = useSignal(form.amount)
     const current = useSignal(null)
     const target = useSignal(0)

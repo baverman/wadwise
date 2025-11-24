@@ -3,6 +3,12 @@
 
 {% block content %}
 
+<style>
+.not-important {
+    color: #777;
+}
+</style>
+
 {% if account %}
 <form id="formImportData" method="POST" action="{{ url_for('import_monzo') }}"
       enctype="multipart/form-data" style="display: none">
