@@ -97,7 +97,8 @@ export function urlqs(base, params) {
     if (!params) {
         return base
     }
-    return base + '?' + new URLSearchParams(params ?? {}).toString()
+    params = Object.entries(params ?? {}).filter((it) => it[1] != null && it[1] != undefined)
+    return base + '?' + new URLSearchParams(params).toString()
 }
 
 export function join(sep, ...args) {

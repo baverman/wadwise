@@ -2,12 +2,27 @@
 {% from 'widgets.html' import select_group %}
 
 {% block content %}
+<style>
+.menu {
+    margin-left: -0.6rem;
+}
 
-{% if not split %}
-<div>
-    <a href="{{ url_for('transaction_edit', tid=form.tid, dest=form.dest, split=1) }}">Split</a>
-</div>
-{% endif %}
+.menu-link {
+    cursor: pointer;
+    display: inline-block;
+    padding: 0.3rem 0.6rem;
+    color: #333;
+    text-decoration: none;
+
+    &:visited {
+        color: #333;
+    }
+
+    &[selected] {
+        background: #ddd;
+    }
+}
+</style>
 
 <template id="accountSelector">
     {{ select_group('some', '_', env.account_groups) }}
@@ -25,6 +40,9 @@
         timeStr: {{ form.date.strftime('%H:%M:%S') | tojson }},
         split: {{ split | tojson }},
         defaultAccount: {{ env.account_groups[0][1][0][0] | tojson }},
+        urls: {
+            transaction_edit: {{ url_for('transaction_edit') | tojson }},
+        }
     }})
 </script>
 

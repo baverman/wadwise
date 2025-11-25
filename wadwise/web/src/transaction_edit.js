@@ -1,4 +1,4 @@
-import { useSignal, batch, useComputed, signal, useSignalEffect } from '@preact/signals'
+import { useSignal, useComputed, signal, useSignalEffect } from '@preact/signals'
 import { useMemo } from 'preact/hooks'
 import {
     registerPreactData,
@@ -12,7 +12,9 @@ import {
 import { hh as h, nbsp } from './html.js'
 import { button, submit, input, AccountSelector } from './components.js'
 
-const { select, p, br, option, textarea, span, nobr } = h
+const { select, p, br, option, textarea, span, nobr, a, div } = h
+
+const mlink = a['menu-link']
 
 function CurSelect(props) {
     const { curList, ...rest } = props
@@ -29,7 +31,7 @@ function op2(src, dest, amount, cur, isMain) {
     ]
 }
 
-function SrcDest({ form, accountTitle, curList, isError, defaultAccount }) {
+function SrcDest({ form, accountTitle, curList, isError, defaultAccount, urls }) {
     const mode = useSignal('simple')
     const src = useSignal(form.src || defaultAccount)
     const via = useSignal(defaultAccount)
@@ -38,7 +40,7 @@ function SrcDest({ form, accountTitle, curList, isError, defaultAccount }) {
     const target = useSignal(0)
     const diff = useComputed(() => current.value - target.value)
     const cur = useSignal(form.cur)
-    const isSpecial = useComputed(() => src.value.includes('.') || form.dest.includes('.'))
+    // const isSpecial = useComputed(() => src.value.includes('.') || form.dest.includes('.'))
 
     const raw_ops = useComputed(() => {
         let result = null
@@ -69,41 +71,67 @@ function SrcDest({ form, accountTitle, curList, isError, defaultAccount }) {
         isError.value = src.value == form.dest
     })
 
-    async function fetchBalance(e) {
+    async function fetchBalance(e, set) {
         const form = e.target.closest('form')
         const resp = await fetch(
             urlqs('/api/balance', { date: form.date.value, aid: form.src.value }),
         )
         const balance = (await resp.json()).result[cur.value] || 0
+        current.value = balance
+        set()
+    }
 
-        batch(() => {
-            current.value = balance
-            mode.value = 'target'
-        })
+    function toggleMode(to, fn) {
+        return (e) => {
+            e.preventDefault()
+            if (mode.value == to) {
+                mode.value = 'simple'
+            } else {
+                if (fn) {
+                    fn(e, () => (mode.value = to))
+                } else {
+                    mode.value = to
+                }
+            }
+        }
     }
 
     const amountOpts = { placeholder: 'amount', autofocus: true, tabindex: 1, size: '8em' }
+    const m = mode.value
 
     return [
-        p('From:', br(), AccountSelector({ name: 'src', ...fieldModel(src) })),
-        p('To: ', accountTitle),
-        mode.value == 'via' && [p('Via:', br(), AccountSelector({ ...fieldModel(via) }))],
+        div.menu(
+            mlink(
+                {
+                    href: urlqs(urls.transaction_edit, {
+                        tid: form.tid,
+                        dest: form.dest,
+                        split: 1,
+                    }),
+                },
+                'Split',
+            ),
+            mlink(
+                { selected: m == 'target', onClick: toggleMode('target', fetchBalance) },
+                'Target',
+            ),
+            mlink({ selected: m == 'noop', onClick: toggleMode('noop') }, 'No Op'),
+            mlink({ selected: m == 'via', onClick: toggleMode('via') }, 'Via'),
+        ),
         p(
-            mode.value !== 'target' &&
-                join(
-                    ' ',
-                    [
-                        input.number({ ...amountOpts, value: amount }),
-                        h(CurSelect, { curList, ...fieldModel(cur) }),
-                    ],
-                    mode.value == 'simple' && button({ onClick: fetchBalance }, 'Target'),
-                    mode.value == 'simple' &&
-                        !isSpecial.value && [
-                            button({ onClick: () => (mode.value = 'noop') }, 'No op'),
-                            button({ onClick: () => (mode.value = 'via') }, 'Via'),
-                        ],
-                ),
-            mode.value === 'target' && [
+            m == 'via' ? 'From / Via:' : 'From:',
+            br(),
+            AccountSelector({ name: 'src', ...fieldModel(src) }),
+        ),
+        m == 'via' && p(AccountSelector({ ...fieldModel(via) })),
+        p('To: ', accountTitle),
+        p(
+            m !== 'target' && [
+                input.number({ ...amountOpts, value: amount }),
+                ' ',
+                h(CurSelect, { curList, ...fieldModel(cur) }),
+            ],
+            m === 'target' && [
                 span(current.value.toFixed(2)),
                 diff.value > 0 ? ' - ' : ' + ',
                 span(Math.abs(diff.value).toFixed(2)),
@@ -113,7 +141,6 @@ function SrcDest({ form, accountTitle, curList, isError, defaultAccount }) {
                 span.cur(cur),
             ],
         ),
-        mode.value === 'noop' && p('Empty transaction'),
         input.hidden({ name: 'ops', value: raw_ops }),
     ]
 }
