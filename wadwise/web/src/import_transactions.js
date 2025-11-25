@@ -3,7 +3,7 @@ import { initPreactData, idify, fieldModel, registerPreactData } from './utils.j
 import { hh as h, nbsp } from './html.js'
 import { vstack, button, submit, input, AccountSelector } from './components.js'
 
-const { div, span, p } = h
+const { div, span, p, nobr } = h
 
 function wrapItem(item) {
     return { ...item, state: signal(item.state), dest: signal(item.dest), desc: signal(item.desc) }
@@ -51,10 +51,10 @@ function Transaction({ trn }) {
         { class: { ignored: trn.state.value, ok: !trn.state.value && trn.dest.value } },
         h['form-aligned'](
             div.label(trn.type),
-            div['aligned-right'](trn.date_str),
+            div['aligned-right'](nobr(trn.date_str)),
 
             div.label(trn.name),
-            div['aligned-right'](span(trn.amount.toFixed(2)), nbsp, span.cur(trn.cur)),
+            div['aligned-right'](nobr(span(trn.amount.toFixed(2)), nbsp, span.cur(trn.cur))),
 
             span['aligned-full'](trn.category),
             AccountSelector['aligned-full']({ lazy: true, name: 'dest', ...fieldModel(trn.dest) }),

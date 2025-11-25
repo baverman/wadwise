@@ -179,17 +179,20 @@
 
      form-aligned {
         display: grid;
-        grid-template-columns: max-content 1fr;
+        grid-template-columns: auto 1fr;
         gap: 0.4em 1rem;
      }
 
-     form-aligned > *, form-aligned > multi-root > * {
+     form-aligned > * {
         grid-column: 2;
         justify-self: start;
      }
 
-     form-aligned > label, form-aligned > .label, form-aligned > multi-root > label {
+     form-aligned > label, form-aligned > .label {
         grid-column: 1;
+        min-width: 0;
+        overflow-wrap: break-word;
+        word-break: break-word;
      }
 
      form-aligned > .aligned-full {
@@ -229,14 +232,6 @@
 
     .button-secondary {
         background: rgb(66, 184, 221);
-    }
-
-    multi-root {
-        display: contents;
-    }
-
-    .no-margin {
-        margin: 0 !important;
     }
    </style>
 </head>
