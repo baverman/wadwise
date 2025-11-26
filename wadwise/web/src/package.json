@@ -1,16 +1,22 @@
 {
     "dependencies": {
         "@preact/signals": "^2.3.2",
+        "@tailwindcss/cli": "^4.1.17",
         "classnames": "^2.5.1",
+        "daisyui": "^5.5.5",
         "deepsignal": "^1.6.0",
         "dot-prop-immutable": "^2.1.1",
+        "htm": "^3.1.1",
         "lz-string": "^1.5.0",
-        "preact": "^10.27.2"
+        "preact": "^10.27.2",
+        "tailwindcss": "^4.1.17"
     },
     "scripts": {
         "lint": "eslint",
         "fmt": "prettier . --write",
-        "build": "rm ../static/js/chunk-*; rollup -c"
+        "css": "tailwindcss -i ./app.css -o ../static/css/app.css",
+        "build": "rm ../static/js/chunk-*; rollup -c",
+        "build-all": "yarn run lint && yarn run css && yarn run build"
     },
     "devDependencies": {
         "@eslint/js": "^9.39.1",

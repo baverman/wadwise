@@ -13,7 +13,7 @@ from werkzeug.wrappers import Response
 
 from wadwise import db, monzo, state, utils
 from wadwise import model as m
-from wadwise.web import app
+from wadwise.web import app, get_request_state
 
 datetime_t = DateTime('%Y-%m-%d%H:%M:%S')
 datetime_trunc_t = DateTime('%Y-%m-%d')
@@ -54,11 +54,47 @@ def account_view(aid: Optional[str]) -> str:
     for k, g in groupby(data, key):
         transactions.append((k, list(g)))
 
+    st = get_request_state()
+    env = st['env']
+
+    cur_list = {}
+    balance = {}
+    if account:
+        cur_list['total'] = env.sorted_curs(env.total(account['aid']))
+        balance['current_total'] = env.current[account['aid']].total
+        balance['month_total'] = env.month[account['aid']].total
+        if account['is_sheet']:
+            balance['month_debit'] = mdeb = env.month[account['aid']].debit
+            balance['month_credit'] = mcred = env.month[account['aid']].credit
+            balance['prev_total'] = prev_tot = env.prev[account['aid']].total
+            cur_list['full'] = env.sorted_curs({**prev_tot, **mdeb, **mcred})
+    else:
+        cur_list['total'] = env.top_sorted_curs()
+
+    view_data = {
+        'account': account,
+        'accounts': accounts,
+        'accounts_totals': env.accounts_totals(accounts),
+        'joint_accounts': env.joint_accounts,
+        'urls': {
+            'settings': url_for('settings'),
+            'account_view': url_for('account_view'),
+            'account_edit': url_for('account_edit'),
+            'transaction_edit': url_for('transaction_edit'),
+        },
+        'amap': env.amap,
+        'today_str': st['today_str'],
+        'today_dsp': st['today'].strftime('%b %Y'),
+        'cur_list': cur_list,
+        'balance': balance,
+        'transactions': transactions,
+    }
+
     return render_template(
-        'account/view.html',
-        accounts=accounts,
-        account=account,
-        transactions=transactions,
+        'app.html',
+        root_component='AccountView',
+        module='account_view.js',
+        data=view_data,
     )
 
 

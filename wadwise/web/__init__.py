@@ -1,5 +1,5 @@
 from datetime import date, datetime
-from typing import Any
+from typing import Any, TypedDict, cast
 
 from flask import Flask, request
 
@@ -16,8 +16,13 @@ def init() -> None:
     m.create_initial_accounts()
 
 
-@app.context_processor
-def setup_context_processor() -> dict[str, Any]:
+class RequestState(TypedDict):
+    env: state.Env
+    today: date
+    today_str: str
+
+
+def get_request_state() -> RequestState:
     today = request.args.get('today')
     if today:
         try:
@@ -27,6 +32,11 @@ def setup_context_processor() -> dict[str, Any]:
 
     today = today or date.today()
     return {'env': state.Env(today), 'today': today, 'today_str': today.strftime('%Y-%m')}
+
+
+@app.context_processor
+def setup_context_processor() -> dict[str, Any]:
+    return cast(dict[str, Any], get_request_state())  # TODO: remove after migration
 
 
 @app.template_global()

@@ -1,0 +1,18 @@
+@import 'tailwindcss';
+@plugin "daisyui";
+
+.content {
+    @apply bg-base-300;
+    padding: 5px;
+    max-width: 23rem;
+    margin: 0 auto;
+}
+
+span.delim {
+    width: 0.15em;
+    display: inline-block;
+}
+
+.small-caps {
+    font-variant-caps: small-caps;
+}

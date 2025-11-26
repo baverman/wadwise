@@ -1,14 +1,18 @@
+import { render } from 'preact'
 import { useEffect } from 'preact/hooks'
 import { useSignal } from '@preact/signals'
 
-import { registerPreactData, preventDefault, initPreactData, urlqs, join, wrap } from './utils.js'
+import { preventDefault, urlqs, join } from './utils.js'
 import { hh as h, nbsp } from './html.js'
 import { input } from './components.js'
+import * as icons from './icons.js'
 
-const { div, span, table, tbody, tr, td } = h
+const { div, span, ul, li, a, nobr } = h
 
 const dqs = document.querySelector.bind(document)
 const intlFmt = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 })
+
+const card = div['card p-2 bg-base-100 shadow-sm/20']
 
 function AccountHeader({ account, urls, amap, today_str, today_dsp }) {
     function dateChanged(e) {
@@ -18,31 +22,26 @@ function AccountHeader({ account, urls, amap, today_str, today_dsp }) {
     }
 
     return [
-        h['form-aligned'](
-            div.label(
-                join(':', [
-                    h.a({ href: urlqs(urls.account_view) }, 'Home'),
-                    ...account.parents.map((p) =>
-                        h.a({ href: urlqs(urls.account_view, { aid: p }) }, amap[p].name),
-                    ),
-                    h.a({ href: urlqs(urls.account_edit, { aid: account.aid }) }, account.name),
-                ]),
-            ),
-            div['aligned-right'](
-                input.month['#dateSelector.opaque']({ value: today_str, onInput: dateChanged }),
-                h.a(
-                    {
-                        href: '#date',
-                        onClick: preventDefault(() => dqs('#dateSelector').showPicker()),
-                    },
-                    today_dsp,
+        div['flex-1 breadcrumbs text-sm'](
+            ul(
+                ...account.parents.map((p) =>
+                    li(a({ href: urlqs(urls.account_view, { aid: p }) }, amap[p].name)),
                 ),
+                li(a({ href: urlqs(urls.account_edit, { aid: account.aid }) }, account.name)),
+            ),
+        ),
+        div['flex-none text-sm'](
+            input.month['#dateSelector.size-0 opaque']({ value: today_str, onInput: dateChanged }),
+            h.a(
+                { href: '#date', onClick: preventDefault(() => dqs('#dateSelector').showPicker()) },
+                today_dsp,
             ),
         ),
     ]
 }
 
 const delim = span.delim()
+const curSpan = span['text-xs text-slate-500']
 
 function fmtNumber(value) {
     const parts = intlFmt.format(value).split(',')
@@ -54,25 +53,23 @@ function totalsRows(cur_list, total, children, props) {
     let first = true
     for (const cur of cur_list) {
         if (total[cur]) {
-            result.push(
-                tr(
-                    td(first && children),
-                    td.tright.amount(fmtNumber(total[cur]), nbsp, span.cur(cur)),
-                ),
-            )
+            result.push([
+                first && children,
+                div['col-2 justify-self-end'](fmtNumber(total[cur]), nbsp, curSpan(cur)),
+            ])
             first = false
         }
     }
 
     if (!result.length && props?.showZero) {
-        result.push(tr(td(children)))
+        result.push(children)
     }
-    return table['w-100'](props?.tprops, tbody(result))
+    return div['grid grid-cols-2 w-full'](props?.tprops, result)
 }
 
 function separateOnMultiCurs(cur_list, ...children) {
     if (cur_list.length > 1) {
-        return h['v-stack'](children)
+        return div['flex flex-col gap-2'](children)
     } else {
         return children
     }
@@ -81,43 +78,38 @@ function separateOnMultiCurs(cur_list, ...children) {
 function AccountStatus({ account, balance, cur_list }) {
     const open = useSignal(account.is_sheet && cur_list.full.length == 1)
     if (account.is_sheet) {
-        return separateOnMultiCurs(
-            cur_list.full,
-            totalsRows(
-                cur_list.total,
-                balance.current_total,
-                'Balance' + (open.value ? '' : ' [+]'),
-                { tprops: { onClick: () => (open.value = true) } },
+        return card(
+            separateOnMultiCurs(
+                cur_list.full,
+                totalsRows(
+                    cur_list.total,
+                    balance.current_total,
+                    'Balance' + (open.value ? '' : ' [+]'),
+                    { tprops: { onClick: () => (open.value = true) } },
+                ),
+                open.value && [
+                    totalsRows(cur_list.full, balance.prev_total, 'Month start'),
+                    totalsRows(cur_list.full, balance.month_debit, 'In'),
+                    totalsRows(cur_list.full, balance.month_credit, 'Out'),
+                ],
             ),
-            open.value && [
-                totalsRows(cur_list.full, balance.prev_total, 'Month start'),
-                totalsRows(cur_list.full, balance.month_debit, 'In'),
-                totalsRows(cur_list.full, balance.month_credit, 'Out'),
-            ],
         )
     } else {
-        return totalsRows(cur_list.total, balance.month_total, 'This month')
+        return card(totalsRows(cur_list.total, balance.month_total, 'This month'))
     }
 }
 
 function SubAccounts({ cur_list, accounts, accounts_totals, urls, today_str }) {
-    return [
-        h.hr(),
-        separateOnMultiCurs(
-            cur_list.total,
-            accounts.map((it) =>
-                totalsRows(
-                    cur_list.total,
-                    accounts_totals[it.aid],
-                    h.a(
-                        { href: urlqs(urls.account_view, { aid: it.aid, today: today_str }) },
-                        it.name,
-                    ),
-                    { showZero: true },
-                ),
+    return card['flex flex-col gap-2'](
+        accounts.map((it) =>
+            totalsRows(
+                cur_list.total,
+                accounts_totals[it.aid],
+                h.a({ href: urlqs(urls.account_view, { aid: it.aid, today: today_str }) }, it.name),
+                { showZero: true },
             ),
         ),
-    ]
+    )
 }
 
 function AccountLinks({ account, urls, joint_accounts }) {
@@ -130,30 +122,29 @@ function AccountLinks({ account, urls, joint_accounts }) {
         frm.monzo.click()
     }
 
-    return div(
-        join(' | ', [
-            [
-                h.a({ href: urlqs(urls.transaction_edit, { dest: account.aid }) }, 'Add'),
-                wrap(
-                    ' (^)',
-                    join(', ', [
-                        h.a(
-                            { href: urlqs(urls.transaction_edit, { dest: account.aid, split: 1 }) },
-                            'split',
-                        ),
-                        account.aid in joint_accounts &&
-                            h.a({ href: urlqs(urls.transaction_edit, { dest: jaid }) }, 'joint'),
-                    ]),
+    const abtn = a['btn btn-sm shadow-xs/50 [role=button]']
+
+    return div['flex gap-2'](
+        div['join'](
+            abtn['join-item']({ href: urlqs(urls.transaction_edit, { dest: account.aid }) }, 'Add'),
+            abtn['join-item'](
+                { href: urlqs(urls.transaction_edit, { dest: account.aid, split: 1 }) },
+                'Split',
+            ),
+            account.aid in joint_accounts &&
+                abtn['join-item']({ href: urlqs(urls.transaction_edit, { dest: jaid }) }, 'Joint'),
+        ),
+        div['join'](
+            abtn['join-item'](
+                { href: '#import', onClick: (e) => handleImport(e, account.aid) },
+                'Import',
+            ),
+            account.aid in joint_accounts &&
+                abtn['join-item'](
+                    { href: '#import', onClick: (e) => handleImport(e, jaid) },
+                    'Joint',
                 ),
-            ],
-            [
-                h.a({ href: '#import', onClick: (e) => handleImport(e, account.aid) }, 'Import'),
-                wrap(' (^)', [
-                    account.aid in joint_accounts &&
-                        h.a({ href: '#import', onClick: (e) => handleImport(e, jaid) }, 'joint'),
-                ]),
-            ],
-        ]),
+        ),
     )
 }
 
@@ -164,7 +155,7 @@ function TransactionList({ account, transactions, amap, urls }) {
         if (acc != account.aid || ispos ^ (amnt > 0)) {
             return span(amnt.toFixed(2))
         } else {
-            return span['good-amount'](amnt.toFixed(2))
+            return span['text-emerald-700 font-medium'](amnt.toFixed(2))
         }
     }
 
@@ -175,29 +166,30 @@ function TransactionList({ account, transactions, amap, urls }) {
 
     function Transaction(it) {
         const turl = urlqs(urls.transaction_edit, { tid: it.tid, dest: account.aid })
-        return div.card['transaction-item'](
-            table(
-                { id: 't-' + it.tid, onClick: gotoTransaction, 'data-href': turl },
-                tbody(
-                    it.desc &&
-                        tr(
-                            { class: { 'transaction-header': it.split } },
-                            td({ colspan: 2 }, it.desc),
-                        ),
-                    it.split
-                        ? it.ops.map(([op_acc, op_amnt, op_cur, op_main]) =>
-                              tr(
-                                  { class: { 'not-important': !op_main } },
-                                  td(amap[op_acc].full_name),
-                                  td.tright(fmtAmount(op_acc, op_amnt), nbsp, span.cur(op_cur)),
-                              ),
-                          )
-                        : tr(
-                              td(amap[it.src].full_name),
-                              td.tright(fmtAmount(account.aid, it.amount), nbsp, span.cur(it.cur)),
-                          ),
+        return card['grid grid-cols-2'](
+            { id: 't-' + it.tid, onClick: gotoTransaction, 'data-href': turl },
+            it.desc &&
+                div['col-span-full'](
+                    { class: { 'border-b-1 border-gray-300': it.split } },
+                    it.desc,
                 ),
-            ),
+            it.split
+                ? it.ops.map(([op_acc, op_amnt, op_cur, op_main]) => [
+                      div['text-wrap tracking-tight'](
+                          { class: { 'text-slate-500': !op_main } },
+                          amap[op_acc].full_name,
+                      ),
+                      div['col-2 justify-self-end'](
+                          { class: { 'text-slate-500': !op_main } },
+                          nobr(fmtAmount(op_acc, op_amnt), nbsp, curSpan(op_cur)),
+                      ),
+                  ])
+                : [
+                      div['text-wrap tracking-tight'](amap[it.src].full_name),
+                      div['col-2 justify-self-end'](
+                          nobr(fmtAmount(account.aid, it.amount), nbsp, curSpan(it.cur)),
+                      ),
+                  ],
         )
     }
 
@@ -211,34 +203,50 @@ function TransactionList({ account, transactions, amap, urls }) {
         })
     }, [])
 
-    return h['v-stack.gap-xl'](
-        [head, tail].map((chunk) =>
-            chunk.value.map(([gdt, tlist]) =>
-                div(div['transaction-date'](gdt), h['v-stack'](tlist.map(Transaction))),
-            ),
+    const tDate = div['small-caps text-sm text-slate-600 text-upper']
+
+    return [head, tail].map((chunk) =>
+        chunk.value.map(([gdt, tlist]) =>
+            div(tDate(gdt), div['flex flex-col gap-2'](tlist.map(Transaction))),
         ),
     )
 }
 
 function AccountBody(config) {
-    return [h.hr(), h(AccountLinks, config), h['v-gap.gap-l'](), h(TransactionList, config)]
+    return [
+        div['h-0'](),
+        div['flex flex-col gap-4'](h(AccountLinks, config), h(TransactionList, config)),
+    ]
 }
 
 function Toast({ messages }) {
     return messages?.map((it) => div.flash(it))
 }
 
-function AccountView(config) {
+export function AccountView(config) {
     const { account, accounts, urls } = config
     return [
-        account
-            ? [h(AccountHeader, config), h['v-gap'](), h(Toast, config), h(AccountStatus, config)]
-            : h.a({ href: urls.settings }, 'Settings'),
-        !!accounts.length && h(SubAccounts, config),
-        account && h(AccountBody, config),
+        div['flex flex-col gap-2'](
+            div['flex bg-base-200 shadow-sm/20 py-1 pl-1 pr-2 rounded-box items-center'](
+                div['flex-none pr-1'](
+                    div['dropdown'](
+                        div['btn btn-ghost px-1 py-0 [role=button][tabindex=0]'](icons.burger),
+                        ul[
+                            'menu dropdown-content bg-base-200 rounded-box z-1 mt-3 w-52 p-2 shadow-sm[tabindex=-1]'
+                        ](
+                            account && li(a({ href: urls.account_view }, 'Home')),
+                            li(a({ href: urls.settings }, 'Settings')),
+                        ),
+                    ),
+                ),
+                !account && div['flex-1'](span['text-xl font-medium']('Home')),
+                account && h(AccountHeader, config),
+            ),
+            account && [h(Toast, config), h(AccountStatus, config)],
+            !!accounts.length && h(SubAccounts, config),
+            account && h(AccountBody, config),
+        ),
     ]
 }
 
-registerPreactData(AccountView)
-
-export { initPreactData }
+render(h(AccountView, window.appData), document.querySelector('.content'))
