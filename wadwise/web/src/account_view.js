@@ -250,7 +250,7 @@ export function AccountView(config) {
                         ),
                     ),
                 ),
-                !account && div['flex-1'](span['text-xl font-medium']('Home')),
+                !account && div['flex-1'](span['text-sm font-medium']('Home')),
                 account && h(AccountHeader, config),
             ),
             account && [h(Toast, config), h(AccountStatus, config)],
