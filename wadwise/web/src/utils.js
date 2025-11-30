@@ -2,8 +2,8 @@ import { render, h } from 'preact'
 
 window._wadwiseFuncs = {}
 
-export function registerPreactData(fn) {
-    window._wadwiseFuncs[fn.name] = fn
+export function registerPreactData(fn, name) {
+    window._wadwiseFuncs[name || fn.name] = fn
 }
 
 export function initPreactData(props) {

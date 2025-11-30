@@ -1,3 +1,4 @@
+import './app.css'
 import { signal, computed, batch } from '@preact/signals'
 import { initPreactData, idify, fieldModel, registerPreactData } from './utils.js'
 import { hh as h, nbsp } from './html.js'
@@ -91,6 +92,6 @@ function ImportForm({ src, name, balance }) {
     ]
 }
 
-registerPreactData(ImportForm)
+registerPreactData(ImportForm, 'ImportForm')
 
 export { init, initPreactData }

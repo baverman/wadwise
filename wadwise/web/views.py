@@ -81,6 +81,7 @@ def account_view(aid: Optional[str]) -> str:
             'account_view': url_for('account_view'),
             'account_edit': url_for('account_edit'),
             'transaction_edit': url_for('transaction_edit'),
+            'import_monzo': url_for('import_monzo'),
         },
         'amap': env.amap,
         'today_str': st['today_str'],

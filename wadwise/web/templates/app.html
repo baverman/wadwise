@@ -6,7 +6,7 @@
    <meta name="theme-color" content="#ffffff">
    <title>{{ title | default('Wadwise')}}</title>
    <link rel="manifest" href="/static/manifest.json">
-   <link rel="stylesheet" href="/static/css/app.css">
+   <link rel="stylesheet" href="{{ hash_url('app.css') }}">
 </head>
 <body>
   <div class="content"></div>
@@ -15,7 +15,10 @@
     window.appData.messages = {{ get_flashed_messages() | tojson }};
   </script>
   <script type="module">
-    import '/static/js/{{ module }}';
+    {% if DEV %}
+    import 'http://localhost:5173/@vite/client';
+    {% endif %}
+    import '{{ hash_url(module) }}';
   </script>
 </body>
 </html>

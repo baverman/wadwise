@@ -209,6 +209,6 @@ function AccountEdit(config) {
     ]
 }
 
-registerPreactData(AccountEdit)
+registerPreactData(AccountEdit, 'AccountEdit')
 
 export { initPreactData }

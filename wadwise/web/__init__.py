@@ -1,4 +1,8 @@
+import functools
+import json
+import os
 from datetime import date, datetime
+from pathlib import Path
 from typing import Any, TypedDict, cast
 
 from flask import Flask, request
@@ -10,6 +14,8 @@ app = Flask(__name__)
 app.url_map.strict_slashes = False
 app.config.from_mapping(SECRET_KEY='boo')
 
+DEV = os.environ.get('DEV') == '1'
+
 
 def init() -> None:
     m.create_tables()
@@ -20,6 +26,7 @@ class RequestState(TypedDict):
     env: state.Env
     today: date
     today_str: str
+    DEV: bool
 
 
 def get_request_state() -> RequestState:
@@ -31,7 +38,7 @@ def get_request_state() -> RequestState:
             today = None
 
     today = today or date.today()
-    return {'env': state.Env(today), 'today': today, 'today_str': today.strftime('%Y-%m')}
+    return {'env': state.Env(today), 'today': today, 'today_str': today.strftime('%Y-%m'), 'DEV': DEV}
 
 
 @app.context_processor
@@ -53,6 +60,20 @@ def merge(*values: dict[object, object]) -> dict[object, object]:
     for v in values:
         result.update(v)
     return result
+
+
+@functools.cache
+def get_manifest() -> dict[str, dict[str, str]]:
+    assets = Path(__file__).parent / 'static/assets'
+    return json.loads(open(assets / '.vite/manifest.json').read())  # type: ignore[no-any-return]
+
+
+@app.template_global()
+def hash_url(name: str) -> str:
+    if DEV:
+        return f'http://localhost:5173/{name}'
+    else:
+        return f'/static/assets/{get_manifest()[name]["file"]}'
 
 
 from . import views

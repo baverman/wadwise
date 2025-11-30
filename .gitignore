@@ -9,3 +9,4 @@ select.html
 node_modules
 wadwise/web/static/js
 wadwise/web/static/css/app.css
+wadwise/web/static/assets

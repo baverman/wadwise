@@ -153,7 +153,7 @@ function FavsForm({ favAccs }) {
     )
 }
 
-registerPreactData(JointForm)
-registerPreactData(FavsForm)
+registerPreactData(JointForm, 'JointForm')
+registerPreactData(FavsForm, 'FavsForm')
 
 export { initPreactData, init }

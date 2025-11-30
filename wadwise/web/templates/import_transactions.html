@@ -27,7 +27,7 @@
 </template>
 
 <script type="module">
-    import {init, initPreactData} from '/static/js/import_transactions.js';
+    import {init, initPreactData} from '{{ hash_url('import_transactions.js') }}';
 
     init({{ transactions | tojson }})
 

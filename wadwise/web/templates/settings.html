@@ -45,7 +45,7 @@
 </template>
 
 <script type="module">
-    import {initPreactData, init} from '/static/js/settings.js'
+    import {initPreactData, init} from '{{ hash_url('settings.js') }}'
     init({{ joints | tojson}})
     initPreactData({
         FavsForm: {favAccs: {{ fav_ids | tojson }}}

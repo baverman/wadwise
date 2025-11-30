@@ -31,7 +31,7 @@
 <form data-preact="AccountEdit" method="POST" class="pure-form"></form>
 
 <script type="module">
-    import {initPreactData} from '/static/js/transaction_edit.js'
+    import {initPreactData} from '{{ hash_url('transaction_edit.js') }}'
     initPreactData({AccountEdit: {
         form: {{ form | tojson }},
         accountTitle: {{ env.account_title(form.dest) | tojson }},

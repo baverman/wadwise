@@ -1,3 +1,4 @@
+import './app.css'
 import { render } from 'preact'
 import { useEffect } from 'preact/hooks'
 import { useSignal } from '@preact/signals'
@@ -7,7 +8,7 @@ import { hh as h, nbsp } from './html.js'
 import { input } from './components.js'
 import * as icons from './icons.js'
 
-const { div, span, ul, li, a, nobr } = h
+const { div, span, ul, li, a, nobr, form } = h
 
 const dqs = document.querySelector.bind(document)
 const intlFmt = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 })
@@ -226,13 +227,23 @@ function Toast({ messages }) {
 export function AccountView(config) {
     const { account, accounts, urls } = config
     return [
+        account &&
+            form['#formImportData.hidden [method=POST]'](
+                { action: urls.import_monzo, enctype: 'multipart/form-data' },
+                input.text({ name: 'src' }),
+                input.file({
+                    name: 'monzo',
+                    accept: '.csv',
+                    onInput: (e) => e.target.value && e.target.form.submit(),
+                }),
+            ),
         div['flex flex-col gap-2'](
             div['flex bg-base-200 shadow-sm/20 py-1 pl-1 pr-2 rounded-box items-center'](
                 div['flex-none pr-1'](
                     div['dropdown'](
                         div['btn btn-ghost px-1 py-0 [role=button][tabindex=0]'](icons.burger),
                         ul[
-                            'menu dropdown-content bg-base-200 rounded-box z-1 mt-3 w-52 p-2 shadow-sm[tabindex=-1]'
+                            'menu dropdown-content bg-base-200 rounded-box z-1 mt-2 w-52 p-2 shadow-sm/20 [tabindex=-1]'
                         ](
                             account && li(a({ href: urls.account_view }, 'Home')),
                             li(a({ href: urls.settings }, 'Settings')),
