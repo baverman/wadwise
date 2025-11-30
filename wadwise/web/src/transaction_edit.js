@@ -1,28 +1,31 @@
+import { render } from 'preact'
 import { useSignal, useComputed, signal, useSignalEffect } from '@preact/signals'
 import { useMemo } from 'preact/hooks'
-import {
-    registerPreactData,
-    initPreactData,
-    join,
-    urlqs,
-    fieldModel,
-    pushSignal,
-    deleteIdxSignal,
-} from './utils.js'
-import { hh as h, nbsp } from './html.js'
-import { button, submit, input, AccountSelector } from './components.js'
+import { urlqs, fieldModel, pushSignal, deleteIdxSignal } from './utils.js'
+import { hh as h, nbsp, wrapComponent } from './html.js'
+import { input, AccountSelector } from './components.js'
+import * as icons from './icons.js'
 
-const { select, p, br, option, textarea, span, nobr, a, div } = h
+const { select, p, option, textarea, span, a, div } = h
+const button = h.button['btn [type=button]'].$((el) => ({
+    primary: el['btn-primary'],
+    secondary: el['btn-secondary'],
+}))
+const submit = h.button['btn [type=submit]'].$((el) => ({
+    primary: el['btn-primary'],
+    secondary: el['btn-secondary'],
+    danger: el['btn-warning'],
+}))
 
-const mlink = a['menu-link']
+const mlink = a['tab [role=tab]']
 
-function CurSelect(props) {
+const CurSelect = wrapComponent((props) => {
     const { curList, ...rest } = props
     return select(
         rest,
         curList.map((it) => option(it)),
     )
-}
+})
 
 function op2(src, dest, amount, cur, isMain) {
     return [
@@ -98,10 +101,13 @@ function SrcDest({ form, accountTitle, curList, isError, defaultAccount, urls })
 
     const amountOpts = { placeholder: 'amount', autofocus: true, tabindex: 1, size: '8em' }
     const m = mode.value
+    function tabAct(val) {
+        return { class: { 'tab-active': m == val } }
+    }
 
     return [
-        div.menu(
-            mlink(
+        div['flex bg-base-200 shadow-sm/20 px-2 rounded-box justify-between items-center'](
+            a(
                 {
                     href: urlqs(urls.transaction_edit, {
                         tid: form.tid,
@@ -111,37 +117,57 @@ function SrcDest({ form, accountTitle, curList, isError, defaultAccount, urls })
                 },
                 'Split',
             ),
-            mlink(
-                { selected: m == 'target', onClick: toggleMode('target', fetchBalance) },
-                'Target',
+            div['tabs tabs-box'](
+                mlink(
+                    { ...tabAct('target'), onClick: toggleMode('target', fetchBalance) },
+                    'Target',
+                ),
+                mlink({ ...tabAct('noop'), onClick: toggleMode('noop') }, 'No Op'),
+                mlink({ ...tabAct('via'), onClick: toggleMode('via') }, 'Via'),
             ),
-            mlink({ selected: m == 'noop', onClick: toggleMode('noop') }, 'No Op'),
-            mlink({ selected: m == 'via', onClick: toggleMode('via') }, 'Via'),
         ),
-        p(
-            m == 'via' ? 'From / Via:' : 'From:',
-            br(),
-            AccountSelector({ name: 'src', ...fieldModel(src) }),
+        div['h-2'](),
+        card['flex flex-col gap-4 pt-3'](
+            p(
+                h.label['floating-label'](
+                    AccountSelector['select w-full']({ name: 'src', ...fieldModel(src) }),
+                    span('From'),
+                ),
+            ),
+            m == 'via' &&
+                p(
+                    h.label['floating-label'](
+                        AccountSelector['select w-full']({ ...fieldModel(via) }),
+                        span('Via'),
+                    ),
+                ),
+            p(
+                h.label['floating-label'](
+                    input.text['input w-full [readonly]']({ defaultValue: accountTitle }),
+                    span('To'),
+                ),
+            ),
+            div['flex gap-2 items-center'](
+                m !== 'target' && [
+                    input.number['input w-40 flex-1']({ ...amountOpts, value: amount }),
+                    CurSelect['select w-20 flex-none']({ curList, ...fieldModel(cur) }),
+                ],
+                m === 'target' && [
+                    div['flex-1'](
+                        span(current.value.toFixed(2)),
+                        diff.value > 0 ? ' - ' : ' + ',
+                        span(Math.abs(diff.value).toFixed(2)),
+                        ' = ',
+                    ),
+                    div['flex-none'](
+                        input.number['input w-25']({ ...amountOpts, value: target }),
+                        nbsp,
+                        span.cur(cur),
+                    ),
+                ],
+            ),
+            input.hidden({ name: 'ops', value: raw_ops }),
         ),
-        m == 'via' && p(AccountSelector({ ...fieldModel(via) })),
-        p('To: ', accountTitle),
-        p(
-            m !== 'target' && [
-                input.number({ ...amountOpts, value: amount }),
-                ' ',
-                h(CurSelect, { curList, ...fieldModel(cur) }),
-            ],
-            m === 'target' && [
-                span(current.value.toFixed(2)),
-                diff.value > 0 ? ' - ' : ' + ',
-                span(Math.abs(diff.value).toFixed(2)),
-                ' = ',
-                input.number({ ...amountOpts, value: target }),
-                nbsp,
-                span.cur(cur),
-            ],
-        ),
-        input.hidden({ name: 'ops', value: raw_ops }),
     ]
 }
 
@@ -161,43 +187,50 @@ function Split({ form, curList, isError }) {
         op[1].value = op[1].value - total.value
     }
 
-    return [
+    return card['flex flex-col gap-4'](
         ops.value.map((op, idx) =>
-            p(
-                AccountSelector({ ...fieldModel(op[0]) }),
-                ' ',
-                nobr(
-                    join(' ', [
-                        input.number({ placeholder: 'amount', size: '6em', value: op[1] }),
-                        h(CurSelect, { curList, ...fieldModel(op[2]) }),
-                        sameCur.value && button({ onClick: () => fixAmount(op) }, 'Fix'),
-                        button({ onClick: () => deleteIdxSignal(ops, idx) }, '\u2716'),
-                    ]),
+            div(
+                AccountSelector['select w-full']({ ...fieldModel(op[0]) }),
+                div['h-2'](),
+                div['flex gap-2'](
+                    input.number['input flex-auto']({ placeholder: 'amount', value: op[1] }),
+                    CurSelect['select w-20 flex-none']({ curList, ...fieldModel(op[2]) }),
+                    sameCur.value && button['flex-none']({ onClick: () => fixAmount(op) }, 'Fix'),
+                    button['flex-none']({ onClick: () => deleteIdxSignal(ops, idx) }, icons.trash),
                 ),
             ),
         ),
-        p(
-            button({ onClick: add }, 'Add'),
-            sameCur.value && [nbsp, 'Total: ', nbsp, span(total.value.toFixed(2))],
-            input.hidden({ name: 'ops', value: raw_ops }),
+        div['flex items-center justify-between'](
+            button['flex-none']({ onClick: add }, 'Add'),
+            sameCur.value && div('Total:', nbsp, span(total.value.toFixed(2))),
         ),
-    ]
+        input.hidden({ name: 'ops', value: raw_ops }),
+    )
 }
 
-function AccountEdit(config) {
+const card = div['card p-2 bg-base-100 shadow-sm/20']
+
+function TransactionEdit(config) {
     const { form, dateStr, timeStr, split } = config
     const isError = useSignal(null)
     const btnOpts = { disabled: isError.value }
-    return [
+    return h.form(
+        { method: 'POST' },
         h(split ? Split : SrcDest, { ...config, isError }),
-        p(textarea({ placeholder: 'description', name: 'desc', defaultValue: form.desc })),
-        p(
-            input.date({ name: 'date', defaultValue: dateStr }),
-            input.hidden({ name: 'date_time', defaultValue: timeStr }),
-        ),
-        p(
-            join(
-                ' ',
+        div['h-2'](),
+        card['flex flex-col gap-4'](
+            p(
+                textarea['textarea w-full']({
+                    placeholder: 'description',
+                    name: 'desc',
+                    defaultValue: form.desc,
+                }),
+            ),
+            p(
+                input.date['input w-full']({ name: 'date', defaultValue: dateStr }),
+                input.hidden({ name: 'date_time', defaultValue: timeStr }),
+            ),
+            div['flex justify-between'](
                 submit.primary({ ...btnOpts }, 'Save'),
                 form.tid && [
                     submit.danger({ ...btnOpts, name: 'action', value: 'delete' }, 'Delete'),
@@ -206,9 +239,7 @@ function AccountEdit(config) {
                 ],
             ),
         ),
-    ]
+    )
 }
 
-registerPreactData(AccountEdit, 'AccountEdit')
-
-export { initPreactData }
+render(h(TransactionEdit, window.appData), document.querySelector('.content'))

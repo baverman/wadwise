@@ -93,7 +93,6 @@ def account_view(aid: Optional[str]) -> str:
 
     return render_template(
         'app.html',
-        root_component='AccountView',
         module='account_view.js',
         data=view_data,
     )
@@ -153,7 +152,21 @@ def transaction_edit(dest: str, tid: Optional[str], split: bool) -> str:
         form = {'cur': cur, 'ops': ((None, 0, cur), (dest, 0, cur)), 'dest': dest, 'date': datetime.now()}
 
     cur_list = state.get_cur_list()
-    return render_template('transaction/edit.html', form=form, cur_list=cur_list, split=split or form.get('split'))
+
+    env = get_request_state()['env']
+    view_data = {
+        'form': form,
+        'accountTitle': env.account_title(form['dest']),
+        'curList': cur_list,
+        'dateStr': form['date'].strftime('%Y-%m-%d'),
+        'timeStr': form['date'].strftime('%H:%M:%S'),
+        'split': split or form.get('split'),
+        'defaultAccount': env.account_groups[0][1][0][0],
+        'urls': {
+            'transaction_edit': url_for('transaction_edit'),
+        },
+    }
+    return render_template('app.html', data=view_data, module='transaction_edit.js')
 
 
 transaction_actions_t = opt(str) | enum('delete', 'copy', 'copy-now')

@@ -1,3 +1,4 @@
+{% from 'widgets.html' import select_group %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -10,6 +11,11 @@
 </head>
 <body>
   <div class="content"></div>
+
+  <template id="accountSelector">
+      {{ select_group('some', '_', env.account_groups) }}
+  </template>
+
   <script>
     window.appData = {{ data | tojson(2) }};
     window.appData.messages = {{ get_flashed_messages() | tojson }};
