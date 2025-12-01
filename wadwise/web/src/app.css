@@ -3,8 +3,11 @@
     exclude: properties;
 }
 
-.content {
+html {
     @apply bg-base-300;
+}
+
+.content {
     padding: 5px;
     max-width: 23rem;
     margin: 0 auto;

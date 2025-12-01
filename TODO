@@ -1,6 +1,4 @@
 # ToDo
-* flash messages
-* Move transaction add buttons to menu
 * Meta ops:
    - show meta ops in transaction list
 * Manual import decisions should not be overrided by [Set similar]

@@ -211,10 +211,12 @@ def transaction_save_helper(
 
     amap = state.account_map()
     cbal = state.current_balance()
+    flashed: set[str] = set()
     for op in ops:
         aid = op['aid']
-        if aid != dest and amap[aid]['is_sheet']:
+        if aid != dest and amap[aid]['is_sheet'] and aid not in flashed:
             flash(f"""{amap[aid]['full_name']}: {cbal[aid].total.get(op['cur'], 0):.2f} {op['cur']}""")
+            flashed.add(aid)
 
     return redirect(url_for('account_view', aid=dest, _anchor=tid and f't-{tid}'))
 
@@ -292,9 +294,7 @@ def import_monzo(src: str) -> str:
         'balance': bend,
         'src': src,
         'name': env.account_title(src),
-        'urls': {
-            'import_transactions_apply': url_for('import_transactions_apply')
-        }
+        'urls': {'import_transactions_apply': url_for('import_transactions_apply')},
     }
 
     return render_template('app.html', data=view_data, module='import_transactions.js')

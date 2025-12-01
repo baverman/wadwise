@@ -1,4 +1,3 @@
-import './app.css'
 import { render } from 'preact'
 import { useEffect } from 'preact/hooks'
 import { useSignal } from '@preact/signals'
@@ -79,20 +78,26 @@ function separateOnMultiCurs(cur_list, ...children) {
 function AccountStatus({ account, balance, cur_list }) {
     const open = useSignal(account.is_sheet && cur_list.full.length == 1)
     if (account.is_sheet) {
+        const cursWithMovements = cur_list.full.filter(
+            (cur) => balance.month_debit[cur] || balance.month_credit[cur],
+        )
+        const hasDetails = cursWithMovements.length > 0
+
         return card(
             separateOnMultiCurs(
                 cur_list.full,
                 totalsRows(
                     cur_list.total,
                     balance.current_total,
-                    'Balance' + (open.value ? '' : ' [+]'),
+                    'Balance' + (hasDetails && !open.value ? ' [+]' : ''),
                     { tprops: { onClick: () => (open.value = true) } },
                 ),
-                open.value && [
-                    totalsRows(cur_list.full, balance.prev_total, 'Month start'),
-                    totalsRows(cur_list.full, balance.month_debit, 'In'),
-                    totalsRows(cur_list.full, balance.month_credit, 'Out'),
-                ],
+                open.value &&
+                    hasDetails && [
+                        totalsRows(cursWithMovements, balance.prev_total, 'Month start'),
+                        totalsRows(cursWithMovements, balance.month_debit, 'In'),
+                        totalsRows(cursWithMovements, balance.month_credit, 'Out'),
+                    ],
             ),
         )
     } else {
@@ -121,35 +126,21 @@ function AccountLinks({ account, urls, joint_accounts }) {
 
     function handleImport(e, aid) {
         e.preventDefault()
-        const frm = document.querySelector('#formImportData')
-        frm.src.value = aid
-        frm.monzo.click()
+        window.formImportData.src.value = aid
+        window.formImportData.monzo.click()
     }
 
-    const abtn = a['btn btn-sm shadow-xs/50 [role=button]']
-
-    return div['flex gap-2'](
-        div['join'](
-            abtn['join-item']({ href: urlqs(urls.transaction_edit, { dest: account.aid }) }, 'Add'),
-            abtn['join-item'](
-                { href: urlqs(urls.transaction_edit, { dest: account.aid, split: 1 }) },
-                'Split',
-            ),
-            account.aid in joint_accounts &&
-                abtn['join-item']({ href: urlqs(urls.transaction_edit, { dest: jaid }) }, 'Joint'),
-        ),
-        div['join'](
-            abtn['join-item'](
-                { href: '#import', onClick: (e) => handleImport(e, account.aid) },
-                'Import',
-            ),
-            account.aid in joint_accounts &&
-                abtn['join-item'](
-                    { href: '#import', onClick: (e) => handleImport(e, jaid) },
-                    'Joint',
-                ),
-        ),
-    )
+    return [
+        li(div['h-0']()),
+        li(a({ href: urlqs(urls.transaction_edit, { dest: account.aid }) }, 'Add transaction')),
+        li(a({ href: urlqs(urls.transaction_edit, { dest: account.aid, split: 1 }) }, 'Add Split')),
+        account.aid in joint_accounts &&
+            li(a({ href: urlqs(urls.transaction_edit, { dest: jaid }) }, 'Add Joint')),
+        li(div['h-0']()),
+        li(a({ href: '#import', onClick: (e) => handleImport(e, account.aid) }, 'Import')),
+        account.aid in joint_accounts &&
+            li(a({ href: '#import', onClick: (e) => handleImport(e, jaid) }, 'Import Joint')),
+    ]
 }
 
 function TransactionList({ account, transactions, amap, urls }) {
@@ -207,7 +198,7 @@ function TransactionList({ account, transactions, amap, urls }) {
         })
     }, [])
 
-    const tDate = div['small-caps text-sm text-slate-600 text-upper']
+    const tDate = div['small-caps text-sm text-slate-600 text-upper mb-1']
 
     return [head, tail].map((chunk) =>
         chunk.value.map(([gdt, tlist]) =>
@@ -217,14 +208,13 @@ function TransactionList({ account, transactions, amap, urls }) {
 }
 
 function AccountBody(config) {
-    return [
-        div['h-0'](),
-        div['flex flex-col gap-4'](h(AccountLinks, config), h(TransactionList, config)),
-    ]
+    return [div['h-0'](), div['flex flex-col gap-4'](h(TransactionList, config))]
 }
 
 function Toast({ messages }) {
-    return messages?.map((it) => div.flash(it))
+    return messages?.map((it) =>
+        div['bg-sky-100 p-2 rounded-box text-sm shadow-sm/20 text-slate-800'](it),
+    )
 }
 
 export function AccountView(config) {
@@ -246,10 +236,11 @@ export function AccountView(config) {
                     div['dropdown'](
                         div['btn btn-ghost px-1 py-0 [role=button][tabindex=0]'](icons.burger2),
                         ul[
-                            'menu dropdown-content bg-base-200 rounded-box z-1 mt-2 w-52 p-2 shadow-sm/20 [tabindex=-1]'
+                            'menu dropdown-content bg-base-200 rounded-box z-1 -ml-1 mt-2 w-52 p-2 shadow-sm/20 [tabindex=-1]'
                         ](
                             account && li(a({ href: urls.account_view }, 'Home')),
                             li(a({ href: urls.settings }, 'Settings')),
+                            account && h(AccountLinks, config),
                         ),
                     ),
                 ),

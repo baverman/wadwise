@@ -17,6 +17,7 @@ export default {
                 'settings.js',
                 'account_view.js',
                 'transaction_edit.js',
+                'app.css',
             ],
             // output: { format: 'es', chunkFileNames: 'chunk-[hash].js' },
             plugins: [nodeResolve()],

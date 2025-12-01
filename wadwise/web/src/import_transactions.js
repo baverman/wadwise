@@ -1,4 +1,3 @@
-import './app.css'
 import { render } from 'preact'
 import { signal, computed, batch } from '@preact/signals'
 import { idify, fieldModel } from './utils.js'
