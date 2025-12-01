@@ -285,7 +285,19 @@ def import_monzo(src: str) -> str:
         it['date_str'] = dt.strftime('%Y-%m-%d')  # type: ignore[typeddict-unknown-key]
 
     bend = state.current_balance(utils.next_month_start(max_dt))[src_aid].total
-    return render_template('import_transactions.html', src=src, balance=bend, transactions=data, bdate=max_dt)
+
+    env = get_request_state()['env']
+    view_data = {
+        'transactions': data,
+        'balance': bend,
+        'src': src,
+        'name': env.account_title(src),
+        'urls': {
+            'import_transactions_apply': url_for('import_transactions_apply')
+        }
+    }
+
+    return render_template('app.html', data=view_data, module='import_transactions.js')
 
 
 @app.route('/import/transactions', methods=['POST'])
