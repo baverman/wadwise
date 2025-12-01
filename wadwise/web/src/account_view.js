@@ -96,7 +96,10 @@ function AccountStatus({ account, balance, cur_list }) {
             ),
         )
     } else {
-        return card(totalsRows(cur_list.total, balance.month_total, 'This month'))
+        return (
+            !!Object.keys(cur_list.total).length &&
+            card(totalsRows(cur_list.total, balance.month_total, 'This month'))
+        )
     }
 }
 
@@ -241,7 +244,7 @@ export function AccountView(config) {
             div['flex bg-base-200 shadow-sm/20 py-1 pl-1 pr-2 rounded-box items-center'](
                 div['flex-none pr-1'](
                     div['dropdown'](
-                        div['btn btn-ghost px-1 py-0 [role=button][tabindex=0]'](icons.burger),
+                        div['btn btn-ghost px-1 py-0 [role=button][tabindex=0]'](icons.burger2),
                         ul[
                             'menu dropdown-content bg-base-200 rounded-box z-1 mt-2 w-52 p-2 shadow-sm/20 [tabindex=-1]'
                         ](

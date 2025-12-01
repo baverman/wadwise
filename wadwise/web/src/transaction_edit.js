@@ -230,12 +230,21 @@ function TransactionEdit(config) {
                 input.date['input w-full']({ name: 'date', defaultValue: dateStr }),
                 input.hidden({ name: 'date_time', defaultValue: timeStr }),
             ),
-            div['flex justify-between'](
-                submit.primary({ ...btnOpts }, 'Save'),
+            div['flex gap-2'](
+                submit.primary['flex-auto']({ ...btnOpts }, 'Save'),
                 form.tid && [
-                    submit.danger({ ...btnOpts, name: 'action', value: 'delete' }, 'Delete'),
-                    submit.secondary({ ...btnOpts, name: 'action', value: 'copy-now' }, 'Copy Now'),
-                    submit.secondary({ ...btnOpts, name: 'action', value: 'copy' }, 'Copy'),
+                    submit.danger['flex-auto'](
+                        { ...btnOpts, name: 'action', value: 'delete' },
+                        'Delete',
+                    ),
+                    submit.secondary['flex-auto'](
+                        { ...btnOpts, name: 'action', value: 'copy-now' },
+                        'Copy Now',
+                    ),
+                    submit.secondary['flex-auto'](
+                        { ...btnOpts, name: 'action', value: 'copy' },
+                        'Copy',
+                    ),
                 ],
             ),
         ),

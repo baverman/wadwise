@@ -1,11 +1,8 @@
 # ToDo
-* Unify simple edit and split edit
+* flash messages
+* Move transaction add buttons to menu
 * Meta ops:
-   - over: specify 3rd account which passes through original amount, for example to track personal spending from joint.
-   - null: invert original transaction. Doesn't change balance on affected accounts in the end, for example to track others
-     personal spending from joint
    - show meta ops in transaction list
-* Fix import grid, wide names make right column spill.
 * Manual import decisions should not be overrided by [Set similar]
 * Links to accounts in toasts
 * Persist original special transaction to show and edit it as simple src/dest transaction.
