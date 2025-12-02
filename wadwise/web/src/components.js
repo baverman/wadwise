@@ -3,8 +3,6 @@ import { useSignal, batch, useSignalEffect } from '@preact/signals'
 import { hh, wrapComponent } from './html.js'
 import { node2component, negInput } from './utils.js'
 
-import 'preact/jsx-runtime'
-
 function buttonSet(el) {
     return { primary: el['btn-primary'], secondary: el['btn-secondary'], danger: el['btn-warning'] }
 }
@@ -12,7 +10,7 @@ function buttonSet(el) {
 let accountSelectorOptions = [hh.option('Error')]
 
 ;(function () {
-    const tpl = document.querySelector('#accountSelector')
+    const tpl = window.accountSelector
     if (tpl) {
         accountSelectorOptions = node2component(tpl.content.querySelector('select')).props.children
     }
@@ -92,9 +90,12 @@ export const input = hh.input['input'].$((el) => ({
 }))
 
 export const card = hh.div['card p-2 bg-base-100 shadow-sm/20']
+export const vcard = card['flex flex-col']
 export const textarea = hh.textarea['textarea']
 export const select = hh.select['select']
 export const nav = hh.div['flex bg-base-200 shadow-sm/20 rounded-box items-center']
+export const delim = hh.span.delim()
+export const curSpan = hh.span['text-xs text-slate-500']
 
 if (import.meta.hot) {
     import.meta.hot.invalidate()

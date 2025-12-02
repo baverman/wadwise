@@ -3,21 +3,21 @@ import { useSignal, useComputed, signal, useSignalEffect } from '@preact/signals
 import { useMemo } from 'preact/hooks'
 import { urlqs, fieldModel, pushSignal, deleteIdxSignal } from './utils.js'
 import { hh as h, nbsp, wrapComponent } from './html.js'
-import { input, AccountSelector } from './components.js'
+import {
+    input,
+    AccountSelector,
+    select,
+    button,
+    submit,
+    textarea,
+    nav,
+    vcard,
+} from './components.js'
 import * as icons from './icons.js'
 
-const { select, p, option, textarea, span, a, div } = h
-const button = h.button['btn [type=button]'].$((el) => ({
-    primary: el['btn-primary'],
-    secondary: el['btn-secondary'],
-}))
-const submit = h.button['btn [type=submit]'].$((el) => ({
-    primary: el['btn-primary'],
-    secondary: el['btn-secondary'],
-    danger: el['btn-warning'],
-}))
-
+const { p, option, span, a, div } = h
 const mlink = a['tab [role=tab]']
+const flabel = h.label['floating-label']
 
 const CurSelect = wrapComponent((props) => {
     const { curList, ...rest } = props
@@ -106,7 +106,7 @@ function SrcDest({ form, accountTitle, curList, isError, defaultAccount, urls })
     }
 
     return [
-        div['flex bg-base-200 shadow-sm/20 px-2 rounded-box justify-between items-center'](
+        nav['px-2 justify-between'](
             a(
                 {
                     href: urlqs(urls.transaction_edit, {
@@ -117,7 +117,7 @@ function SrcDest({ form, accountTitle, curList, isError, defaultAccount, urls })
                 },
                 'Split',
             ),
-            div['tabs tabs-box'](
+            div['tabs tabs-box px-0'](
                 mlink(
                     { ...tabAct('target'), onClick: toggleMode('target', fetchBalance) },
                     'Target',
@@ -127,30 +127,14 @@ function SrcDest({ form, accountTitle, curList, isError, defaultAccount, urls })
             ),
         ),
         div['h-2'](),
-        card['flex flex-col gap-4 pt-3'](
-            p(
-                h.label['floating-label'](
-                    AccountSelector['select w-full']({ name: 'src', ...fieldModel(src) }),
-                    span('From'),
-                ),
-            ),
-            m == 'via' &&
-                p(
-                    h.label['floating-label'](
-                        AccountSelector['select w-full']({ ...fieldModel(via) }),
-                        span('Via'),
-                    ),
-                ),
-            p(
-                h.label['floating-label'](
-                    input.text['input w-full [readonly]']({ defaultValue: accountTitle }),
-                    span('To'),
-                ),
-            ),
+        vcard['gap-4 pt-3'](
+            p(flabel(AccountSelector['w-full']({ name: 'src', ...fieldModel(src) }), span('From'))),
+            m == 'via' && p(flabel(AccountSelector['w-full']({ ...fieldModel(via) }), span('Via'))),
+            p(flabel(input.text['w-full [readonly]']({ defaultValue: accountTitle }), span('To'))),
             div['flex gap-2 items-center'](
                 m !== 'target' && [
-                    input.number['input w-40 flex-1']({ ...amountOpts, value: amount }),
-                    CurSelect['select w-20 flex-none']({ curList, ...fieldModel(cur) }),
+                    input.number['w-40 flex-1']({ ...amountOpts, value: amount }),
+                    CurSelect['w-20 flex-none']({ curList, ...fieldModel(cur) }),
                 ],
                 m === 'target' && [
                     div['flex-1'](
@@ -160,7 +144,7 @@ function SrcDest({ form, accountTitle, curList, isError, defaultAccount, urls })
                         ' = ',
                     ),
                     div['flex-none'](
-                        input.number['input w-25']({ ...amountOpts, value: target }),
+                        input.number['w-25']({ ...amountOpts, value: target }),
                         nbsp,
                         span.cur(cur),
                     ),
@@ -187,14 +171,14 @@ function Split({ form, curList, isError }) {
         op[1].value = op[1].value - total.value
     }
 
-    return card['flex flex-col gap-4'](
+    return vcard['gap-4'](
         ops.value.map((op, idx) =>
             div(
-                AccountSelector['select w-full']({ ...fieldModel(op[0]) }),
+                AccountSelector['w-full']({ ...fieldModel(op[0]) }),
                 div['h-2'](),
                 div['flex gap-2'](
-                    input.number['input flex-auto']({ placeholder: 'amount', value: op[1] }),
-                    CurSelect['select w-20 flex-none']({ curList, ...fieldModel(op[2]) }),
+                    input.number['flex-auto']({ placeholder: 'amount', value: op[1] }),
+                    CurSelect['w-20 flex-none']({ curList, ...fieldModel(op[2]) }),
                     sameCur.value && button['flex-none']({ onClick: () => fixAmount(op) }, 'Fix'),
                     button['flex-none']({ onClick: () => deleteIdxSignal(ops, idx) }, icons.trash),
                 ),
@@ -208,8 +192,6 @@ function Split({ form, curList, isError }) {
     )
 }
 
-const card = div['card p-2 bg-base-100 shadow-sm/20']
-
 function TransactionEdit(config) {
     const { form, dateStr, timeStr, split } = config
     const isError = useSignal(null)
@@ -218,33 +200,24 @@ function TransactionEdit(config) {
         { method: 'POST' },
         h(split ? Split : SrcDest, { ...config, isError }),
         div['h-2'](),
-        card['flex flex-col gap-4'](
+        vcard['gap-4'](
             p(
-                textarea['textarea w-full']({
+                textarea['w-full']({
                     placeholder: 'description',
                     name: 'desc',
                     defaultValue: form.desc,
                 }),
             ),
             p(
-                input.date['input w-full']({ name: 'date', defaultValue: dateStr }),
+                input.date['w-full']({ name: 'date', defaultValue: dateStr }),
                 input.hidden({ name: 'date_time', defaultValue: timeStr }),
             ),
-            div['flex gap-2'](
-                submit.primary['flex-auto']({ ...btnOpts }, 'Save'),
+            div['!flex gap-2 [&>*]:flex-auto'](
+                submit.primary({ ...btnOpts }, 'Save'),
                 form.tid && [
-                    submit.danger['flex-auto'](
-                        { ...btnOpts, name: 'action', value: 'delete' },
-                        'Delete',
-                    ),
-                    submit.secondary['flex-auto'](
-                        { ...btnOpts, name: 'action', value: 'copy-now' },
-                        'Copy Now',
-                    ),
-                    submit.secondary['flex-auto'](
-                        { ...btnOpts, name: 'action', value: 'copy' },
-                        'Copy',
-                    ),
+                    submit.danger({ ...btnOpts, name: 'action', value: 'delete' }, 'Delete'),
+                    submit.secondary({ ...btnOpts, name: 'action', value: 'copy-now' }, 'Copy Now'),
+                    submit.secondary({ ...btnOpts, name: 'action', value: 'copy' }, 'Copy'),
                 ],
             ),
         ),

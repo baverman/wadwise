@@ -2,23 +2,9 @@ import { render } from 'preact'
 import { signal, computed, batch } from '@preact/signals'
 import { idify, fieldModel } from './utils.js'
 import { hh as h, nbsp } from './html.js'
-import { input, AccountSelector } from './components.js'
+import { input, AccountSelector, submit, button, card, curSpan, vstack } from './components.js'
 
 const { div, span, p, nobr, form } = h
-
-const card = div['card p-2 bg-base-100 shadow-sm/20']
-const curSpan = span['text-xs text-slate-500']
-
-const submit = h.button['btn btn-sm [type=submit]'].$((el) => ({
-    primary: el['btn-primary'],
-    secondary: el['btn-secondary'],
-    danger: el['btn-warning'],
-}))
-
-const button = h.button['btn btn-sm [type=button]'].$((el) => ({
-    primary: el['btn-primary'],
-    secondary: el['btn-secondary'],
-}))
 
 function wrapItem(item) {
     return { ...item, state: signal(item.state), dest: signal(item.dest), desc: signal(item.desc) }
@@ -73,19 +59,22 @@ function Transaction({ trn }) {
             div['text-right'](nobr(span(trn.amount.toFixed(2)), nbsp, curSpan(trn.cur))),
 
             span['col-span-full'](trn.category),
-            AccountSelector['select col-span-full w-full appearance-none']({
+            AccountSelector['col-span-full w-full appearance-none']({
                 lazy: true,
                 name: 'dest',
                 ...fieldModel(trn.dest),
             }),
-            input.text['input col-span-full w-full']({ name: 'desc', ...fieldModel(trn.desc) }),
+            input.text['col-span-full w-full']({ name: 'desc', ...fieldModel(trn.desc) }),
             div['col-span-full'](
-                button.secondary(
+                button.secondary['btn-sm'](
                     { onClick: () => setSimilar(trn), disabled: !trn.dest.value },
                     'Set similar',
                 ),
                 ' ',
-                button.secondary({ onClick: () => (trn.state.value = state_value) }, state_title),
+                button.secondary['btn-sm'](
+                    { onClick: () => (trn.state.value = state_value) },
+                    state_title,
+                ),
             ),
         ),
     )
@@ -100,7 +89,7 @@ function ImportForm({ src, name, balance, urls }) {
         { method: 'POST', action: urls.import_transactions_apply },
         input.hidden({ name: 'src', value: src }),
         input.hidden({ name: 'transactions', value: transactionsStr }),
-        div['flex flex-col gap-2'](
+        vstack['gap-2'](
             card(
                 p(
                     'Account: ',
@@ -109,7 +98,7 @@ function ImportForm({ src, name, balance, urls }) {
                     'Balance: ',
                     `${balance.GBP.toFixed(2)} + ${total.value.toFixed(2)} = ${(balance.GBP + total.value).toFixed(2)}`,
                 ),
-                p(submit.primary({ disabled: !submit_ok.value }, 'Import')),
+                p(submit['btn-sm'].primary({ disabled: !submit_ok.value }, 'Import')),
             ),
             h(TransactionList),
         ),

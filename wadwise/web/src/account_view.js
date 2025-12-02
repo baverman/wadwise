@@ -4,15 +4,12 @@ import { useSignal } from '@preact/signals'
 
 import { preventDefault, urlqs, join } from './utils.js'
 import { hh as h, nbsp } from './html.js'
-import { input } from './components.js'
+import { input, card, delim, curSpan, vstack, vcard, nav } from './components.js'
 import * as icons from './icons.js'
 
 const { div, span, ul, li, a, nobr, form } = h
 
-const dqs = document.querySelector.bind(document)
 const intlFmt = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2 })
-
-const card = div['card p-2 bg-base-100 shadow-sm/20']
 
 function AccountHeader({ account, urls, amap, today_str, today_dsp }) {
     function dateChanged(e) {
@@ -36,15 +33,12 @@ function AccountHeader({ account, urls, amap, today_str, today_dsp }) {
                 onInput: dateChanged,
             }),
             h.a(
-                { href: '#date', onClick: preventDefault(() => dqs('#dateSelector').showPicker()) },
+                { href: '#date', onClick: preventDefault(() => window.dateSelector.showPicker()) },
                 today_dsp,
             ),
         ),
     ]
 }
-
-const delim = span.delim()
-const curSpan = span['text-xs text-slate-500']
 
 function fmtNumber(value) {
     const parts = intlFmt.format(value).split(',')
@@ -72,7 +66,7 @@ function totalsRows(cur_list, total, children, props) {
 
 function separateOnMultiCurs(cur_list, ...children) {
     if (cur_list.length > 1) {
-        return div['flex flex-col gap-2'](children)
+        return vstack['gap-2'](children)
     } else {
         return children
     }
@@ -112,7 +106,7 @@ function AccountStatus({ account, balance, cur_list }) {
 }
 
 function SubAccounts({ cur_list, accounts, accounts_totals, urls, today_str }) {
-    return card['flex flex-col gap-2'](
+    return vcard['gap-2'](
         accounts.map((it) =>
             totalsRows(
                 cur_list.total,
@@ -204,14 +198,12 @@ function TransactionList({ account, transactions, amap, urls }) {
     const tDate = div['small-caps text-sm text-slate-600 text-upper mb-1']
 
     return [head, tail].map((chunk) =>
-        chunk.value.map(([gdt, tlist]) =>
-            div(tDate(gdt), div['flex flex-col gap-2'](tlist.map(Transaction))),
-        ),
+        chunk.value.map(([gdt, tlist]) => div(tDate(gdt), vstack['gap-2'](tlist.map(Transaction)))),
     )
 }
 
 function AccountBody(config) {
-    return [div['h-0'](), div['flex flex-col gap-4'](h(TransactionList, config))]
+    return [div['h-0'](), vstack['gap-4'](h(TransactionList, config))]
 }
 
 function Toast({ messages }) {
@@ -235,8 +227,8 @@ export function AccountView(config) {
                     onInput: (e) => e.target.value && e.target.form.submit(),
                 }),
             ),
-        div['flex flex-col gap-2'](
-            div['flex bg-base-200 shadow-sm/20 py-1 pl-1 pr-2 rounded-box items-center'](
+        vstack['gap-2'](
+            nav['py-1 pl-1 pr-2'](
                 div['flex-none pr-1'](
                     div['dropdown'](
                         div['btn btn-ghost px-1 py-0 [role=button][tabindex=0]'](icons.burger2),

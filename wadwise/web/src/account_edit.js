@@ -44,7 +44,7 @@ function AccountEdit({ form, accTypes, hiddenTypes, urls, accList }) {
                 }),
                 span('Show'),
             ),
-            div['flex gap-2'](
+            div['!flex gap-2 [&>*]:flex-auto'](
                 submit.primary('Save'),
                 form.aid && [
                     submit.danger(
