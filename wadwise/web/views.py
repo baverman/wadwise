@@ -92,11 +92,7 @@ def account_view(aid: Optional[str]) -> str:
         'transactions': transactions,
     }
 
-    return render_template(
-        'app.html',
-        module='account_view.js',
-        data=view_data,
-    )
+    return render_template('app.html', module='account_view.js', data=view_data)
 
 
 @app.route('/account/edit')
@@ -225,7 +221,10 @@ def transaction_save_helper(
     for op in ops:
         aid = op['aid']
         if aid != dest and amap[aid]['is_sheet'] and aid not in flashed:
-            flash(f"""{amap[aid]['full_name']}: {cbal[aid].total.get(op['cur'], 0):.2f} {op['cur']}""")
+            aurl = url_for('account_view', aid=aid)
+            flash(
+                f"""<a href="{aurl}">{amap[aid]['full_name']}</a>: {cbal[aid].total.get(op['cur'], 0):.2f} {op['cur']}"""
+            )
             flashed.add(aid)
 
     return redirect(url_for('account_view', aid=dest, _anchor=tid and f't-{tid}'))

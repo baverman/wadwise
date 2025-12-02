@@ -29,7 +29,11 @@ function AccountEdit({ form, accTypes, hiddenTypes, urls, accList }) {
                 span('Parent'),
             ),
             label(
-                textarea['w-full']({ placeholder: 'description', name: 'desc', defaultValue: form.desc }),
+                textarea['w-full']({
+                    placeholder: 'description',
+                    name: 'desc',
+                    defaultValue: form.desc,
+                }),
                 span('Description'),
             ),
             label(

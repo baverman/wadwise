@@ -216,7 +216,9 @@ function AccountBody(config) {
 
 function Toast({ messages }) {
     return messages?.map((it) =>
-        div['bg-sky-100 p-2 rounded-box text-sm shadow-sm/20 text-slate-800'](it),
+        div['bg-sky-100 p-2 rounded-box text-sm shadow-sm/20 text-slate-800']({
+            dangerouslySetInnerHTML: { __html: it },
+        }),
     )
 }
 
