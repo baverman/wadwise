@@ -16,6 +16,7 @@ export default {
                 'import_transactions.js',
                 'settings.js',
                 'account_view.js',
+                'account_edit.js',
                 'transaction_edit.js',
                 'app.css',
             ],

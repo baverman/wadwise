@@ -31,7 +31,10 @@ function AccountHeader({ account, urls, amap, today_str, today_dsp }) {
             ),
         ),
         div['flex-none text-sm'](
-            input.month['#dateSelector.size-0 opaque']({ value: today_str, onInput: dateChanged }),
+            input.month['#dateSelector.size-0 opacity-0']({
+                value: today_str,
+                onInput: dateChanged,
+            }),
             h.a(
                 { href: '#date', onClick: preventDefault(() => dqs('#dateSelector').showPicker()) },
                 today_dsp,

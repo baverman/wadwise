@@ -4,6 +4,7 @@ import subprocess
 from datetime import date as ddate
 from datetime import datetime, timedelta
 from itertools import groupby
+from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, TypedDict, Union, cast
 
 from covador import Date, DateTime, enum, opt
@@ -113,7 +114,16 @@ def account_edit(aid: Optional[str], parent: Optional[str]) -> str:
             return abort(404)
         form = {'type': pacc['type'], 'parent': parent, 'is_hidden': None}
     form['hidden_value'] = '' if form['is_hidden'] is None else str(int(form['is_hidden']))  # type: ignore[typeddict-unknown-key]
-    return render_template('account/edit.html', form=form)
+
+    env = get_request_state()['env']
+    view_data = {
+        'form': form,
+        'accTypes': env.acc_types,
+        'accList': sorted(env.account_list(form.get('aid'), True), key=itemgetter(1)),
+        'hiddenTypes': env.hidden_options,
+        'urls': {'account_delete': url_for('account_delete'), 'account_edit': url_for('account_edit')},
+    }
+    return render_template('app.html', data=view_data, module='account_edit.js')
 
 
 @app.route('/account/edit', methods=['POST'])

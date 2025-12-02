@@ -1,3 +1,4 @@
+import { useEffect, useRef } from 'preact/hooks'
 import { useSignal, batch, useSignalEffect } from '@preact/signals'
 import { hh, wrapComponent } from './html.js'
 import { node2component, negInput } from './utils.js'
@@ -25,9 +26,22 @@ function _AccountSelector({ lazy, ...props }) {
             open.value || props.value.value ? accountSelectorOptions : hh.option('---'),
         )
     } else {
-        return hh.select(props, accountSelectorOptions)
+        return uselect(props, accountSelectorOptions)
     }
 }
+
+export const uselect = wrapComponent((props) => {
+    let { defaultValue, children, ...rest } = props
+    if (defaultValue !== undefined) {
+        const ref = useRef()
+        useEffect(() => {
+            ref.current.value = defaultValue
+        }, [])
+        rest.ref = ref
+        rest.debugvalue = defaultValue
+    }
+    return select(rest, children)
+})
 
 function NumericInput({ value, ...props }) {
     const state = useSignal(value.peek())
