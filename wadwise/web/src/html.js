@@ -2,7 +2,12 @@ import { h } from 'preact'
 import classNames from 'classnames'
 
 function parseSelector(selector) {
-    const [head, ...tail] = selector.trim().split('[')
+    let [head, tail] = ['', '']
+    if (selector[0] == '!') {
+        head = selector.slice(1)
+    } else {
+        ;[head, ...tail] = selector.trim().split('[')
+    }
     let tags = []
     let attrs = null
 

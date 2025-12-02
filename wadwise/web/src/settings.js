@@ -1,17 +1,22 @@
+import { render } from 'preact'
 import { signal, computed, batch } from '@preact/signals'
 
-import {
-    registerPreactData,
-    deleteIdxSignal,
-    idify,
-    fieldModel,
-    pushSignal,
-    initPreactData,
-} from './utils.js'
+import { deleteIdxSignal, idify, fieldModel, pushSignal } from './utils.js'
 import { hh as h } from './html.js'
-import { button, submit, vstack, input, AccountSelector } from './components.js'
+import {
+    button,
+    submit,
+    vstack,
+    input,
+    AccountSelector,
+    card,
+    textarea,
+    nav,
+} from './components.js'
+import * as icons from './icons.js'
 
-const { div, fieldset, legend } = h
+const { div, form, a } = h
+const header = h.h2['text-lg font-medium mb-1']
 
 function wrapItem(item) {
     return {
@@ -35,13 +40,6 @@ const hasErrors = computed(() => {
             it.assets.value.every((a) => a.value),
     )
 })
-
-// import {effect} from '@preact/signals'
-// effect(() => console.log(hasErrors.value, joints.value))
-
-function init(data) {
-    joints.value = idify(data).map(wrapItem)
-}
 
 function add() {
     pushSignal(
@@ -73,33 +71,39 @@ function removeParty(item, pidx) {
 function JointForm() {
     function partyFrag(card, pidx) {
         return [
-            div(),
-            div.label(`Party ${pidx + 1}`),
-            button({ onClick: () => removeParty(card, pidx) }, 'Remove party'),
-            div.label('Joint'),
-            AccountSelector({ name: 'joint-other', ...fieldModel(card.joints.value[pidx + 1]) }),
-            div.label('Asset'),
-            AccountSelector({ name: 'asset-other', ...fieldModel(card.assets.value[pidx]) }),
+            div['col-1 mt-2'](`Party ${pidx + 1}`),
+            button['col-2 btn-sm mt-2 justify-self-start'](
+                { onClick: () => removeParty(card, pidx) },
+                icons.trash,
+            ),
+            div('Joint'),
+            AccountSelector['col-2']({
+                name: 'joint-other',
+                ...fieldModel(card.joints.value[pidx + 1]),
+            }),
+            div('Asset'),
+            AccountSelector['col-2']({
+                name: 'asset-other',
+                ...fieldModel(card.assets.value[pidx]),
+            }),
         ]
     }
 
     function jointCard({ card, onDelete }) {
-        return div.card(
-            { style: { padding: '0.6rem' } },
-            vstack(
-                h['form-aligned'](
-                    div.label('Main'),
-                    AccountSelector({ name: 'main', ...fieldModel(card.parent) }),
-                    div.label('Me'),
-                    AccountSelector({ name: 'me', ...fieldModel(card.joints.value[0]) }),
-                    div.label('Clear'),
-                    AccountSelector({ name: 'clear', ...fieldModel(card.clear) }),
+        return div['p-2 border-1 border-gray-300 rounded-box'](
+            vstack['gap-2'](
+                h.div['!grid grid-cols-[auto_1fr] items-center gap-y-1 gap-x-4'](
+                    div('Main'),
+                    AccountSelector['col-2']({ name: 'main', ...fieldModel(card.parent) }),
+                    div('Me'),
+                    AccountSelector['col-2']({ name: 'me', ...fieldModel(card.joints.value[0]) }),
+                    div('Clear'),
+                    AccountSelector['col-2']({ name: 'clear', ...fieldModel(card.clear) }),
                     card.assets.value.map((_, pidx) => partyFrag(card, pidx)),
                 ),
-                div(
-                    button({ onClick: () => addParty(card) }, 'Add Party'),
-                    ' ',
-                    button({ onClick: onDelete }, 'Remove Joint'),
+                div['flex gap-2'](
+                    button['btn-sm']({ onClick: () => addParty(card) }, 'Add Party'),
+                    button['btn-sm']({ onClick: onDelete }, 'Remove Joint'),
                 ),
             ),
         )
@@ -112,14 +116,14 @@ function JointForm() {
     }
 
     return [
-        fieldset(
-            legend('Joint accounts'),
+        header('Joint accounts'),
+        form(
+            { method: 'POST', action: './joint-accounts' },
             input.hidden({ name: 'data', value: jointsStr }),
-            vstack(
-                h(JointList, { joints }),
-                div(
+            vstack['gap-2'](
+                vstack['gap-2'](h(JointList, { joints })),
+                div['flex gap-2'](
                     button({ onClick: add }, 'Add Joint'),
-                    ' ',
                     submit.primary({ disabled: hasErrors }, 'Save'),
                 ),
             ),
@@ -132,28 +136,55 @@ function FavsForm({ favAccs }) {
 
     function FavList() {
         return favs.value.map((it, idx) =>
-            div(
-                AccountSelector({ name: 'acc', ...fieldModel(it) }),
-                ' ',
-                button({ onClick: () => deleteIdxSignal(favs, idx) }, '\u2716'),
+            div['flex gap-1'](
+                AccountSelector['flex-auto']({ name: 'acc', ...fieldModel(it) }),
+                button['flex-none']({ onClick: () => deleteIdxSignal(favs, idx) }, icons.trash),
             ),
         )
     }
 
-    return fieldset(
-        legend('Favorites'),
-        vstack(
-            h(FavList),
-            div(
-                button({ onClick: () => pushSignal(favs, signal('')) }, 'Add'),
-                ' ',
-                submit.primary('Save'),
+    return [
+        header('Favorites'),
+        form(
+            { method: 'POST', action: './favs', 'data-preact': 'FavsForm', class: 'pure-form' },
+            vstack['gap-2'](
+                vstack['gap-1'](h(FavList)),
+                div['flex gap-2'](
+                    button({ onClick: () => pushSignal(favs, signal('')) }, 'Add'),
+                    submit.primary('Save'),
+                ),
             ),
         ),
-    )
+    ]
 }
 
-registerPreactData(JointForm, 'JointForm')
-registerPreactData(FavsForm, 'FavsForm')
+function Settings(config) {
+    const { curList } = config
+    return [
+        vstack['gap-2'](
+            nav['p-2'](a['font-medium text-sm']({ href: '/account' }, 'Home'), div['h-4 m-2'](' ')),
+            card(h(FavsForm, config)),
+            card(h(JointForm, config)),
+            card(
+                header('Currencies'),
+                form(
+                    { method: 'POST', action: './cur-list' },
+                    vstack['gap-2'](
+                        textarea['w-full field-sizing-content']({
+                            name: 'cur_list',
+                            defaultValue: curList.join('\n'),
+                        }),
+                        div(submit.primary('Save')),
+                    ),
+                ),
+            ),
+            card(
+                header('Backup'),
+                form({ method: 'POST', action: './backup' }, submit.primary('Share database')),
+            ),
+        ),
+    ]
+}
 
-export { initPreactData, init }
+joints.value = idify(window.appData.joints).map(wrapItem)
+render(h(Settings, window.appData), document.querySelector('.content'))

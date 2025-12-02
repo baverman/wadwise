@@ -315,12 +315,13 @@ def import_transactions_apply(src: str, transactions: list[monzo.ImportTransacti
 
 @app.route('/settings/')
 def settings() -> str:
-    return render_template(
-        'settings.html',
-        fav_ids=state.get_favs(),
-        cur_list=state.get_cur_list(),
-        joints=list(m.get_joint_accounts().values()),
-    )
+    view_data = {
+        'favAccs': state.get_favs(),
+        'joints': list(m.get_joint_accounts().values()),
+        'curList': state.get_cur_list(),
+        'favIds': state.get_favs(),
+    }
+    return render_template('app.html', data=view_data, module='settings.js')
 
 
 @app.route('/settings/favs', methods=['POST'])

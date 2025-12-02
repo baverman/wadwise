@@ -2,12 +2,10 @@ import { useSignal, batch, useSignalEffect } from '@preact/signals'
 import { hh, wrapComponent } from './html.js'
 import { node2component, negInput } from './utils.js'
 
+import 'preact/jsx-runtime'
+
 function buttonSet(el) {
-    return {
-        primary: el['pure-button-primary'],
-        secondary: el['button-secondary'],
-        danger: el['button-error'],
-    }
+    return { primary: el['btn-primary'], secondary: el['btn-secondary'], danger: el['btn-warning'] }
 }
 
 let accountSelectorOptions = [hh.option('Error')]
@@ -64,14 +62,13 @@ function NumericInput({ value, ...props }) {
     })
 }
 
-const btn = hh.button['pure-button']
+const btn = hh.button['btn']
 
-export const AccountSelector = wrapComponent(_AccountSelector)
+export const AccountSelector = wrapComponent(_AccountSelector)['select']
 export const button = btn['[type=button]'].$(buttonSet)
 export const submit = btn['[type=submit]'].$(buttonSet)
-export const vstack = hh['v-stack']
-export const vgap = hh['v-gap']
-export const input = hh['input'].$((el) => ({
+export const vstack = hh.div['flex flex-col']
+export const input = hh.input['input'].$((el) => ({
     text: el['[type=text]'],
     hidden: el['[type=hidden]'],
     date: el['[type=date]'],
@@ -79,3 +76,12 @@ export const input = hh['input'].$((el) => ({
     file: el['[type=file]'],
     number: wrapComponent(NumericInput),
 }))
+
+export const card = hh.div['card p-2 bg-base-100 shadow-sm/20']
+export const textarea = hh.textarea['textarea']
+export const select = hh.select['select']
+export const nav = hh.div['flex bg-base-200 shadow-sm/20 rounded-box items-center']
+
+if (import.meta.hot) {
+    import.meta.hot.invalidate()
+}
