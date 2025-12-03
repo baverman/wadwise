@@ -2,7 +2,8 @@ import { render } from 'preact'
 import { signal, computed, batch } from '@preact/signals'
 import { idify, fieldModel } from './utils.js'
 import { hh as h, nbsp } from './html.js'
-import { input, AccountSelector, submit, button, card, curSpan, vstack } from './components.js'
+import { input, submit, button, card, curSpan, vstack } from './components.js'
+import { AccountSelector } from './account_selector.js'
 
 const { div, span, p, nobr, form } = h
 

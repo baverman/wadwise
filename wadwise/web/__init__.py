@@ -12,7 +12,10 @@ from wadwise import state
 
 app = Flask(__name__)
 app.url_map.strict_slashes = False
-app.config.from_mapping(SECRET_KEY='boo')
+app.config.from_mapping(
+    SECRET_KEY='boo',
+    SEND_FILE_MAX_AGE_DEFAULT=86400,
+)
 
 DEV = os.environ.get('DEV') == '1'
 
@@ -30,6 +33,9 @@ class RequestState(TypedDict):
 
 
 def get_request_state() -> RequestState:
+    if hasattr(request, '_wadwise_context'):
+        return request._wadwise_context  # type: ignore[no-any-return]
+
     today = request.args.get('today')
     if today:
         try:
@@ -38,7 +44,14 @@ def get_request_state() -> RequestState:
             today = None
 
     today = today or date.today()
-    return {'env': state.Env(today), 'today': today, 'today_str': today.strftime('%Y-%m'), 'DEV': DEV}
+    result: RequestState = {
+        'env': state.Env(today),
+        'today': today,
+        'today_str': today.strftime('%Y-%m'),
+        'DEV': DEV,
+    }
+    request._wadwise_context = result  # type: ignore[attr-defined]
+    return result
 
 
 @app.context_processor

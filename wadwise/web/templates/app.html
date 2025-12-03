@@ -1,4 +1,3 @@
-{% from 'widgets.html' import select_group %}
 <!DOCTYPE html>
 <html>
 <head>
@@ -12,9 +11,7 @@
 <body class="app">
   <div class="content"></div>
 
-  <template id="accountSelector">
-      {{ select_group('some', '---', env.account_groups) }}
-  </template>
+  <div id="accSelectorPortal"></div>
 
   <script>
     window.appData = {{ data | tojson(2) }};

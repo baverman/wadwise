@@ -44,6 +44,13 @@ function AccountEdit({ form, accTypes, hiddenTypes, urls, accList }) {
                 }),
                 span('Show'),
             ),
+            h.label(
+                h.input['checkbox [type=checkbox]']({
+                    name: 'is_placeholder',
+                    checked: form.is_placeholder,
+                }),
+                ' Placeholder account',
+            ),
             div['!flex gap-2 [&>*]:flex-auto'](
                 submit.primary('Save'),
                 form.aid && [

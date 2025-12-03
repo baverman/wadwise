@@ -45,10 +45,10 @@ function fmtNumber(value) {
     return join(delim, parts)
 }
 
-function totalsRows(cur_list, total, children, props) {
+function totalsRows(accCur, total, children, props) {
     const result = []
     let first = true
-    for (const cur of cur_list) {
+    for (const cur of accCur) {
         if (total[cur]) {
             result.push([
                 first && children,
@@ -72,19 +72,19 @@ function separateOnMultiCurs(cur_list, ...children) {
     }
 }
 
-function AccountStatus({ account, balance, cur_list }) {
-    const open = useSignal(account.is_sheet && cur_list.full.length == 1)
+function AccountStatus({ account, balance, accCur }) {
+    const open = useSignal(account.is_sheet && accCur.full.length == 1)
     if (account.is_sheet) {
-        const cursWithMovements = cur_list.full.filter(
+        const cursWithMovements = accCur.full.filter(
             (cur) => balance.month_debit[cur] || balance.month_credit[cur],
         )
         const hasDetails = cursWithMovements.length > 0
 
         return card(
             separateOnMultiCurs(
-                cur_list.full,
+                accCur.full,
                 totalsRows(
-                    cur_list.total,
+                    accCur.total,
                     balance.current_total,
                     'Balance' + (hasDetails && !open.value ? ' [+]' : ''),
                     { tprops: { onClick: () => (open.value = true) } },
@@ -99,17 +99,17 @@ function AccountStatus({ account, balance, cur_list }) {
         )
     } else {
         return (
-            !!Object.keys(cur_list.total).length &&
-            card(totalsRows(cur_list.total, balance.month_total, 'This month'))
+            !!Object.keys(accCur.total).length &&
+            card(totalsRows(accCur.total, balance.month_total, 'This month'))
         )
     }
 }
 
-function SubAccounts({ cur_list, accounts, accounts_totals, urls, today_str }) {
+function SubAccounts({ accCur, accounts, accounts_totals, urls, today_str }) {
     return vcard['gap-2'](
         accounts.map((it) =>
             totalsRows(
-                cur_list.total,
+                accCur.total,
                 accounts_totals[it.aid],
                 h.a({ href: urlqs(urls.account_view, { aid: it.aid, today: today_str }) }, it.name),
                 { showZero: true },
@@ -118,7 +118,7 @@ function SubAccounts({ cur_list, accounts, accounts_totals, urls, today_str }) {
     )
 }
 
-function AccountLinks({ account, urls, joint_accounts }) {
+function AccountLinks({ account, urls, jointAccounts }) {
     const jaid = account.aid + '.joint'
 
     function handleImport(e, aid) {
@@ -131,11 +131,11 @@ function AccountLinks({ account, urls, joint_accounts }) {
         li(div['h-0']()),
         li(a({ href: urlqs(urls.transaction_edit, { dest: account.aid }) }, 'Add transaction')),
         li(a({ href: urlqs(urls.transaction_edit, { dest: account.aid, split: 1 }) }, 'Add Split')),
-        account.aid in joint_accounts &&
+        account.aid in jointAccounts &&
             li(a({ href: urlqs(urls.transaction_edit, { dest: jaid }) }, 'Add Joint')),
         li(div['h-0']()),
         li(a({ href: '#import', onClick: (e) => handleImport(e, account.aid) }, 'Import')),
-        account.aid in joint_accounts &&
+        account.aid in jointAccounts &&
             li(a({ href: '#import', onClick: (e) => handleImport(e, jaid) }, 'Import Joint')),
     ]
 }

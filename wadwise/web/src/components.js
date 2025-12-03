@@ -1,31 +1,10 @@
 import { useEffect, useRef } from 'preact/hooks'
 import { useSignal, batch, useSignalEffect } from '@preact/signals'
 import { hh, wrapComponent } from './html.js'
-import { node2component, negInput } from './utils.js'
+import { negInput } from './utils.js'
 
 function buttonSet(el) {
     return { primary: el['btn-primary'], secondary: el['btn-secondary'], danger: el['btn-warning'] }
-}
-
-let accountSelectorOptions = [hh.option('Error')]
-
-;(function () {
-    const tpl = window.accountSelector
-    if (tpl) {
-        accountSelectorOptions = node2component(tpl.content.querySelector('select')).props.children
-    }
-})()
-
-function _AccountSelector({ lazy, ...props }) {
-    const open = useSignal(false)
-    if (lazy) {
-        return hh.select(
-            { ...props, onFocus: () => (open.value = true) },
-            open.value || props.value.value ? accountSelectorOptions : hh.option('---'),
-        )
-    } else {
-        return uselect(props, accountSelectorOptions)
-    }
 }
 
 export const uselect = wrapComponent((props) => {
@@ -76,7 +55,6 @@ function NumericInput({ value, ...props }) {
 
 const btn = hh.button['btn']
 
-export const AccountSelector = wrapComponent(_AccountSelector)['select']
 export const button = btn['[type=button]'].$(buttonSet)
 export const submit = btn['[type=submit]'].$(buttonSet)
 export const vstack = hh.div['flex flex-col']

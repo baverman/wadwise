@@ -300,11 +300,20 @@ def account_list() -> AccountMap:
         it.setdefault('children', [])
         amap[it['parent']].setdefault('children', []).append(it['aid'])  # type: ignore[index]
 
+    sk = lambda x: amap[x]['name']
+    for v in amap.values():
+        v['children'].sort(key=sk)
+
     amap.top = amap.pop(None)['children']  # type: ignore[call-overload]
     for it in amap.values():
         if not it.get('aid'):
             continue
         it['full_name'] = ':'.join([amap[p]['name'] for p in it['parents']] + [it['name']])
+
+    for jacc in get_joint_accounts().values():
+        pacc = amap[jacc['parent']]
+        amap[pacc['aid'] + '.joint'] = {'name': pacc['name'] + ' (joint)', 'full_name': pacc['full_name'] + ' (joint)'}  # type: ignore[typeddict-item]
+
     return amap
 
 

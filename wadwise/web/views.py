@@ -38,6 +38,29 @@ def split_date(name: str = 'date') -> dict[str, Any]:
     return {name: str, name + '_time': str}
 
 
+def render_entrypoint(module: str, data: dict[str, Any]) -> str:
+    env = get_request_state()['env']
+    data.update(
+        {
+            'curList': state.get_cur_list(),
+            'amap': env.amap,
+            'jointAccounts': env.joint_accounts,
+            'rootAccounts': env.amap.top,
+            'favAccounts': state.get_favs(),
+            'urls': {
+                'settings': url_for('settings'),
+                'account_view': url_for('account_view'),
+                'account_edit': url_for('account_edit'),
+                'account_delete': url_for('account_delete'),
+                'transaction_edit': url_for('transaction_edit'),
+                'import_monzo': url_for('import_monzo'),
+                'import_transactions_apply': url_for('import_transactions_apply'),
+            },
+        }
+    )
+    return render_template('app.html', module=module, data=data)
+
+
 @app.route('/account')
 @query_string(aid=opt(str))
 def account_view(aid: Optional[str]) -> str:
@@ -73,26 +96,17 @@ def account_view(aid: Optional[str]) -> str:
         cur_list['total'] = env.top_sorted_curs()
 
     view_data = {
+        'accCur': cur_list,
         'account': account,
         'accounts': accounts,
         'accounts_totals': env.accounts_totals(accounts),
-        'joint_accounts': env.joint_accounts,
-        'urls': {
-            'settings': url_for('settings'),
-            'account_view': url_for('account_view'),
-            'account_edit': url_for('account_edit'),
-            'transaction_edit': url_for('transaction_edit'),
-            'import_monzo': url_for('import_monzo'),
-        },
-        'amap': env.amap,
         'today_str': st['today_str'],
         'today_dsp': st['today'].strftime('%b %Y'),
-        'cur_list': cur_list,
         'balance': balance,
         'transactions': transactions,
     }
 
-    return render_template('app.html', module='account_view.js', data=view_data)
+    return render_entrypoint('account_view.js', view_data)
 
 
 @app.route('/account/edit')
@@ -117,9 +131,8 @@ def account_edit(aid: Optional[str], parent: Optional[str]) -> str:
         'accTypes': env.acc_types,
         'accList': sorted(env.account_list(form.get('aid'), True), key=itemgetter(1)),
         'hiddenTypes': env.hidden_options,
-        'urls': {'account_delete': url_for('account_delete'), 'account_edit': url_for('account_edit')},
     }
-    return render_template('app.html', data=view_data, module='account_edit.js')
+    return render_entrypoint('account_edit.js', view_data)
 
 
 @app.route('/account/edit', methods=['POST'])
@@ -157,22 +170,15 @@ def transaction_edit(dest: str, tid: Optional[str], split: bool) -> str:
         cur = state.get_cur_list()[0]
         form = {'cur': cur, 'ops': ((None, 0, cur), (dest, 0, cur)), 'dest': dest, 'date': datetime.now()}
 
-    cur_list = state.get_cur_list()
-
     env = get_request_state()['env']
     view_data = {
         'form': form,
         'accountTitle': env.account_title(form['dest']),
-        'curList': cur_list,
         'dateStr': form['date'].strftime('%Y-%m-%d'),
         'timeStr': form['date'].strftime('%H:%M:%S'),
         'split': split or form.get('split'),
-        'defaultAccount': env.account_groups[0][1][0][0],
-        'urls': {
-            'transaction_edit': url_for('transaction_edit'),
-        },
     }
-    return render_template('app.html', data=view_data, module='transaction_edit.js')
+    return render_entrypoint('transaction_edit.js', view_data)
 
 
 transaction_actions_t = opt(str) | enum('delete', 'copy', 'copy-now')
@@ -303,10 +309,9 @@ def import_monzo(src: str) -> str:
         'balance': bend,
         'src': src,
         'name': env.account_title(src),
-        'urls': {'import_transactions_apply': url_for('import_transactions_apply')},
     }
 
-    return render_template('app.html', data=view_data, module='import_transactions.js')
+    return render_entrypoint('import_transactions.js', view_data)
 
 
 @app.route('/import/transactions', methods=['POST'])
@@ -324,13 +329,7 @@ def import_transactions_apply(src: str, transactions: list[monzo.ImportTransacti
 
 @app.route('/settings/')
 def settings() -> str:
-    view_data = {
-        'favAccs': state.get_favs(),
-        'joints': list(m.get_joint_accounts().values()),
-        'curList': state.get_cur_list(),
-        'favIds': state.get_favs(),
-    }
-    return render_template('app.html', data=view_data, module='settings.js')
+    return render_entrypoint('settings.js', {})
 
 
 @app.route('/settings/favs', methods=['POST'])

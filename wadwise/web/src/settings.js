@@ -3,17 +3,9 @@ import { signal, computed, batch } from '@preact/signals'
 
 import { deleteIdxSignal, idify, fieldModel, pushSignal } from './utils.js'
 import { hh as h } from './html.js'
-import {
-    button,
-    submit,
-    vstack,
-    input,
-    AccountSelector,
-    card,
-    textarea,
-    nav,
-} from './components.js'
+import { button, submit, vstack, input, card, textarea, nav } from './components.js'
 import * as icons from './icons.js'
+import { AccountSelector } from './account_selector.js'
 
 const { div, form, a } = h
 const header = h.h2['text-lg font-medium mb-1']
@@ -131,8 +123,8 @@ function JointForm() {
     ]
 }
 
-function FavsForm({ favAccs }) {
-    const favs = signal(favAccs.map(signal))
+function FavsForm({ favAccounts }) {
+    const favs = signal(favAccounts.map(signal))
 
     function FavList() {
         return favs.value.map((it, idx) =>
@@ -186,5 +178,5 @@ function Settings(config) {
     ]
 }
 
-joints.value = idify(window.appData.joints).map(wrapItem)
+joints.value = idify(Object.values(window.appData.jointAccounts)).map(wrapItem)
 render(h(Settings, window.appData), document.querySelector('.content'))

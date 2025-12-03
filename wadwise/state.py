@@ -2,7 +2,6 @@ import json
 from collections import namedtuple
 from datetime import date, datetime
 from functools import cached_property
-from operator import itemgetter
 from typing import Optional
 
 from wadwise import model as m
@@ -27,58 +26,6 @@ class Env:
     @cached_property
     def account_list_all(self) -> list[Option]:
         return [Option(it['aid'], it['full_name'], False) for it in self.amap.values()]
-
-    @cached_property
-    def account_groups(self) -> list[tuple[str, list[Option]]]:
-        amap = self.amap
-        groups: dict[str, list[Option]] = {}
-        fids = get_favs()
-        favs = [amap[it] for it in fids if it in amap]
-
-        result = []
-        if favs:
-            result.append(('Favorites', [Option(it['aid'], it['full_name'], False) for it in favs]))
-
-        hidden: dict[str | None, bool] = {}
-
-        def is_hidden(aid: str | None) -> bool:
-            try:
-                return hidden[aid]
-            except KeyError:
-                pass
-
-            if aid is None:
-                result = False
-            else:
-                acc = amap[aid]
-                if acc['is_hidden'] is not None:
-                    result = acc['is_hidden']
-                else:
-                    result = is_hidden(acc['parent'])
-
-            hidden[aid] = result
-            return result
-
-        for it in amap.values():
-            if it['parent'] and it['aid']:
-                atitle = ':'.join([amap[p]['name'] for p in it['parents'][1:]] + [it['name']])
-                groups.setdefault(it['parents'][0], []).append(Option(it['aid'], atitle, is_hidden(it['aid'])))
-
-        key = itemgetter(1)
-        for v in groups.values():
-            v.sort(key=key)
-
-        result.extend((amap[gaid]['name'], children) for gaid, children in groups.items())
-
-        joints = self.joint_accounts
-        if joints:
-            result.append(
-                (
-                    'Joint Ops',
-                    [Option(f'{it["parent"]}.joint', amap[it['parent']]['name'], False) for it in joints.values()],
-                )
-            )
-        return result
 
     def account_list(self, exclude: Optional[str] = None, root: bool = False) -> list[Option]:
         result = []

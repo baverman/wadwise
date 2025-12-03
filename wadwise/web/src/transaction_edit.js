@@ -3,17 +3,9 @@ import { useSignal, useComputed, signal, useSignalEffect } from '@preact/signals
 import { useMemo } from 'preact/hooks'
 import { urlqs, fieldModel, pushSignal, deleteIdxSignal } from './utils.js'
 import { hh as h, nbsp, wrapComponent } from './html.js'
-import {
-    input,
-    AccountSelector,
-    select,
-    button,
-    submit,
-    textarea,
-    nav,
-    vcard,
-} from './components.js'
+import { input, select, button, submit, textarea, nav, vcard } from './components.js'
 import * as icons from './icons.js'
+import { AccountSelector } from './account_selector.js'
 
 const { p, option, span, a, div } = h
 const mlink = a['tab [role=tab]']
@@ -34,10 +26,10 @@ function op2(src, dest, amount, cur, isMain) {
     ]
 }
 
-function SrcDest({ form, accountTitle, curList, isError, defaultAccount, urls }) {
+function SrcDest({ form, accountTitle, curList, isError, favAccounts, urls }) {
     const mode = useSignal('simple')
-    const src = useSignal(form.src || defaultAccount)
-    const via = useSignal(defaultAccount)
+    const src = useSignal(form.src || favAccounts?.[0])
+    const via = useSignal(favAccounts?.[0])
     const amount = useSignal(form.amount)
     const current = useSignal(null)
     const target = useSignal(0)
@@ -99,7 +91,7 @@ function SrcDest({ form, accountTitle, curList, isError, defaultAccount, urls })
         }
     }
 
-    const amountOpts = { placeholder: 'amount', autofocus: true, tabindex: 1, size: '8em' }
+    const amountOpts = { placeholder: 'amount', autofocus: !form.tid, tabindex: 1, size: '8em' }
     const m = mode.value
     function tabAct(val) {
         return { class: { 'tab-active': m == val } }
@@ -196,32 +188,37 @@ function TransactionEdit(config) {
     const { form, dateStr, timeStr, split } = config
     const isError = useSignal(null)
     const btnOpts = { disabled: isError.value }
-    return h.form(
-        { method: 'POST' },
-        h(split ? Split : SrcDest, { ...config, isError }),
-        div['h-2'](),
-        vcard['gap-4'](
-            p(
-                textarea['w-full']({
-                    placeholder: 'description',
-                    name: 'desc',
-                    defaultValue: form.desc,
-                }),
-            ),
-            p(
-                input.date['w-full']({ name: 'date', defaultValue: dateStr }),
-                input.hidden({ name: 'date_time', defaultValue: timeStr }),
-            ),
-            div['!flex gap-2 [&>*]:flex-auto'](
-                submit.primary({ ...btnOpts }, 'Save'),
-                form.tid && [
-                    submit.danger({ ...btnOpts, name: 'action', value: 'delete' }, 'Delete'),
-                    submit.secondary({ ...btnOpts, name: 'action', value: 'copy-now' }, 'Copy Now'),
-                    submit.secondary({ ...btnOpts, name: 'action', value: 'copy' }, 'Copy'),
-                ],
+    return [
+        h.form(
+            { method: 'POST' },
+            h(split ? Split : SrcDest, { ...config, isError }),
+            div['h-2'](),
+            vcard['gap-4'](
+                p(
+                    textarea['w-full']({
+                        placeholder: 'description',
+                        name: 'desc',
+                        defaultValue: form.desc,
+                    }),
+                ),
+                p(
+                    input.date['w-full']({ name: 'date', defaultValue: dateStr }),
+                    input.hidden({ name: 'date_time', defaultValue: timeStr }),
+                ),
+                div['!flex gap-2 [&>*]:flex-auto'](
+                    submit.primary({ ...btnOpts }, 'Save'),
+                    form.tid && [
+                        submit.danger({ ...btnOpts, name: 'action', value: 'delete' }, 'Delete'),
+                        submit.secondary(
+                            { ...btnOpts, name: 'action', value: 'copy-now' },
+                            'Copy Now',
+                        ),
+                        submit.secondary({ ...btnOpts, name: 'action', value: 'copy' }, 'Copy'),
+                    ],
+                ),
             ),
         ),
-    )
+    ]
 }
 
 render(h(TransactionEdit, window.appData), document.querySelector('.content'))
