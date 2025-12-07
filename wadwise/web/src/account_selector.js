@@ -83,7 +83,9 @@ const AccountTree = wrapComponent(({ value, onSelect, search }) => {
         )
     }
 
-    return [div['leading-8'](search.value?.length > 0 ? renderSearch() : renderList(rootAccounts))]
+    return div['overflow-y-scroll pr-2 leading-8'](
+        search.value?.length > 0 ? renderSearch() : renderList(rootAccounts),
+    )
 })
 
 export const AccountSelector = wrapComponent((props) => {
@@ -117,9 +119,9 @@ export const AccountSelector = wrapComponent((props) => {
         input.hidden({ value, name }),
         open.value &&
             createPortal(
-                h.dialog['#accSelectorDialog.modal'](
+                h.dialog['#accSelectorDialog.modal transition-none'](
                     { onClose: () => (open.value = false) },
-                    vcard['! p-4 modal-box gap-4 h-[96dvh]'](
+                    vcard['! p-4 modal-box gap-4 h-[96dvh] transition-none'](
                         div['flex gap-4'](
                             h.form['flex-1 w-full'](
                                 { onSubmit: (e) => e.preventDefault() },
@@ -139,7 +141,7 @@ export const AccountSelector = wrapComponent((props) => {
                                 'Close',
                             ),
                         ),
-                        div['overflow-auto'](AccountTree({ onSelect, value, search })),
+                        AccountTree({ onSelect, value, search }),
                     ),
                 ),
                 window.accSelectorPortal,

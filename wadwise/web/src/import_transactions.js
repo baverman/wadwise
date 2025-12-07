@@ -99,7 +99,7 @@ function ImportForm({ src, name, balance, urls }) {
                     'Balance: ',
                     `${balance.GBP.toFixed(2)} + ${total.value.toFixed(2)} = ${(balance.GBP + total.value).toFixed(2)}`,
                 ),
-                p(submit['btn-sm'].primary({ disabled: !submit_ok.value }, 'Import')),
+                p(submit.primary['btn-sm']({ disabled: !submit_ok.value }, 'Import')),
             ),
             h(TransactionList),
         ),
