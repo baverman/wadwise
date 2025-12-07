@@ -24,18 +24,6 @@ class Env:
         self.today = today or date.today()
 
     @cached_property
-    def account_list_all(self) -> list[Option]:
-        return [Option(it['aid'], it['full_name'], False) for it in self.amap.values()]
-
-    def account_list(self, exclude: Optional[str] = None, root: bool = False) -> list[Option]:
-        result = []
-        if root:
-            result.append(Option('', 'ROOT', False))
-
-        result.extend(it for it in self.account_list_all if it.value != exclude)
-        return result
-
-    @cached_property
     def amap(self) -> m.AccountMap:
         return account_map()
 

@@ -4,7 +4,6 @@ import subprocess
 from datetime import date as ddate
 from datetime import datetime, timedelta
 from itertools import groupby
-from operator import itemgetter
 from typing import TYPE_CHECKING, Any, Callable, Iterable, Optional, TypedDict, Union, cast
 
 from covador import Date, DateTime, enum, opt
@@ -129,7 +128,6 @@ def account_edit(aid: Optional[str], parent: Optional[str]) -> str:
     view_data = {
         'form': form,
         'accTypes': env.acc_types,
-        'accList': sorted(env.account_list(form.get('aid'), True), key=itemgetter(1)),
         'hiddenTypes': env.hidden_options,
     }
     return render_entrypoint('account_edit.js', view_data)

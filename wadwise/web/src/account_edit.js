@@ -1,8 +1,10 @@
 import { render } from 'preact'
-import { urlqs } from './utils.js'
+import { useSignal } from '@preact/signals'
+import { urlqs, fieldModel } from './utils.js'
 import { hh as h, wrapComponent } from './html.js'
 
 import { uselect, submit, input, textarea, card } from './components.js'
+import { AccountSelector } from './account_selector.js'
 
 const { option, a, span, div } = h
 const label = h.label['floating-label']
@@ -15,7 +17,8 @@ const Select = wrapComponent((props) => {
     )
 })
 
-function AccountEdit({ form, accTypes, hiddenTypes, urls, accList }) {
+function AccountEdit({ form, accTypes, hiddenTypes, urls }) {
+    const parentAcc = useSignal(form.parent)
     return card['pt-3'](
         h.form['flex flex-col gap-4'](
             { method: 'POST' },
@@ -25,7 +28,12 @@ function AccountEdit({ form, accTypes, hiddenTypes, urls, accList }) {
                 span('Type'),
             ),
             label(
-                Select['w-full']({ name: 'parent', defaultValue: form.parent, options: accList }),
+                AccountSelector['w-full']({
+                    name: 'parent',
+                    selectPlaceholder: true,
+                    excludeSpecial: true,
+                    ...fieldModel(parentAcc),
+                }),
                 span('Parent'),
             ),
             label(

@@ -237,7 +237,7 @@ export function AccountView(config) {
                         ](
                             account && li(a({ href: urls.account_view }, 'Home')),
                             li(a({ href: urls.settings }, 'Settings')),
-                            account && h(AccountLinks, config),
+                            account && !account.is_placeholder && h(AccountLinks, config),
                         ),
                     ),
                 ),
