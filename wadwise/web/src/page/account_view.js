@@ -42,7 +42,7 @@ function AccountHeader({ account, urls, amap, today_str, today_dsp }) {
 
 function fmtNumber(value) {
     const parts = intlFmt.format(value).split(',')
-    return join(delim, parts)
+    return span['tabular-nums tracking-tighter'](join(delim, parts))
 }
 
 function totalsRows(accCur, total, children, props) {

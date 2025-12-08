@@ -73,7 +73,7 @@ export const textarea = hh.textarea['textarea']
 export const select = hh.select['select']
 export const nav = hh.div['flex bg-base-200 shadow-sm/20 rounded-box items-center']
 export const delim = hh.span.delim()
-export const curSpan = hh.span['text-xs text-slate-500']
+export const curSpan = hh.span['text-xs font-mono text-slate-500']
 
 if (import.meta.hot) {
     import.meta.hot.invalidate()
