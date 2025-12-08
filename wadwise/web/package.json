@@ -1,6 +1,5 @@
 {
     "dependencies": {
-        "@preact/preset-vite": "^2.10.2",
         "@preact/signals": "^2.3.2",
         "classnames": "^2.5.1",
         "daisyui": "^5.5.5",
@@ -18,18 +17,28 @@
         "@eslint/js": "^9.39.1",
         "@rollup/plugin-commonjs": "^29.0.0",
         "@rollup/plugin-node-resolve": "^16.0.3",
+        "@tailwindcss/vite": "^4.1.17",
         "eslint": "^9.39.1",
         "globals": "^16.5.0",
         "prettier": "3.6.2",
-        "@tailwindcss/vite": "^4.1.17",
         "vite": "^7.2.4",
-        "vite-plugin-eslint": "^1.8.1"
+        "vite-plugin-eslint": "^1.8.1",
+        "glob": "^13.0.0",
+        "@preact/preset-vite": "^2.10.2"
     },
     "prettier": {
         "printWidth": 100,
         "tabWidth": 4,
         "semi": false,
         "singleQuote": true,
-        "objectWrap": "collapse"
+        "objectWrap": "collapse",
+        "overrides": [
+            {
+                "files": "*.html",
+                "options": {
+                    "tabWidth": 2
+                }
+            }
+        ]
     }
 }

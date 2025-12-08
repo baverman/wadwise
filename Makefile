@@ -11,4 +11,4 @@ lint:
 all: fmt lint
 
 watch:
-	on-change -e wadwise/web/static -e wadwise/web/src wadwise -- daemon python main.py -b 0.0.0.0
+	on-change -e 'wadwise/web/src/**' -e 'wadwise/web/node_modules/**' wadwise -- daemon python main.py -b 0.0.0.0

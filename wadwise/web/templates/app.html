@@ -1,27 +1,28 @@
-<!DOCTYPE html>
+<!doctype html>
 <html>
-<head>
-   <meta charset="utf-8">
-   <meta name="viewport" content="width=device-width, initial-scale=1">
-   <meta name="theme-color" content="#ffffff">
-   <title>{{ title | default('Wadwise')}}</title>
-   <link rel="manifest" href="/static/manifest.json">
-   <link rel="stylesheet" href="{{ hash_url('app.css') }}">
-</head>
-<body class="app">
-  <div class="content"></div>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>{{ title | default('Wadwise')}}</title>
+    <link rel="manifest" href="/static/manifest.json" />
+    <link rel="stylesheet" href="{{ hash_url('src/styles/app.css') }}" />
+  </head>
+  <body class="app">
+    <div class="content"></div>
 
-  <div id="accSelectorPortal"></div>
+    <div id="accSelectorPortal"></div>
 
-  <script>
-    window.appData = {{ data | tojson(2) }};
-    window.appData.messages = {{ get_flashed_messages() | tojson }};
-  </script>
-  <script type="module">
-    {% if DEV %}
-    import 'http://localhost:5173/@vite/client';
-    {% endif %}
-    import '{{ hash_url(module) }}';
-  </script>
-</body>
+    <script>
+      window.appData = {{ data | tojson(2) }};
+      window.appData.messages = {{ get_flashed_messages() | tojson }};
+    </script>
+
+    <script type="module">
+      {% if DEV %}
+      import 'http://localhost:5173/@vite/client';
+      {% endif %}
+      import '{{ hash_url(module) }}';
+    </script>
+  </body>
 </html>

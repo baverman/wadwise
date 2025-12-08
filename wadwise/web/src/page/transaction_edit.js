@@ -1,11 +1,12 @@
 import { render } from 'preact'
 import { useSignal, useComputed, signal, useSignalEffect } from '@preact/signals'
 import { useMemo } from 'preact/hooks'
-import { urlqs, fieldModel, pushSignal, deleteIdxSignal } from './utils.js'
-import { hh as h, nbsp, wrapComponent } from './html.js'
-import { input, select, button, submit, textarea, nav, vcard } from './components.js'
-import * as icons from './icons.js'
-import { AccountSelector } from './account_selector.js'
+
+import { urlqs, fieldModel, pushSignal, deleteIdxSignal } from '../utils.js'
+import { hh as h, nbsp, wrapComponent } from '../html.js'
+import { input, select, button, submit, textarea, nav, vcard } from '../components.js'
+import * as icons from '../icons.js'
+import { AccountSelector } from '../account_selector.js'
 
 const { p, option, span, a, div } = h
 const mlink = a['tab [role=tab]']

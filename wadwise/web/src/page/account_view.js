@@ -2,10 +2,10 @@ import { render } from 'preact'
 import { useEffect } from 'preact/hooks'
 import { useSignal } from '@preact/signals'
 
-import { preventDefault, urlqs, join } from './utils.js'
-import { hh as h, nbsp } from './html.js'
-import { input, card, delim, curSpan, vstack, vcard, nav } from './components.js'
-import * as icons from './icons.js'
+import { preventDefault, urlqs, join } from '../utils.js'
+import { hh as h, nbsp } from '../html.js'
+import { input, card, delim, curSpan, vstack, vcard, nav } from '../components.js'
+import * as icons from '../icons.js'
 
 const { div, span, ul, li, a, nobr, form } = h
 

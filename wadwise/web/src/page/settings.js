@@ -1,11 +1,11 @@
 import { render } from 'preact'
 import { signal, computed, batch } from '@preact/signals'
 
-import { deleteIdxSignal, idify, fieldModel, pushSignal } from './utils.js'
-import { hh as h } from './html.js'
-import { button, submit, vstack, input, card, textarea, nav } from './components.js'
-import * as icons from './icons.js'
-import { AccountSelector } from './account_selector.js'
+import { deleteIdxSignal, idify, fieldModel, pushSignal } from '../utils.js'
+import { hh as h } from '../html.js'
+import { button, submit, vstack, input, card, textarea, nav } from '../components.js'
+import * as icons from '../icons.js'
+import { AccountSelector } from '../account_selector.js'
 
 const { div, form, a } = h
 const header = h.h2['text-lg font-medium mb-1']

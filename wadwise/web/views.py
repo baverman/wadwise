@@ -57,7 +57,7 @@ def render_entrypoint(module: str, data: dict[str, Any]) -> str:
             },
         }
     )
-    return render_template('app.html', module=module, data=data)
+    return render_template('app.html', module='src/page/' + module, data=data)
 
 
 @app.route('/account')

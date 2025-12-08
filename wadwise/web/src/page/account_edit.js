@@ -1,10 +1,10 @@
 import { render } from 'preact'
 import { useSignal } from '@preact/signals'
-import { urlqs, fieldModel } from './utils.js'
-import { hh as h, wrapComponent } from './html.js'
 
-import { uselect, submit, input, textarea, card } from './components.js'
-import { AccountSelector } from './account_selector.js'
+import { urlqs, fieldModel } from '../utils.js'
+import { hh as h, wrapComponent } from '../html.js'
+import { uselect, submit, input, textarea, card } from '../components.js'
+import { AccountSelector } from '../account_selector.js'
 
 const { option, a, span, div } = h
 const label = h.label['floating-label']
