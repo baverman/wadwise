@@ -28,15 +28,14 @@ function op2(src, dest, amount, cur, isMain) {
 }
 
 function SrcDest({ form, accountTitle, curList, isError, favAccounts, urls }) {
-    const mode = useSignal('simple')
+    const mode = useSignal(form.meta?.type ?? 'simple')
     const src = useSignal(form.src || favAccounts?.[0])
-    const via = useSignal(favAccounts?.[0])
+    const via = useSignal(form.meta?.via ?? favAccounts?.[0])
     const amount = useSignal(form.amount)
     const current = useSignal(null)
     const target = useSignal(0)
     const diff = useComputed(() => current.value - target.value)
     const cur = useSignal(form.cur)
-    // const isSpecial = useComputed(() => src.value.includes('.') || form.dest.includes('.'))
 
     const raw_ops = useComputed(() => {
         let result = null
@@ -49,6 +48,13 @@ function SrcDest({ form, accountTitle, curList, isError, favAccounts, urls }) {
                     ...op2(form.dest, form.dest, amount.value, cur.value, true),
                     ...op2(src.value, src.value, amount.value, cur.value, false),
                 ],
+                meta: {
+                    type: 'noop',
+                    src: src.value,
+                    dest: form.dest,
+                    amount: amount.value,
+                    cur: cur.value,
+                },
             }
         } else if (m == 'via') {
             result = {
@@ -56,6 +62,14 @@ function SrcDest({ form, accountTitle, curList, isError, favAccounts, urls }) {
                     ...op2(src.value, form.dest, amount.value, cur.value, true),
                     ...op2(via.value, via.value, amount.value, cur.value, false),
                 ],
+                meta: {
+                    type: 'via',
+                    src: src.value,
+                    via: via.value,
+                    dest: form.dest,
+                    amount: amount.value,
+                    cur: cur.value,
+                },
             }
         } else {
             result = { simple: [src.value, form.dest, amount.value, cur.value] }

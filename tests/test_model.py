@@ -64,9 +64,9 @@ def test_delete_account(dbconn):
 def test_transaction_flow(dbconn):
     a = make_acc('a:cash')
     e = make_acc('e:food')
-    tid = m.create_transaction(m.op2(a, e, 100, 'USD'), from_ts(10))
+    tid = m.create_transaction(m.op2(a, e, 100, 'USD'), from_ts(10), meta={'boo': 'foo'})
 
-    m.update_transaction(tid, m.op2(a, e, 200, 'USD'), from_ts(10), 'foo')
+    m.update_transaction(tid, m.op2(a, e, 200, 'USD'), from_ts(10), 'foo', meta={'boo': 'zoo'})
     result = m.balance()
     assert result[a]['USD'].sum == -200
     assert result[e]['USD'].sum == 200
@@ -82,6 +82,7 @@ def test_transaction_flow(dbconn):
         'amount': 0,
         'src': a,
         'cur': 'USD',
+        'meta': {'boo': 'zoo'},
     }
 
     m.delete_transaction(tid)

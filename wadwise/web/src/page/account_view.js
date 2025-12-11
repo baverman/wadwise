@@ -81,22 +81,25 @@ function AccountStatus({ account, balance, accCur }) {
         const hasDetails = cursWithMovements.length > 0
         const hasBalance = accCur.full.length > 0
 
-        return (hasBalance || hasDetails) && card(
-            separateOnMultiCurs(
-                accCur.full,
-                totalsRows(
-                    accCur.total,
-                    balance.current_total,
-                    'Balance' + (hasDetails && !open.value ? ' [+]' : ''),
-                    { tprops: { onClick: () => (open.value = true) } },
+        return (
+            (hasBalance || hasDetails) &&
+            card(
+                separateOnMultiCurs(
+                    accCur.full,
+                    totalsRows(
+                        accCur.total,
+                        balance.current_total,
+                        'Balance' + (hasDetails && !open.value ? ' [+]' : ''),
+                        { tprops: { onClick: () => (open.value = true) } },
+                    ),
+                    open.value &&
+                        hasDetails && [
+                            totalsRows(cursWithMovements, balance.prev_total, 'Month start'),
+                            totalsRows(cursWithMovements, balance.month_debit, 'In'),
+                            totalsRows(cursWithMovements, balance.month_credit, 'Out'),
+                        ],
                 ),
-                open.value &&
-                    hasDetails && [
-                        totalsRows(cursWithMovements, balance.prev_total, 'Month start'),
-                        totalsRows(cursWithMovements, balance.month_debit, 'In'),
-                        totalsRows(cursWithMovements, balance.month_credit, 'Out'),
-                    ],
-            ),
+            )
         )
     } else {
         return (
@@ -152,9 +155,42 @@ function TransactionList({ account, transactions, amap, urls }) {
         }
     }
 
+    function tranRow(acc, destAcc, amount, cur, isMain) {
+        return [
+            div['text-wrap tracking-tight'](
+                { class: { 'text-slate-500': !isMain } },
+                amap[acc].full_name,
+            ),
+            div['col-2 justify-self-end'](
+                { class: { 'text-slate-500': !isMain } },
+                nobr(fmtAmount(destAcc, amount), nbsp, curSpan(cur)),
+            ),
+        ]
+    }
+
     function gotoTransaction(e) {
         const target = e.target.closest('[data-href]')
         window.location.href = target.dataset.href
+    }
+
+    function TransactionBody(it) {
+        if (it.meta?.type == 'via') {
+            return [
+                tranRow(it.meta.src, account.aid, it.meta.amount, it.meta.cur, true),
+                div['col-span-full']('Via ', amap[it.meta.via].full_name),
+            ]
+        } else if (it.meta?.type == 'noop') {
+            return [
+                tranRow(it.meta.src, account.aid, it.meta.amount, it.meta.cur, false),
+                div['col-span-full text-slate-500']('Empty transaction'),
+            ]
+        } else if (it.split) {
+            return it.ops.map(([op_acc, op_amnt, op_cur, op_main]) =>
+                tranRow(op_acc, op_acc, op_amnt, op_cur, op_main),
+            )
+        } else {
+            return tranRow(it.src, account.aid, it.amount, it.cur, true)
+        }
     }
 
     function Transaction(it) {
@@ -163,26 +199,10 @@ function TransactionList({ account, transactions, amap, urls }) {
             { id: 't-' + it.tid, onClick: gotoTransaction, 'data-href': turl },
             it.desc &&
                 div['col-span-full'](
-                    { class: { 'border-b-1 border-gray-300': it.split } },
+                    { class: { 'border-b-1 border-gray-300': it.split && !it.meta?.type } },
                     it.desc,
                 ),
-            it.split
-                ? it.ops.map(([op_acc, op_amnt, op_cur, op_main]) => [
-                      div['text-wrap tracking-tight'](
-                          { class: { 'text-slate-500': !op_main } },
-                          amap[op_acc].full_name,
-                      ),
-                      div['col-2 justify-self-end'](
-                          { class: { 'text-slate-500': !op_main } },
-                          nobr(fmtAmount(op_acc, op_amnt), nbsp, curSpan(op_cur)),
-                      ),
-                  ])
-                : [
-                      div['text-wrap tracking-tight'](amap[it.src].full_name),
-                      div['col-2 justify-self-end'](
-                          nobr(fmtAmount(account.aid, it.amount), nbsp, curSpan(it.cur)),
-                      ),
-                  ],
+            TransactionBody(it),
         )
     }
 

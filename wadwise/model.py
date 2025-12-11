@@ -3,7 +3,7 @@ import operator
 from collections.abc import Collection
 from dataclasses import dataclass
 from datetime import datetime
-from typing import Iterable, Literal, Optional, TypedDict, Union, overload
+from typing import Any, Iterable, Literal, Optional, TypedDict, Union, overload
 
 from sqlbind_t import VALUES, WHERE, E, in_range, not_none, sqlf, text
 
@@ -36,6 +36,7 @@ class TransactionRaw(TypedDict):
     date: int
     desc: str
     ops: str
+    meta: str | None
 
 
 class Transaction(TypedDict):
@@ -45,6 +46,7 @@ class Transaction(TypedDict):
     ops: list[tuple[str, float, str, bool]]
     split: Literal[True]
     dest: str
+    meta: Any | None
 
 
 class Transaction2(Transaction):
@@ -166,18 +168,27 @@ def update_account(
 
 
 @transaction()
-def create_transaction(ops: Iterable[Operation], date: Optional[datetime] = None, desc: Optional[str] = None) -> str:
+def create_transaction(
+    ops: Iterable[Operation],
+    date: Optional[datetime] = None,
+    desc: Optional[str] = None,
+    meta: dict[str, Any] | None = None,
+) -> str:
     tid = gen_id()
     ts = int((date or datetime.now()).timestamp())
-    insert('transactions', tid=tid, date=ts, desc=desc)
+    insert('transactions', tid=tid, date=ts, desc=desc, meta=meta and json.dumps(meta) or None)
     for op in ops:
         insert('ops', tid=tid, aid=op['aid'], amount=round(op['amount'] * 100), cur=op['cur'], is_main=op['is_main'])
     return tid
 
 
 @transaction()
-def update_transaction(tid: str, ops: Iterable[Operation], date: datetime, desc: Optional[str]) -> None:
-    update('transactions', 'tid', tid=tid, date=int(date.timestamp()), desc=desc)
+def update_transaction(
+    tid: str, ops: Iterable[Operation], date: datetime, desc: Optional[str], meta: dict[str, Any] | None = None
+) -> None:
+    update(
+        'transactions', 'tid', tid=tid, date=int(date.timestamp()), desc=desc, meta=meta and json.dumps(meta) or None
+    )
     delete('ops', tid=tid)
     for op in ops:
         insert('ops', tid=tid, aid=op['aid'], amount=round(op['amount'] * 100), cur=op['cur'])
@@ -194,7 +205,7 @@ def account_transactions(
 ) -> list[TransactionAny]:
     cond = [in_range(E.t.date, start_date and start_date.timestamp(), end_date and end_date.timestamp())]
     query = f"""@\
-        SELECT tid, date, desc,
+        SELECT tid, date, desc, meta,
                json_group_array(json_array(aid, amount/100.0, cur, is_main)) as ops
         FROM (SELECT distinct(tid) FROM ops {WHERE(E.aid.IN(not_none / aids), **eq)})
         INNER JOIN transactions t USING(tid)
@@ -219,6 +230,7 @@ def account_transactions(
             'split': len(ops) != 2 or len(curs) > 1,  # type: ignore[typeddict-item]
             'dest': aid,
             'desc': it['desc'],
+            'meta': json.loads(it['meta']) if it['meta'] else None,
         }
 
         if not tr['split']:
@@ -468,8 +480,13 @@ def update_seen_transactions(aid: str, date: datetime, keys: Iterable[str]) -> N
 
 @transaction()
 def create_tables() -> None:
+    def version(ver: int) -> Iterable[None]:
+        if get_version() < ver:
+            yield
+            set_version(ver)
+
     # Initial tables
-    if get_version() < 1:
+    for _ in version(1):
         execute_raw(
             """\
                 CREATE TABLE IF NOT EXISTS accounts (
@@ -518,13 +535,11 @@ def create_tables() -> None:
         execute_raw('CREATE INDEX IF NOT EXISTS idx_ops_tid ON ops (tid)')
         execute_raw('CREATE INDEX IF NOT EXISTS idx_ops_aid ON ops (aid)')
         execute_raw('CREATE INDEX IF NOT EXISTS idx_transactions_date ON transactions (date, tid)')
-        set_version(1)
 
-    if get_version() < 2:
+    for _ in version(2):
         execute_raw('ALTER TABLE accounts ADD COLUMN is_hidden INTEGER')
-        set_version(2)
 
-    if get_version() < 3:
+    for _ in version(3):
         stmts = """\
             CREATE TABLE seen_transactions (
                 aid TEXT NOT NULL,
@@ -536,11 +551,12 @@ def create_tables() -> None:
         """
         for q in stmts.split(';\n'):
             execute_raw(q)
-        set_version(3)
 
-    if get_version() < 4:
+    for _ in version(4):
         execute_raw('ALTER TABLE ops ADD COLUMN is_main INTEGER DEFAULT 1')
-        set_version(4)
+
+    for _ in version(5):
+        execute_raw('ALTER TABLE transactions ADD COLUMN meta TEXT')
 
 
 def create_initial_accounts() -> None:

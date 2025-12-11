@@ -164,6 +164,12 @@ def transaction_edit(dest: str, tid: Optional[str], split: bool) -> str:
     if tid:
         (trn,) = m.account_transactions(aid=dest, tid=tid)
         form = cast(dict[str, Any], trn)
+        if meta := trn.get('meta'):
+            form['split'] = False
+            form['src'] = meta['src']
+            form['dest'] = meta['dest']
+            form['amount'] = meta['amount']
+            form['cur'] = meta['cur']
     else:
         cur = state.get_cur_list()[0]
         form = {'cur': cur, 'ops': ((None, 0, cur), (dest, 0, cur)), 'dest': dest, 'date': datetime.now()}
@@ -185,6 +191,7 @@ transaction_actions_t = opt(str) | enum('delete', 'copy', 'copy-now')
 class TransactionSave(TypedDict):
     simple: tuple[str, str, float, str]
     ops: list[tuple[str, float, str, bool]]
+    meta: dict[str, Any] | None
 
 
 @app.route('/transaction/edit', methods=['POST'])
@@ -200,11 +207,17 @@ def transaction_save(
         oplist.extend(m.op(*it) for it in ops['ops'])
     if not oplist:
         abort(400)
-    return transaction_save_helper(action, tid, oplist, m.decode_account_id(dest)[0], date, desc)
+    return transaction_save_helper(action, tid, oplist, m.decode_account_id(dest)[0], date, desc, ops.get('meta'))
 
 
 def transaction_save_helper(
-    action: str, tid: Optional[str], ops: Iterable[m.Operation], dest: str, date: datetime, desc: Optional[str]
+    action: str,
+    tid: Optional[str],
+    ops: Iterable[m.Operation],
+    dest: str,
+    date: datetime,
+    desc: Optional[str],
+    meta: dict[str, Any] | None,
 ) -> Response:
     if action == 'delete':
         assert tid
@@ -213,9 +226,9 @@ def transaction_save_helper(
         if action == 'copy-now':
             date = datetime.now()
         if tid and action not in ('copy', 'copy-now'):
-            m.update_transaction(tid, ops, date, desc)
+            m.update_transaction(tid, ops, date, desc, meta)
         else:
-            tid = m.create_transaction(ops, date, desc)
+            tid = m.create_transaction(ops, date, desc, meta)
 
     state.transactions_changed()
 
