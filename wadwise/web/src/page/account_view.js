@@ -79,8 +79,9 @@ function AccountStatus({ account, balance, accCur }) {
             (cur) => balance.month_debit[cur] || balance.month_credit[cur],
         )
         const hasDetails = cursWithMovements.length > 0
+        const hasBalance = accCur.full.length > 0
 
-        return card(
+        return (hasBalance || hasDetails) && card(
             separateOnMultiCurs(
                 accCur.full,
                 totalsRows(
