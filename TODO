@@ -1,4 +1,9 @@
 # ToDo
 
+* BUG: Update target balance on account change
+* BUG: Ensure joint ops always have zero sum
+* Update meta ops on account move
+  - acceptable: remove meta
+  - good: update src/dest for meta field in each transaction
 * Manual import decisions should not be overrided by [Set similar]
 * Persist original special transaction to show and edit it as simple src/dest transaction.

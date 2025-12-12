@@ -79,7 +79,7 @@ function AccountStatus({ account, balance, accCur }) {
             (cur) => balance.month_debit[cur] || balance.month_credit[cur],
         )
         const hasDetails = cursWithMovements.length > 0
-        const hasBalance = accCur.full.length > 0
+        const hasBalance = accCur.total.length > 0
 
         return (
             (hasBalance || hasDetails) &&

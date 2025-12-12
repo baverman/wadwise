@@ -90,7 +90,7 @@ def account_view(aid: Optional[str]) -> str:
             balance['month_debit'] = mdeb = env.month[account['aid']].debit
             balance['month_credit'] = mcred = env.month[account['aid']].credit
             balance['prev_total'] = prev_tot = env.prev[account['aid']].total
-            cur_list['full'] = env.sorted_curs({**prev_tot, **mdeb, **mcred})
+            cur_list['full'] = env.sorted_curs(prev_tot, mdeb, mcred)
     else:
         cur_list['total'] = env.top_sorted_curs()
 
