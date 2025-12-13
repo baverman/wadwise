@@ -21,7 +21,7 @@ export const uselect = wrapComponent((props) => {
 })
 
 function NumericInput({ value, ...props }) {
-    const state = useSignal(value.peek())
+    const state = useSignal(value?.peek())
     const edit = useSignal(false)
 
     useSignalEffect(() => {
@@ -43,7 +43,8 @@ function NumericInput({ value, ...props }) {
         })
     }
 
-    return input.text({
+    return hh.input({
+        type: 'text',
         inputmode: 'decimal',
         autocomplete: 'off',
         ...props,
@@ -59,6 +60,15 @@ export const button = btn['[type=button]'].$(buttonSet)
 export const submit = btn['[type=submit]'].$(buttonSet)
 export const vstack = hh.div['flex flex-col']
 export const input = hh.input['input'].$((el) => ({
+    text: el['[type=text]'],
+    hidden: el['[type=hidden]'],
+    date: el['[type=date]'],
+    month: el['[type=month]'],
+    file: el['[type=file]'],
+    number: wrapComponent(NumericInput)['input'],
+}))
+
+export const inputns = hh.input.$((el) => ({
     text: el['[type=text]'],
     hidden: el['[type=hidden]'],
     date: el['[type=date]'],

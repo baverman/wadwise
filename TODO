@@ -1,6 +1,5 @@
 # ToDo
 
-* BUG: Update target balance on account change
 * BUG: Ensure joint ops always have zero sum
 * Update meta ops on account move
   - acceptable: remove meta

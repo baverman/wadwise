@@ -4,7 +4,7 @@ import { useMemo } from 'preact/hooks'
 
 import { urlqs, fieldModel, pushSignal, deleteIdxSignal } from '../utils.js'
 import { hh as h, nbsp, wrapComponent } from '../html.js'
-import { input, select, button, submit, textarea, nav, vcard } from '../components.js'
+import { input, inputns, select, button, submit, textarea, nav, vcard } from '../components.js'
 import * as icons from '../icons.js'
 import { AccountSelector } from '../account_selector.js'
 
@@ -81,27 +81,26 @@ function SrcDest({ form, accountTitle, curList, isError, favAccounts, urls }) {
         isError.value = src.value == form.dest
     })
 
-    async function fetchBalance(e, set) {
-        const form = e.target.closest('form')
-        const resp = await fetch(
-            urlqs('/api/balance', { date: form.date.value, aid: form.src.value }),
-        )
-        const balance = (await resp.json()).result[cur.value] || 0
-        current.value = balance
-        set()
-    }
+    useSignalEffect(async () => {
+        if (mode.value == 'target') {
+            const form = window.transactionEdit
+            const resp = await fetch(
+                urlqs('/api/balance', { date: form.date.value, aid: src.value }),
+            )
+            const balance = (await resp.json()).result[cur.value] || 0
+            current.value = balance
+        } else {
+            current.value = null
+        }
+    })
 
-    function toggleMode(to, fn) {
+    function toggleMode(to) {
         return (e) => {
             e.preventDefault()
             if (mode.value == to) {
                 mode.value = 'simple'
             } else {
-                if (fn) {
-                    fn(e, () => (mode.value = to))
-                } else {
-                    mode.value = to
-                }
+                mode.value = to
             }
         }
     }
@@ -125,10 +124,7 @@ function SrcDest({ form, accountTitle, curList, isError, favAccounts, urls }) {
                 'Split',
             ),
             div['tabs tabs-box px-0'](
-                mlink(
-                    { ...tabAct('target'), onClick: toggleMode('target', fetchBalance) },
-                    'Target',
-                ),
+                mlink({ ...tabAct('target'), onClick: toggleMode('target') }, 'Target'),
                 mlink({ ...tabAct('noop'), onClick: toggleMode('noop') }, 'No Op'),
                 mlink({ ...tabAct('via'), onClick: toggleMode('via') }, 'Via'),
             ),
@@ -143,19 +139,19 @@ function SrcDest({ form, accountTitle, curList, isError, favAccounts, urls }) {
                     input.number['w-40 flex-1']({ ...amountOpts, value: amount }),
                     CurSelect['w-20 flex-none']({ curList, ...fieldModel(cur) }),
                 ],
-                m === 'target' && [
-                    div['flex-1'](
-                        span(current.value.toFixed(2)),
-                        diff.value > 0 ? ' - ' : ' + ',
-                        span(Math.abs(diff.value).toFixed(2)),
-                        ' = ',
-                    ),
-                    div['flex-none'](
-                        input.number['w-25']({ ...amountOpts, value: target }),
-                        nbsp,
-                        span.cur(cur),
-                    ),
-                ],
+                m === 'target' &&
+                    current.value != null && [
+                        h.label['input flex-1'](
+                            span['label'](
+                                span(current.value.toFixed(2)),
+                                diff.value > 0 ? ' - ' : ' + ',
+                                span(Math.abs(diff.value).toFixed(2)),
+                                ' =',
+                            ),
+                            inputns.number({ value: target }),
+                            span['label'](cur),
+                        ),
+                    ],
             ),
             input.hidden({ name: 'ops', value: raw_ops }),
         ),
@@ -204,7 +200,7 @@ function TransactionEdit(config) {
     const isError = useSignal(null)
     const btnOpts = { disabled: isError.value }
     return [
-        h.form(
+        h.form['#transactionEdit'](
             { method: 'POST' },
             h(split ? Split : SrcDest, { ...config, isError }),
             div['h-2'](),
