@@ -28,10 +28,6 @@ class Parser(HTMLParser):
             stack[-1]['children'].append(data)
 
 
-parser = Parser()
-parser.feed(sys.stdin.read())
-
-
 def print_ast(elem, ident):
     if not elem['props'] and not elem['children']:
         print(ident, elem['tag'], '()', sep='', end='')
@@ -53,6 +49,10 @@ def print_ast(elem, ident):
     print(ident, ')', sep='', end='')
 
 
-for it in stack[0]['children']:
-    print_ast(it, '')
-    print(',')
+if __name__ == '__main__':
+    parser = Parser()
+    parser.feed(sys.stdin.read())
+
+    for it in stack[0]['children']:
+        print_ast(it, '')
+        print(',')
