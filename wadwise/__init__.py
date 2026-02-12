@@ -1,3 +1,3 @@
-from sqlbind_t.tfstring import init
+from sqlbind_t import tfstring
 
-init(['wadwise.'])
+tfstring.init(['wadwise.*'])
