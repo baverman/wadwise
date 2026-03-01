@@ -64,10 +64,11 @@ export function getObjectId(obj) {
     return _ids.get(obj)
 }
 
-export function fieldModel(signal) {
+export function fieldModel(signal, onChanged) {
     const onInput = (e) => {
         const v = e.currentTarget.value
         signal.value = v
+        onChanged?.(v, e)
     }
     return { value: signal, onInput }
 }

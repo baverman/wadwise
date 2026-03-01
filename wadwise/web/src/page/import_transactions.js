@@ -9,7 +9,13 @@ import { AccountSelector } from '../account_selector.js'
 const { div, span, p, nobr, form } = h
 
 function wrapItem(item) {
-    return { ...item, state: signal(item.state), dest: signal(item.dest), desc: signal(item.desc) }
+    return {
+        ...item,
+        state: signal(item.state),
+        dest: signal(item.dest),
+        desc: signal(item.desc),
+        selected: signal(false),
+    }
 }
 
 const transactions = signal([])
@@ -29,6 +35,32 @@ const total = computed(() => {
     return result
 })
 
+function onDestChanged(trn, dest) {
+    if (!trn.selected.value) {
+        return
+    }
+
+    batch(() => {
+        for (const it of transactions.value) {
+            if (it.selected.value) {
+                it.dest.value = dest
+            }
+        }
+    })
+}
+
+function clearSelection() {
+    batch(() => {
+        for (const tr of transactions.value) {
+            tr.selected.value = false
+        }
+    })
+}
+
+function toggleState(trn) {
+    trn.state.value = trn.state.value ? null : 'seen'
+}
+
 function setSimilar(other) {
     batch(() => {
         for (const tr of transactions.value) {
@@ -44,13 +76,15 @@ function setSimilar(other) {
 }
 
 function Transaction({ trn }) {
-    const [state_value, state_title] = trn.state.value ? [null, 'Include'] : ['seen', 'Exclude']
+    const state_title = trn.state.value ? 'Include' : 'Exclude'
 
     return card(
         {
             class: {
                 'bg-slate-100': trn.state.value,
                 'bg-green-100': !trn.state.value && trn.dest.value,
+                'outline-2 outline-sky-600': trn.selected.value,
+                'outline-2 outline-transparent': !trn.selected.value,
             },
         },
         div['grid grid-cols-2 w-full gap-y-2'](
@@ -64,7 +98,7 @@ function Transaction({ trn }) {
             AccountSelector['col-span-full w-full appearance-none']({
                 lazy: true,
                 name: 'dest',
-                ...fieldModel(trn.dest),
+                ...fieldModel(trn.dest, (dest) => onDestChanged(trn, dest)),
             }),
             input.text['col-span-full w-full']({ name: 'desc', ...fieldModel(trn.desc) }),
             div['col-span-full'](
@@ -73,9 +107,11 @@ function Transaction({ trn }) {
                     'Set similar',
                 ),
                 ' ',
+                button.secondary['btn-sm']({ onClick: () => toggleState(trn) }, state_title),
+                ' ',
                 button.secondary['btn-sm'](
-                    { onClick: () => (trn.state.value = state_value) },
-                    state_title,
+                    { onClick: () => (trn.selected.value = !trn.selected.value) },
+                    trn.selected.value ? 'Unselect' : 'Select',
                 ),
             ),
         ),
@@ -100,7 +136,12 @@ function ImportForm({ src, name, balance, urls }) {
                     'Balance: ',
                     `${balance.GBP.toFixed(2)} + ${total.value.toFixed(2)} = ${(balance.GBP + total.value).toFixed(2)}`,
                 ),
-                p(submit.primary['btn-sm']({ disabled: !submit_ok.value }, 'Import')),
+                p(
+                    div['flex w-full justify-between'](
+                        submit.primary['btn-sm']({ disabled: !submit_ok.value }, 'Import'),
+                        button.secondary['btn-sm']({ onClick: clearSelection }, 'Clear selection'),
+                    ),
+                ),
             ),
             h(TransactionList),
         ),
